@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "241674796862",
+    "project_id": "agepay-9a80d",
+    "storage_bucket": "agepay-9a80d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "YOUR_ANDROID_APP_ID",
+        "android_client_info": {
+          "package_name": "com.agegrade.cls"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCH7SfFkZ1Ci-b0Bpl_glLRtoN7HWV1xwc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

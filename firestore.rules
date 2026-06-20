@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ── Helper functions ────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserRole(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+    }
+
+    function isMember() {
+      return isAuthenticated() && getUserRole(request.auth.uid) == 'member';
+    }
+
+    function isTreasurer() {
+      return isAuthenticated() && getUserRole(request.auth.uid) == 'treasurer';
+    }
+
+    function isPresident() {
+      return isAuthenticated() && getUserRole(request.auth.uid) == 'president';
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && getUserRole(request.auth.uid) == 'superAdmin';
+    }
+
+    function isAdminOrTreasurer() {
+      return isTreasurer() || isPresident() || isSuperAdmin();
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ── Users collection ────────────────────────────────
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdminOrTreasurer();
+      allow create: if isSuperAdmin() ||
+        (isOwner(userId) && request.resource.data.role == 'member');
+      allow update: if isSuperAdmin() ||
+        (isOwner(userId) && request.resource.data.role == resource.data.role);
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Members collection ──────────────────────────────
+    match /members/{memberId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdminOrTreasurer());
+      allow create: if isAdminOrTreasurer();
+      allow update: if isAdminOrTreasurer() ||
+        (resource.data.userId == request.auth.uid);
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Obligations collection ──────────────────────────
+    match /obligations/{obligationId} {
+      allow read: if isAuthenticated() &&
+        (resource == null || resource.data.memberId == request.auth.uid || isAdminOrTreasurer());
+      allow create: if isAdminOrTreasurer();
+      allow update: if isAdminOrTreasurer() ||
+        (resource.data.memberId == request.auth.uid);
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Payments collection ─────────────────────────────
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() &&
+        (resource == null || resource.data.memberId == request.auth.uid || isAdminOrTreasurer());
+      allow create: if isAuthenticated() && request.resource.data.memberId == request.auth.uid;
+      allow update: if isAdminOrTreasurer() ||
+        (resource.data.memberId == request.auth.uid);
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Expenses collection ─────────────────────────────
+    match /expenses/{expenseId} {
+      allow read: if isAdminOrTreasurer();
+      allow create: if isTreasurer() || isSuperAdmin();
+      allow update: if isTreasurer() || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Levies collection ───────────────────────────────
+    match /levies/{levyId} {
+      allow read: if isAuthenticated();
+      allow create: if isTreasurer() || isSuperAdmin();
+      allow update: if isTreasurer() || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Receipts collection ─────────────────────────────
+    match /receipts/{receiptId} {
+      allow read: if isAuthenticated() &&
+        (resource == null || resource.data.memberId == request.auth.uid || isAdminOrTreasurer());
+      allow create: if isAdminOrTreasurer();
+      allow update: if isAdminOrTreasurer();
+      allow delete: if isSuperAdmin();
+    }
+  }
+}
