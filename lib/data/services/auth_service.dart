@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../features/auth/models/user_model.dart';
 import '../../core/constants/enums.dart';
+import '../../data/models/member_model.dart';
+import '../../data/repositories/member_repository.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -46,6 +48,24 @@ class AuthService {
           createdAt: DateTime.now(),
         );
         await _firestore.collection('users').doc(user.uid).set(user.toFirestore());
+        
+        // Also create a MemberModel for members
+        if (role == UserRole.member) {
+          final member = MemberModel(
+            id: '',
+            userId: user.uid,
+            fullName: displayName,
+            email: email,
+            phoneNumber: phoneNumber,
+            dateOfBirth: DateTime(2000),
+            joinedDate: DateTime.now(),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+          final memberRepo = MemberRepository(firestore: _firestore);
+          await memberRepo.createMember(member);
+        }
+        
         return user;
       }
       return null;

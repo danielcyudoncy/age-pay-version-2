@@ -421,7 +421,7 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
     if (amount <= 0 || selected.isEmpty) return;
 
     await ref.read(offlinePaymentProvider.notifier).recordCashPayment(
-      memberId: _selectedMember!.id,
+      memberId: _selectedMember!.userId,
       obligationIds: selected.map((o) => o.id).toList(),
       amount: amount,
       notes: _notesController.text.isNotEmpty ? _notesController.text : null,

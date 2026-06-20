@@ -49,7 +49,8 @@ service cloud.firestore {
     match /members/{memberId} {
       allow read: if isAuthenticated() &&
         (resource.data.userId == request.auth.uid || isAdminOrTreasurer());
-      allow create: if isAdminOrTreasurer();
+      allow create: if isAdminOrTreasurer() ||
+        (isAuthenticated() && request.resource.data.userId == request.auth.uid);
       allow update: if isAdminOrTreasurer() ||
         (resource.data.userId == request.auth.uid);
       allow delete: if isSuperAdmin();
