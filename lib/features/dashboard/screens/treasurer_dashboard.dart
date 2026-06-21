@@ -1,3 +1,4 @@
+// features/dashboard/screens/treasurer_dashboard.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -6,8 +7,10 @@ import 'package:cls/core/widgets/quick_action_button.dart';
 import 'package:cls/features/auth/providers/auth_provider.dart';
 import 'package:cls/features/dashboard/providers/treasurer_dashboard_provider.dart';
 import 'package:cls/features/obligations/providers/obligation_provider.dart';
-import 'package:cls/features/levies/providers/levy_provider.dart' hide obligationRepositoryProvider;
+import 'package:cls/features/levies/providers/levy_provider.dart'
+    hide obligationRepositoryProvider;
 import 'package:cls/features/levies/screens/create_levy_screen.dart';
+import 'package:cls/features/members/screens/treasurer_members_list_screen.dart';
 import 'package:cls/features/expenses/providers/expense_provider.dart';
 
 class TreasurerDashboard extends ConsumerWidget {
@@ -58,6 +61,7 @@ class TreasurerDashboard extends ConsumerWidget {
     final dashboardAsync = ref.watch(treasurerDashboardProvider);
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
     final dateFormat = DateFormat('MMM dd, yyyy \u2022 HH:mm');
+    final theme = Theme.of(context);
 
     return dashboardAsync.when(
       data: (data) => RefreshIndicator(
@@ -72,11 +76,49 @@ class TreasurerDashboard extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text(
-              'Welcome, ${ref.read(authProvider).valueOrNull?.displayName ?? 'Treasurer'}',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary.withValues(alpha: 0.08),
+                    Colors.transparent,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Welcome, ${ref.read(authProvider).valueOrNull?.displayName ?? 'Treasurer'}',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      DateFormat('MMM yyyy').format(DateTime.now()),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
             _OverviewCards(data: data, currency: currency),
@@ -157,6 +199,21 @@ class _OverviewCards extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           _OverviewCard(
+            label: 'Total Registered Members',
+            value: data.totalMembers.toString(),
+            icon: Icons.people,
+            color: Colors.blue,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const TreasurerMembersListScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 12),
+          _OverviewCard(
             label: 'Net Position',
             value: currency.format(data.netPosition),
             icon: Icons.account_balance,
@@ -173,40 +230,52 @@ class _OverviewCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   const _OverviewCard({
     required this.label,
     required this.value,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 160,
+    final scheme = Theme.of(context).colorScheme;
+
+    final card = SizedBox(
+      width: 180,
       child: Card(
-        elevation: 2,
+        color: color.withValues(alpha: 0.06),
+        elevation: 0,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(10),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 14),
               Text(
                 value,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 label,
-                style: TextStyle(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontSize: 12,
-                  color: Colors.grey.shade600,
+                  color: scheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -214,6 +283,9 @@ class _OverviewCard extends StatelessWidget {
         ),
       ),
     );
+
+    if (onTap == null) return card;
+    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(12), child: card);
   }
 }
 
@@ -233,23 +305,22 @@ class _MemberArrearsSection extends StatelessWidget {
           children: [
             Text(
               'Members in Arrears',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            TextButton(
-              onPressed: () {},
-              child: const Text('See All'),
-            ),
+            TextButton(onPressed: () {}, child: const Text('See All')),
           ],
         ),
         const SizedBox(height: 8),
         if (arrears.isEmpty)
           Card(
+            color: Colors.grey.shade50,
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
+                  const SizedBox(height: 8),
                   Icon(
                     Icons.check_circle_outline,
                     size: 48,
@@ -268,25 +339,58 @@ class _MemberArrearsSection extends StatelessWidget {
           Column(
             children: arrears.take(5).map((a) {
               return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Text(
-                      a.memberName.isNotEmpty ? a.memberName[0] : '?',
-                    ),
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        child: Text(
+                          a.memberName.isNotEmpty ? a.memberName[0] : '?',
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              a.memberName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${a.unpaidCount} unpaid obligation${a.unpaidCount == 1 ? '' : 's'}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        child: Text(
+                          currency.format(a.totalOutstanding),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.redAccent,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  title: Text(a.memberName),
-                  subtitle: Text(
-                    '${a.unpaidCount} unpaid obligation${a.unpaidCount == 1 ? '' : 's'}',
-                  ),
-                  trailing: Text(
-                    currency.format(a.totalOutstanding),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.redAccent,
-                    ),
-                  ),
-                  onTap: () {},
                 ),
               );
             }).toList(),
@@ -311,16 +415,18 @@ class _LevyCollectionSection extends StatelessWidget {
         Text(
           'Levy Collection',
           style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 8),
         if (levies.isEmpty)
           Card(
+            color: Colors.grey.shade50,
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
+                  const SizedBox(height: 8),
                   Icon(
                     Icons.assignment_outlined,
                     size: 48,
@@ -456,17 +562,19 @@ class _RecentActivitySection extends StatelessWidget {
       children: [
         Text(
           'Recent Activity',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         if (items.isEmpty)
           Card(
+            color: Colors.grey.shade50,
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
+                  const SizedBox(height: 8),
                   Icon(
                     Icons.receipt_long_outlined,
                     size: 48,
@@ -492,8 +600,9 @@ class _RecentActivitySection extends StatelessWidget {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: _statusColor(p.status)
-                            .withValues(alpha: 0.15),
+                        backgroundColor: _statusColor(
+                          p.status,
+                        ).withValues(alpha: 0.15),
                         child: Icon(
                           Icons.payment,
                           color: _statusColor(p.status),
@@ -521,12 +630,22 @@ class _RecentActivitySection extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              _statusLabel(p.status),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: _statusColor(p.status),
-                                fontWeight: FontWeight.w600,
+                            Container(
+                              decoration: BoxDecoration(
+                                color: _statusColor(p.status).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              child: Text(
+                                _statusLabel(p.status),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: _statusColor(p.status),
+                                ),
                               ),
                             ),
                           ],
@@ -563,9 +682,9 @@ class _QuickActionsRow extends ConsumerWidget {
       children: [
         Text(
           'Quick Actions',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -588,7 +707,9 @@ class _QuickActionsRow extends ConsumerWidget {
               label: 'Create Levy',
               onPressed: () {
                 final currentUser = authState.valueOrNull;
-                final memberIds = membersAsync.valueOrNull?.map((m) => m.userId).toList() ?? [];
+                final memberIds =
+                    membersAsync.valueOrNull?.map((m) => m.userId).toList() ??
+                    [];
                 if (currentUser != null) {
                   Navigator.push(
                     context,

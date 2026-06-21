@@ -1,9 +1,7 @@
-# TODO - Production mode cleanup
+# TODO
 
-- [x] Remove/disable demo mode wiring (DEMO_MODE / kForceDemo) so app never seeds demo data in production.
-
-- [ ] Ensure no demo code is imported/compiled in main app runtime (remove lib/demo usage from lib/main.dart).
-- [x] Optionally restrict demo overrides file to non-production builds only (if still needed for tests/dev).
-
-- [ ] Run `flutter test` (and/or `flutter analyze`) to confirm no breakages.
-
+- [x] Modernize Treasurer dashboard UI (visual-only) in `lib/features/dashboard/screens/treasurer_dashboard.dart`.
+- [x] Keep all existing texts used by `test/treasurer_dashboard_test.dart`.
+- [ ] Optionally modernize visuals in `lib/core/widgets/quick_action_button.dart` without changing its API.
+- [ ] Run `flutter analyze`.
+- [x] Run `flutter test test/treasurer_dashboard_test.dart`.

@@ -82,6 +82,7 @@ class TreasurerDashboardData {
   final double totalCollected;
   final double totalOutstanding;
   final double totalPending;
+  final int totalMembers;
   final List<MemberArrears> memberArrears;
   final List<LevyCollectionSummary> levyCollection;
   final double expenseTotal;
@@ -92,6 +93,7 @@ class TreasurerDashboardData {
     required this.totalCollected,
     required this.totalOutstanding,
     required this.totalPending,
+    required this.totalMembers,
     required this.memberArrears,
     required this.levyCollection,
     required this.expenseTotal,
@@ -141,6 +143,11 @@ final totalPendingProvider = Provider.autoDispose<AsyncValue<double>>((ref) {
   return paymentsAsync.whenData((list) => list
       .where((p) => p.status == PaymentStatus.pending)
       .fold<double>(0.0, (sum, p) => sum + p.amount));
+});
+
+final totalMembersProvider = Provider.autoDispose<AsyncValue<int>>((ref) {
+  final membersAsync = ref.watch(membersStreamProvider);
+  return membersAsync.whenData((list) => list.length);
 });
 
 final memberArrearsProvider =
@@ -252,6 +259,7 @@ final treasurerDashboardProvider =
   final collectedAsync = ref.watch(totalCollectedProvider);
   final outstandingAsync = ref.watch(totalOutstandingProvider);
   final pendingAsync = ref.watch(totalPendingProvider);
+  final membersCountAsync = ref.watch(totalMembersProvider);
   final arrearsAsync = ref.watch(memberArrearsProvider);
   final levyAsync = ref.watch(levyCollectionProvider);
   final expenseAsync = ref.watch(expenseTotalProvider);
@@ -264,6 +272,7 @@ final treasurerDashboardProvider =
       collectedAsync,
       outstandingAsync,
       pendingAsync,
+      membersCountAsync,
       arrearsAsync,
       levyAsync,
       expenseAsync,
@@ -298,6 +307,7 @@ final treasurerDashboardProvider =
         totalCollected: collectedAsync.valueOrNull ?? 0.0,
         totalOutstanding: outstandingAsync.valueOrNull ?? 0.0,
         totalPending: pendingAsync.valueOrNull ?? 0.0,
+        totalMembers: membersCountAsync.valueOrNull ?? 0,
         memberArrears: arrearsAsync.valueOrNull ?? [],
         levyCollection: levyAsync.valueOrNull ?? [],
         expenseTotal: expenseAsync.valueOrNull ?? 0.0,
