@@ -61,7 +61,7 @@ class ObligationRepository {
     final docRef = _collection.doc();
     final newObligation = obligation.copyWith(
       id: docRef.id,
-      outstandingBalance: obligation.amount,
+      outstandingBalance: obligation.amount - obligation.paidAmount,
     );
     await docRef.set(newObligation.toFirestore());
     return docRef.id;
@@ -88,7 +88,7 @@ class ObligationRepository {
       final docRef = _collection.doc();
       final newObligation = obligation.copyWith(
         id: docRef.id,
-        outstandingBalance: obligation.amount,
+        outstandingBalance: obligation.amount - obligation.paidAmount,
       );
       batch.set(docRef, newObligation.toFirestore());
     }
@@ -102,7 +102,9 @@ class ObligationRepository {
       final data = {...map};
       data['id'] = docRef.id;
       if (!data.containsKey('outstandingBalance')) {
-        data['outstandingBalance'] = data['amount'] ?? 0;
+        final amount = data['amount'] ?? 0;
+        final paidAmount = data['paidAmount'] ?? 0;
+        data['outstandingBalance'] = amount - paidAmount;
       }
       batch.set(docRef, data);
     }

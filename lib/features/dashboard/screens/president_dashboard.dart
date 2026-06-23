@@ -9,6 +9,7 @@ import 'package:cls/features/dashboard/providers/president_dashboard_provider.da
 import 'package:cls/features/obligations/providers/obligation_provider.dart';
 import 'package:cls/features/levies/providers/levy_provider.dart'
     hide obligationRepositoryProvider;
+import 'package:cls/features/dashboard/screens/member_dashboard.dart';
 
 class PresidentDashboard extends ConsumerWidget {
   const PresidentDashboard({super.key});
@@ -21,6 +22,16 @@ class PresidentDashboard extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('President Dashboard'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            tooltip: 'My Personal Dues',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MemberDashboard()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(authProvider.notifier).signOut(),

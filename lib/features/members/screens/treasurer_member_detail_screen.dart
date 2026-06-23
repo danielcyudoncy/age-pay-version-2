@@ -6,6 +6,8 @@ import 'package:cls/data/models/member_model.dart';
 import 'package:cls/features/dashboard/providers/treasurer_dashboard_provider.dart';
 import 'package:cls/features/obligations/providers/obligation_provider.dart';
 import 'package:cls/core/constants/enums.dart';
+import 'package:cls/features/auth/providers/auth_provider.dart';
+import 'package:cls/data/models/obligation_model.dart';
 
 class TreasurerMemberDetailScreen extends ConsumerWidget {
   final String memberId;
@@ -16,8 +18,14 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final membersAsync = ref.watch(membersStreamProvider);
     final obligationsAsync = ref.watch(memberObligationsProvider(memberId));
+    final authState = ref.watch(authProvider);
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
     final dateFormat = DateFormat('MMM d, yyyy');
+    
+    final currentUserRole = authState.valueOrNull?.role;
+    final canEdit = currentUserRole == UserRole.treasurer ||
+                    currentUserRole == UserRole.president ||
+                    currentUserRole == UserRole.superAdmin;
 
     return Scaffold(
       appBar: AppBar(
@@ -71,11 +79,22 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                     currency: currency,
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'Obligations',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Obligations',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (canEdit)
+                        TextButton.icon(
+                          onPressed: () => _showCreateObligationDialog(context, ref, memberId, currency),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Add Past Obligation'),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   if (obligations.isEmpty)
@@ -163,6 +182,19 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                                     color: Colors.grey.shade600,
                                   ),
                                 ),
+                                if (canEdit) ...[
+                                  const SizedBox(height: 12),
+                                  const Divider(height: 1),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () => _showUpdateObligationDialog(context, ref, o, currency),
+                                      icon: const Icon(Icons.edit, size: 18),
+                                      label: const Text('Update Payment Status'),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -189,6 +221,179 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showCreateObligationDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String memberId,
+    NumberFormat currency,
+  ) {
+    final TextEditingController titleController = TextEditingController(text: 'Past Dues');
+    final TextEditingController amountController = TextEditingController();
+    final TextEditingController paidController = TextEditingController(text: '0');
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Add Past Obligation'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Title / Description',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Total Amount Owed',
+                    border: OutlineInputBorder(),
+                    prefixText: '₦ ',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: paidController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Amount Already Paid',
+                    border: OutlineInputBorder(),
+                    prefixText: '₦ ',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final amount = double.tryParse(amountController.text) ?? 0.0;
+                final paidAmount = double.tryParse(paidController.text) ?? 0.0;
+                
+                if (amount <= 0) return; // Basic validation
+                
+                final outstandingBalance = amount - paidAmount;
+                
+                ObligationStatus newStatus;
+                if (paidAmount >= amount) {
+                  newStatus = ObligationStatus.paid;
+                } else if (paidAmount > 0) {
+                  newStatus = ObligationStatus.partial;
+                } else {
+                  newStatus = ObligationStatus.unpaid;
+                }
+
+                final newObligation = ObligationModel(
+                  id: '', // Will be generated by repo
+                  memberId: memberId,
+                  levyId: '', // No specific levy
+                  type: ObligationType.monthlyDue,
+                  title: titleController.text.trim().isEmpty ? 'Past Dues' : titleController.text.trim(),
+                  description: 'Backdated obligation added manually',
+                  amount: amount,
+                  paidAmount: paidAmount,
+                  outstandingBalance: outstandingBalance,
+                  status: newStatus,
+                  dueDate: DateTime.now(),
+                  createdAt: DateTime.now(),
+                  settledAt: newStatus == ObligationStatus.paid ? DateTime.now() : null,
+                );
+
+                await ref.read(obligationRepositoryProvider).createObligation(newObligation);
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Add Obligation'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showUpdateObligationDialog(
+    BuildContext context,
+    WidgetRef ref,
+    ObligationModel obligation,
+    NumberFormat currency,
+  ) {
+    final TextEditingController controller = TextEditingController(
+      text: obligation.paidAmount.toString(),
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Update Obligation'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Total Amount: ${currency.format(obligation.amount)}'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Paid Amount',
+                  border: OutlineInputBorder(),
+                  prefixText: '₦ ',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newPaidAmount = double.tryParse(controller.text) ?? 0.0;
+                final outstandingBalance = obligation.amount - newPaidAmount;
+                
+                ObligationStatus newStatus;
+                if (newPaidAmount >= obligation.amount) {
+                  newStatus = ObligationStatus.paid;
+                } else if (newPaidAmount > 0) {
+                  newStatus = ObligationStatus.partial;
+                } else {
+                  newStatus = ObligationStatus.unpaid;
+                }
+
+                await ref.read(obligationRepositoryProvider).updateObligationStatus(
+                  obligation.id,
+                  paidAmount: newPaidAmount,
+                  outstandingBalance: outstandingBalance,
+                  status: newStatus,
+                  settledAt: newStatus == ObligationStatus.paid ? DateTime.now() : null,
+                );
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 

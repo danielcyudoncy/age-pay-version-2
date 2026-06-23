@@ -1,10 +1,11 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
+import { defineSecret } from 'firebase-functions/params';
 
 admin.initializeApp();
 const db = admin.firestore();
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
+const paystackSecretKey = defineSecret('PAYSTACK_SECRET_KEY');
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
 
 /**
@@ -194,7 +195,9 @@ export const createLevyWithObligations = functions.https.onCall(
  * Callable function: initialize a Paystack transaction.
  * Returns an authorization_url for the client to open in a webview.
  */
-export const initializePaystackPayment = functions.https.onCall(
+export const initializePaystackPayment = functions
+  .runWith({ secrets: ['PAYSTACK_SECRET_KEY'] })
+  .https.onCall(
   async (data, context) => {
     if (!context.auth) {
       throw new functions.https.HttpsError(
@@ -211,7 +214,8 @@ export const initializePaystackPayment = functions.https.onCall(
       );
     }
 
-    if (!PAYSTACK_SECRET_KEY) {
+    const secretKey = process.env.PAYSTACK_SECRET_KEY || '';
+    if (!secretKey) {
       throw new functions.https.HttpsError(
         'failed-precondition',
         'Paystack secret key not configured'
@@ -222,7 +226,7 @@ export const initializePaystackPayment = functions.https.onCall(
       const response = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+          Authorization: `Bearer ${secretKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -259,7 +263,9 @@ export const initializePaystackPayment = functions.https.onCall(
  * Callable function: verify a Paystack transaction and record the payment.
  * Creates a Payment document, updates obligations, generates receipt.
  */
-export const verifyPaystackTransaction = functions.https.onCall(
+export const verifyPaystackTransaction = functions
+  .runWith({ secrets: ['PAYSTACK_SECRET_KEY'] })
+  .https.onCall(
   async (data, context) => {
     if (!context.auth) {
       throw new functions.https.HttpsError(
@@ -276,7 +282,8 @@ export const verifyPaystackTransaction = functions.https.onCall(
       );
     }
 
-    if (!PAYSTACK_SECRET_KEY) {
+    const secretKey = process.env.PAYSTACK_SECRET_KEY || '';
+    if (!secretKey) {
       throw new functions.https.HttpsError(
         'failed-precondition',
         'Paystack secret key not configured'
@@ -290,7 +297,7 @@ export const verifyPaystackTransaction = functions.https.onCall(
         {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+            Authorization: `Bearer ${secretKey}`,
             'Content-Type': 'application/json',
           },
         }

@@ -510,6 +510,34 @@ Future<void> seedDemoData() async {
   );
   _demoMemberRepo._members.add(memberProfile);
 
+  // Seed a member profile for the treasurer account
+  final treasurerProfile = MemberModel(
+    id: 'demo-treasurer-profile',
+    userId: 'demo-treasurer',
+    fullName: 'Demo Treasurer',
+    email: 'treasurer@demo.com',
+    phoneNumber: '08022222222',
+    dateOfBirth: DateTime(1985, 5, 15),
+    joinedDate: DateTime(2018, 1, 1),
+    createdAt: now,
+    updatedAt: now,
+  );
+  _demoMemberRepo._members.add(treasurerProfile);
+
+  // Seed a member profile for the president account
+  final presidentProfile = MemberModel(
+    id: 'demo-president-profile',
+    userId: 'demo-president',
+    fullName: 'Demo President',
+    email: 'president@demo.com',
+    phoneNumber: '08033333333',
+    dateOfBirth: DateTime(1980, 8, 20),
+    joinedDate: DateTime(2015, 1, 1),
+    createdAt: now,
+    updatedAt: now,
+  );
+  _demoMemberRepo._members.add(presidentProfile);
+
   // Seed a demo levy
   final levy = LevyModel(
     id: 'levy-1',

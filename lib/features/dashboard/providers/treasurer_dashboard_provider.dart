@@ -125,10 +125,11 @@ AsyncValue<T> _combine<T>(List<AsyncValue> inputs, T Function() build) {
 // Metric providers
 // ---------------------------------------------------------------------------
 final totalCollectedProvider = Provider.autoDispose<AsyncValue<double>>((ref) {
-  final paymentsAsync = ref.watch(allPaymentsStreamProvider);
-  return paymentsAsync.whenData((list) => list
-      .where((p) => p.status == PaymentStatus.approved)
-      .fold<double>(0.0, (sum, p) => sum + p.amount));
+  // Sum paidAmount from obligations directly - this captures both manual
+  // payment updates (via "Update Payment Status") and actual payment transactions.
+  final obligationsAsync = ref.watch(allObligationsProvider);
+  return obligationsAsync.whenData((list) =>
+      list.fold<double>(0.0, (sum, o) => sum + o.paidAmount));
 });
 
 final totalOutstandingProvider = Provider.autoDispose<AsyncValue<double>>((ref) {

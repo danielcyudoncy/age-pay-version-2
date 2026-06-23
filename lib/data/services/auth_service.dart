@@ -49,22 +49,20 @@ class AuthService {
         );
         await _firestore.collection('users').doc(user.uid).set(user.toFirestore());
         
-        // Also create a MemberModel for members
-        if (role == UserRole.member) {
-          final member = MemberModel(
-            id: '',
-            userId: user.uid,
-            fullName: displayName,
-            email: email,
-            phoneNumber: phoneNumber,
-            dateOfBirth: DateTime(2000),
-            joinedDate: DateTime.now(),
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          );
-          final memberRepo = MemberRepository(firestore: _firestore);
-          await memberRepo.createMember(member);
-        }
+        // Also create a MemberModel for all users so they can pay dues/levies
+        final member = MemberModel(
+          id: '',
+          userId: user.uid,
+          fullName: displayName,
+          email: email,
+          phoneNumber: phoneNumber,
+          dateOfBirth: DateTime(2000),
+          joinedDate: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        final memberRepo = MemberRepository(firestore: _firestore);
+        await memberRepo.createMember(member);
         
         return user;
       }

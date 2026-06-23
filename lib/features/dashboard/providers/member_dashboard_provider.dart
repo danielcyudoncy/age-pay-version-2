@@ -13,8 +13,8 @@ final memberPaymentsStreamProvider = StreamProvider.autoDispose.family<List<Paym
 });
 
 final memberTotalPaidProvider = Provider.autoDispose.family<AsyncValue<double>, String>((ref, memberId) {
-  final asyncPayments = ref.watch(memberPaymentsStreamProvider(memberId));
-  return asyncPayments.whenData((list) => list.fold(0.0, (sum, p) => sum + p.amount));
+  final asyncObligations = ref.watch(memberObligationsProvider(memberId));
+  return asyncObligations.whenData((list) => list.fold(0.0, (sum, o) => sum + o.paidAmount));
 });
 
 final memberTotalOutstandingProvider = Provider.autoDispose.family<AsyncValue<double>, String>((ref, memberId) {

@@ -12,6 +12,7 @@ import 'package:cls/features/levies/providers/levy_provider.dart'
 import 'package:cls/features/levies/screens/create_levy_screen.dart';
 import 'package:cls/features/members/screens/treasurer_members_list_screen.dart';
 import 'package:cls/features/expenses/providers/expense_provider.dart';
+import 'package:cls/features/dashboard/screens/member_dashboard.dart';
 
 class TreasurerDashboard extends ConsumerWidget {
   const TreasurerDashboard({super.key});
@@ -24,6 +25,16 @@ class TreasurerDashboard extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Treasurer Dashboard'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            tooltip: 'My Personal Dues',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MemberDashboard()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(authProvider.notifier).signOut(),
