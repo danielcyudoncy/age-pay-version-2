@@ -70,6 +70,9 @@ set_target_properties(${BINARY_NAME}
 )
 
 
+install(FILES "com.agegrade.cls.desktop" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}")
+install(FILES "app_icon_512.png" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}")
+
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
 include(flutter/generated_plugins.cmake)

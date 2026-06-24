@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "firebase deploy --only storage:rules": "agepay-9a80d"
+  },
+  "targets": {},
+  "etags": {}
+}

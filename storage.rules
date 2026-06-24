@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Receipts - authenticated users can read/write (restrict via app logic)
+    match /receipts/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

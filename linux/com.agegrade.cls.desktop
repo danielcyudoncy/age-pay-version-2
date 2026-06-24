@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=AgePay
+Comment=AgePay Application
+Exec=cls
+Icon=app_icon_512
+Type=Application
+Categories=Utility;Application;
