@@ -212,8 +212,13 @@ class DemoObligationRepository implements ObligationRepository {
 
   @override
   Future<String> createObligation(ObligationModel obligation) async {
-    _obligations.add(obligation);
-    return obligation.id;
+    final id = 'demo-obl-${DateTime.now().millisecondsSinceEpoch}';
+    final newObligation = obligation.copyWith(
+      id: id,
+      outstandingBalance: obligation.amount - obligation.paidAmount,
+    );
+    _obligations.add(newObligation);
+    return id;
   }
 
   @override

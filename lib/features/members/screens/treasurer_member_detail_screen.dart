@@ -304,13 +304,11 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
             ),
             ElevatedButton(
               onPressed: () async {
-                final amount = double.tryParse(amountController.text) ?? 0.0;
-                final paidAmount = double.tryParse(paidController.text) ?? 0.0;
+                final amount = double.tryParse(amountController.text.trim().replaceAll(',', '')) ?? 0.0;
+                final paidAmount = double.tryParse(paidController.text.trim().replaceAll(',', '')) ?? 0.0;
                 
                 if (amount <= 0) return; // Basic validation
-                
-                final outstandingBalance = amount - paidAmount;
-                
+
                 ObligationStatus newStatus;
                 if (paidAmount >= amount) {
                   newStatus = ObligationStatus.paid;
@@ -329,7 +327,6 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                   description: 'Backdated obligation added manually',
                   amount: amount,
                   paidAmount: paidAmount,
-                  outstandingBalance: outstandingBalance,
                   status: newStatus,
                   dueDate: DateTime.now(),
                   createdAt: DateTime.now(),
@@ -357,7 +354,9 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
     NumberFormat currency,
   ) {
     final TextEditingController controller = TextEditingController(
-      text: obligation.paidAmount.toString(),
+      text: obligation.paidAmount > 0
+          ? obligation.paidAmount.toStringAsFixed(0)
+          : '',
     );
 
     showDialog(
@@ -389,9 +388,11 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
             ),
             ElevatedButton(
               onPressed: () async {
-                final newPaidAmount = double.tryParse(controller.text) ?? 0.0;
-                final outstandingBalance = obligation.amount - newPaidAmount;
-                
+                // Remove commas and whitespace for proper decimal parsing
+                final cleanText = controller.text.trim().replaceAll(',', '');
+                final newPaidAmount = double.tryParse(cleanText) ?? 0.0;
+                final outstandingBalance = (obligation.amount - newPaidAmount).clamp(0.0, double.infinity);
+
                 ObligationStatus newStatus;
                 if (newPaidAmount >= obligation.amount) {
                   newStatus = ObligationStatus.paid;
