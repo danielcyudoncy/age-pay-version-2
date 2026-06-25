@@ -1,4 +1,3 @@
-// features/dashboard/screens/member_dashboard.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +11,7 @@ import 'package:cls/features/obligations/providers/obligation_provider.dart';
 import 'package:cls/features/payments/screens/make_payment_screen.dart';
 import 'package:cls/features/payments/screens/payment_history_screen.dart';
 import 'package:cls/features/obligations/screens/member_obligations_screen.dart';
+import 'package:cls/features/members/screens/member_profile_screen.dart';
 
 class MemberDashboard extends ConsumerWidget {
   const MemberDashboard({super.key});
@@ -45,6 +45,17 @@ class MemberDashboard extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const MemberProfileScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(authProvider.notifier).signOut(),

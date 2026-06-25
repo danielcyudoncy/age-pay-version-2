@@ -24,8 +24,8 @@ void main() {
       );
 
       expect(find.text('Create Account'), findsOneWidget);
-      // 5 TextFormFields + 1 DropdownButtonFormField = 6 input widgets
-      expect(find.byType(TextFormField), findsNWidgets(5));
+      // 6 TextFormFields + 1 DropdownButtonFormField = 7 input widgets
+      expect(find.byType(TextFormField), findsNWidgets(6));
       expect(find.byType(DropdownButtonFormField<UserRole>), findsOneWidget);
       expect(find.widgetWithText(ElevatedButton, 'Register'), findsOneWidget);
     });
@@ -60,8 +60,8 @@ void main() {
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
-      await tester.enterText(find.byType(TextFormField).at(3), 'password123');
-      await tester.enterText(find.byType(TextFormField).at(4), 'different');
+      await tester.enterText(find.byType(TextFormField).at(4), 'password123');
+      await tester.enterText(find.byType(TextFormField).at(5), 'different');
       // Scroll to make the button visible before tapping
       await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Register'));
       await tester.tap(find.widgetWithText(ElevatedButton, 'Register'));

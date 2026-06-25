@@ -32,6 +32,7 @@ class AuthService {
     required String displayName,
     required String phoneNumber,
     required UserRole role,
+    DateTime? dateOfBirth,
   }) async {
     try {
       final result = await _auth.createUserWithEmailAndPassword(
@@ -48,22 +49,21 @@ class AuthService {
           createdAt: DateTime.now(),
         );
         await _firestore.collection('users').doc(user.uid).set(user.toFirestore());
-        
-        // Also create a MemberModel for all users so they can pay dues/levies
+
         final member = MemberModel(
           id: '',
           userId: user.uid,
           fullName: displayName,
           email: email,
           phoneNumber: phoneNumber,
-          dateOfBirth: DateTime(2000),
+          dateOfBirth: dateOfBirth ?? DateTime(2000),
           joinedDate: DateTime.now(),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
         final memberRepo = MemberRepository(firestore: _firestore);
         await memberRepo.createMember(member);
-        
+
         return user;
       }
       return null;

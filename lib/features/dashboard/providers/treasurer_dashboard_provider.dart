@@ -33,6 +33,11 @@ final membersStreamProvider = StreamProvider.autoDispose<List<MemberModel>>(
   },
 );
 
+final memberByUserIdProvider =
+    FutureProvider.autoDispose.family<MemberModel?, String>((ref, userId) {
+  return ref.watch(memberRepositoryProvider).getMemberByUserId(userId);
+});
+
 // ---------------------------------------------------------------------------
 // Data models
 // ---------------------------------------------------------------------------

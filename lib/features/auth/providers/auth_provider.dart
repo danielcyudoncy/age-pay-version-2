@@ -42,6 +42,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     required String displayName,
     required String phoneNumber,
     required UserRole role,
+    DateTime? dateOfBirth,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -51,6 +52,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         displayName: displayName,
         phoneNumber: phoneNumber,
         role: role,
+        dateOfBirth: dateOfBirth,
       );
       state = AsyncValue.data(user);
     } catch (e, st) {

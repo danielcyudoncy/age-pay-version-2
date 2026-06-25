@@ -8,6 +8,7 @@ import 'package:cls/features/obligations/providers/obligation_provider.dart';
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/auth/providers/auth_provider.dart';
 import 'package:cls/data/models/obligation_model.dart';
+import 'edit_member_screen.dart';
 
 class TreasurerMemberDetailScreen extends ConsumerWidget {
   final String memberId;
@@ -63,7 +64,14 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  _MemberInfoCard(member: member, dateFormat: dateFormat),
+                  _MemberInfoCard(
+                    member: member,
+                    dateFormat: dateFormat,
+                    canEdit: canEdit,
+                    onEdit: canEdit
+                        ? () => _navigateToEditScreen(context, ref, member)
+                        : null,
+                  ),
                   const SizedBox(height: 16),
                   _LevySummaryCard(
                     label: 'Levies Owed',
@@ -222,6 +230,22 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _navigateToEditScreen(
+    BuildContext context,
+    WidgetRef ref,
+    MemberModel member,
+  ) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditMemberScreen(member: member),
+      ),
+    );
+    if (result == true) {
+      ref.invalidate(membersStreamProvider);
+    }
   }
 
   void _showCreateObligationDialog(
@@ -429,8 +453,15 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
 class _MemberInfoCard extends StatelessWidget {
   final MemberModel member;
   final DateFormat dateFormat;
+  final VoidCallback? onEdit;
+  final bool canEdit;
 
-  const _MemberInfoCard({required this.member, required this.dateFormat});
+  const _MemberInfoCard({
+    required this.member,
+    required this.dateFormat,
+    this.onEdit,
+    this.canEdit = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -472,6 +503,12 @@ class _MemberInfoCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (canEdit && onEdit != null)
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: onEdit,
+                    tooltip: 'Edit Member',
+                  ),
               ],
             ),
             const SizedBox(height: 16),

@@ -1,6 +1,6 @@
-// features/auth/screens/register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../core/constants/enums.dart';
 import '../providers/auth_provider.dart';
 import '../../dashboard/screens/home_router.dart';
@@ -19,9 +19,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _dobController = TextEditingController();
   UserRole _selectedRole = UserRole.member;
   bool _isLoading = false;
   String? _error;
+  DateTime? _selectedDob;
 
   @override
   void dispose() {
@@ -30,6 +32,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _dobController.dispose();
     super.dispose();
   }
 
@@ -47,8 +50,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           displayName: _nameController.text.trim(),
           phoneNumber: _phoneController.text.trim(),
           role: _selectedRole,
+          dateOfBirth: _selectedDob ?? DateTime(2000),
         );
     setState(() => _isLoading = false);
+  }
+
+  Future<void> _selectDob() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDob ?? DateTime(2000),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDob = picked;
+        _dobController.text = DateFormat('MMM d, yyyy').format(picked);
+      });
+    }
   }
 
   @override
@@ -130,19 +149,43 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                    },
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
                     labelText: 'Phone Number',
                     prefixIcon: Icon(Icons.phone),
                   ),
-                   validator: (value) {
-                     if (value == null || value.isEmpty) {
-                       return 'Phone number is required';
-                     }
-                     return null;
-                   },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Phone number is required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _dobController,
+                  decoration: InputDecoration(
+                    labelText: 'Date of Birth',
+                    prefixIcon: const Icon(Icons.cake),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: _selectDob,
+                    ),
+                  ),
+                  readOnly: true,
+                  onTap: _selectDob,
+                  validator: (value) {
+                    if (_selectedDob == null) {
+                      return 'Please select your date of birth';
+                    }
+                    final age = DateTime.now().year - _selectedDob!.year;
+                    if (age < 13) {
+                      return 'You must be at least 13 years old';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<UserRole>(

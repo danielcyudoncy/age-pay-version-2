@@ -62,6 +62,7 @@ class DemoAuthService implements AuthService {
     required String displayName,
     required String phoneNumber,
     required UserRole role,
+    DateTime? dateOfBirth,
   }) async {
     await Future.delayed(const Duration(milliseconds: 300));
     if (_users.containsKey(email)) {
