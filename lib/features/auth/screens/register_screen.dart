@@ -20,7 +20,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _dobController = TextEditingController();
-  UserRole _selectedRole = UserRole.member;
+  final UserRole _selectedRole = UserRole.member;
   bool _isLoading = false;
   String? _error;
   DateTime? _selectedDob;
@@ -188,23 +188,32 @@ TextFormField(
                   },
                 ),
                 const SizedBox(height: 16),
-                DropdownButtonFormField<UserRole>(
-                  initialValue: _selectedRole,
+                const ListTile(
+                  leading: Icon(Icons.info_outline, color: Colors.blue),
+                  title: Text(
+                    'Self-registration is for members only.',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    'Admin roles (Treasurer, President, Super Admin) are assigned by an existing admin.',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                InputDecorator(
                   decoration: const InputDecoration(
                     labelText: 'Role',
                     prefixIcon: Icon(Icons.badge),
+                    helperText: 'Fixed to Member for self-registration',
                   ),
-                  items: UserRole.values.map((role) {
-                    return DropdownMenuItem(
-                      value: role,
-                      child: Text(role.name.toUpperCase()),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => _selectedRole = value);
-                    }
-                  },
+                  child: Text(
+                    'MEMBER',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(

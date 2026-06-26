@@ -34,7 +34,6 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
     ObligationType.specialLevy,
     ObligationType.projectContribution,
     ObligationType.emergencyContribution,
-    ObligationType.projectContribution,
   ];
 
   @override

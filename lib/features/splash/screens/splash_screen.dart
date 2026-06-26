@@ -11,6 +11,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool _cached = false;
+
   @override
   void initState() {
     super.initState();
@@ -26,6 +28,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_cached) {
+      _cached = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        precacheImage(const AssetImage('assets/images/logo.png'), context);
+      });
+    }
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(child: Image.asset('assets/images/logo.png')),

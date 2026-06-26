@@ -4,6 +4,7 @@ import '../../features/auth/models/user_model.dart';
 import '../../core/constants/enums.dart';
 import '../../data/models/member_model.dart';
 import '../../data/repositories/member_repository.dart';
+import '../../data/repositories/obligation_repository.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -62,7 +63,10 @@ class AuthService {
           updatedAt: DateTime.now(),
         );
         final memberRepo = MemberRepository(firestore: _firestore);
-        await memberRepo.createMember(member);
+        final memberId = await memberRepo.createMember(member);
+
+        final obligationRepo = ObligationRepository(firestore: _firestore);
+        await obligationRepo.backfillObligationsForNewMember(memberId);
 
         return user;
       }

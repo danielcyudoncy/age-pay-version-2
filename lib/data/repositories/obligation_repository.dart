@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/obligation_model.dart';
+import '../models/levy_model.dart';
 import '../../core/constants/enums.dart';
 
 class ObligationRepository {
@@ -109,5 +110,37 @@ class ObligationRepository {
       batch.set(docRef, data);
     }
     await batch.commit();
+  }
+
+  Future<void> backfillObligationsForNewMember(String memberId) async {
+    final leviesSnapshot = await _firestore
+        .collection('levies')
+        .where('isActive', isEqualTo: true)
+        .get();
+
+    final levies = leviesSnapshot.docs
+        .map((doc) => LevyModel.fromFirestore(doc))
+        .toList();
+
+    if (levies.isEmpty) return;
+
+    final now = DateTime.now();
+    final obligations = levies.map((levy) {
+      return {
+        'memberId': memberId,
+        'levyId': levy.id,
+        'type': levy.type.name,
+        'title': levy.title,
+        'description': levy.description,
+        'amount': levy.amountPerMember,
+        'paidAmount': 0.0,
+        'outstandingBalance': levy.amountPerMember,
+        'status': 'unpaid',
+        'dueDate': Timestamp.fromDate(levy.dueDate),
+        'createdAt': Timestamp.fromDate(now),
+      };
+    }).toList();
+
+    await batchCreateFromMaps(obligations);
   }
 }

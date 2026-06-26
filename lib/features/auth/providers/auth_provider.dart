@@ -19,6 +19,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
 
   Future<void> _init() async {
     try {
+      state = const AsyncValue.data(null);
       final user = await _authService.getCurrentUser();
       state = AsyncValue.data(user);
     } catch (e, st) {
