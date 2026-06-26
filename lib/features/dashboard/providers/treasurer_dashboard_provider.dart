@@ -165,34 +165,49 @@ final memberArrearsProvider =
     final obligations = obligationsAsync.valueOrNull ?? [];
     final members = membersAsync.valueOrNull ?? [];
 
-    final map = <String, List<ObligationModel>>{};
-    for (final o in obligations) {
-      if (o.outstandingBalance > 0) {
-        map.putIfAbsent(o.memberId, () => []).add(o);
+    // Build member lookup maps
+    // memberByDocId: document ID -> MemberModel
+    // memberByUserId: user ID -> document ID
+    final memberByDocId = <String, MemberModel>{};
+    final memberByUserId = <String, String>{};
+
+    for (final m in members) {
+      memberByDocId[m.id] = m;
+      if (m.userId.isNotEmpty) {
+        memberByUserId[m.userId] = m.id;
       }
     }
 
-    final result = map.entries.map((e) {
-      final member = members.firstWhere(
-        (m) => m.userId == e.key || m.id == e.key,
-        orElse: () => MemberModel(
-          id: e.key,
-          userId: e.key,
-          fullName: 'Unknown',
-          email: '',
-          phoneNumber: '',
-          dateOfBirth: DateTime(2000),
-          joinedDate: DateTime(2000),
-          createdAt: DateTime(2000),
-          updatedAt: DateTime(2000),
-        ),
-      );
-      final total =
+    // Group obligations by RESOLVED member document ID to prevent duplicates
+    // (obligations may reference member by userId or by document ID)
+    final memberObligations = <String, List<ObligationModel>>{};
+
+    for (final o in obligations) {
+      if (o.outstandingBalance <= 0) continue;
+
+      // Resolve to document ID
+      String resolvedMemberId = o.memberId;
+      if (!memberByDocId.containsKey(o.memberId) &&
+          memberByUserId.containsKey(o.memberId)) {
+        // memberId is a userId, convert to document ID
+        resolvedMemberId = memberByUserId[o.memberId]!;
+      } else if (!memberByDocId.containsKey(o.memberId)) {
+        // Unknown member, keep original ID
+        resolvedMemberId = o.memberId;
+      }
+
+      (memberObligations[resolvedMemberId] ??= []).add(o);
+    }
+
+    // Build result
+    final result = memberObligations.entries.map((e) {
+      final member = memberByDocId[e.key];
+      final totalOutstanding =
           e.value.fold<double>(0.0, (sum, o) => sum + o.outstandingBalance);
       return MemberArrears(
         memberId: e.key,
-        memberName: member.fullName,
-        totalOutstanding: total,
+        memberName: member?.fullName ?? 'Unknown',
+        totalOutstanding: totalOutstanding,
         unpaidCount: e.value.where((o) => o.status != ObligationStatus.paid).length,
       );
     }).toList();
