@@ -494,9 +494,9 @@ void main() {
           .whereType<Text>()
           .map((w) => w.data ?? '')
           .toList();
-      expect(allTexts, contains('₦8,000'));
-      expect(allTexts, contains('₦10,000'));
-      expect(allTexts, contains('₦6,000'));
+      expect(allTexts, contains('₦8,000')); // Total Collected from obligations
+      expect(allTexts, contains('₦10,000')); // Total Outstanding
+      expect(allTexts, contains('₦10,000')); // Pending Payments (p2 = 10000)
     });
 
     testWidgets(

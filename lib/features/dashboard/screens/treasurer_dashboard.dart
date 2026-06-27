@@ -719,7 +719,7 @@ class _QuickActionsRow extends ConsumerWidget {
               onPressed: () {
                 final currentUser = authState.valueOrNull;
                 final memberIds =
-                    membersAsync.valueOrNull?.map((m) => m.userId).toList() ??
+                    membersAsync.valueOrNull?.map((m) => m.id).toList() ??
                     [];
                 if (currentUser != null) {
                   Navigator.push(

@@ -20,7 +20,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _dobController = TextEditingController();
-  final UserRole _selectedRole = UserRole.member;
+  UserRole _selectedRole = UserRole.member;
   bool _isLoading = false;
   String? _error;
   DateTime? _selectedDob;
@@ -123,12 +123,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     labelText: 'Full Name',
                     prefixIcon: Icon(Icons.person),
                   ),
-                   validator: (value) {
-                     if (value == null || value.isEmpty) {
-                       return 'Name is required';
-                     }
-                     return null;
-                   },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Name is required';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -138,18 +138,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     labelText: 'Email',
                     prefixIcon: Icon(Icons.email),
                   ),
-                   validator: (value) {
-                     if (value == null || value.isEmpty) {
-                       return 'Email is required';
-                     }
-                     if (!value.contains('@')) {
-                       return 'Enter a valid email';
-                     }
-                     return null;
-                   },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Email is required';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Enter a valid email';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
-TextFormField(
+                TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
@@ -191,29 +191,30 @@ TextFormField(
                 const ListTile(
                   leading: Icon(Icons.info_outline, color: Colors.blue),
                   title: Text(
-                    'Self-registration is for members only.',
+                    'Select your role during registration.',
                     style: TextStyle(fontSize: 14),
-                  ),
-                  subtitle: Text(
-                    'Admin roles (Treasurer, President, Super Admin) are assigned by an existing admin.',
-                    style: TextStyle(fontSize: 12),
                   ),
                 ),
                 const SizedBox(height: 16),
-                InputDecorator(
+                DropdownButtonFormField<UserRole>(
+                  initialValue: _selectedRole,
                   decoration: const InputDecoration(
                     labelText: 'Role',
                     prefixIcon: Icon(Icons.badge),
-                    helperText: 'Fixed to Member for self-registration',
                   ),
-                  child: Text(
-                    'MEMBER',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
+                  items: UserRole.values.map((role) {
+                    return DropdownMenuItem(
+                      value: role,
+                      child: Text(_roleLabel(role)),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedRole = value;
+                      });
+                    }
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -241,12 +242,12 @@ TextFormField(
                     labelText: 'Confirm Password',
                     prefixIcon: Icon(Icons.lock_outline),
                   ),
-                   validator: (value) {
-                     if (value != _passwordController.text) {
-                       return 'Passwords do not match';
-                     }
-                     return null;
-                   },
+                  validator: (value) {
+                    if (value != _passwordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -280,5 +281,18 @@ TextFormField(
         ),
       ),
     );
+  }
+
+  String _roleLabel(UserRole role) {
+    switch (role) {
+      case UserRole.member:
+        return 'Member';
+      case UserRole.treasurer:
+        return 'Treasurer';
+      case UserRole.president:
+        return 'President';
+      case UserRole.superAdmin:
+        return 'Super Admin';
+    }
   }
 }

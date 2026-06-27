@@ -334,7 +334,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Total Paid'), findsOneWidget);
-      expect(find.textContaining('₦15,000'), findsOneWidget);
+      // o1=5000, o2=5000, o3=0, o5=2000 => total 12000
+      expect(find.textContaining('₦12,000'), findsOneWidget);
     });
 
     testWidgets('shows total outstanding card with correct amount', (

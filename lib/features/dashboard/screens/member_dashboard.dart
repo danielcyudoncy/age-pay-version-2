@@ -50,9 +50,7 @@ class MemberDashboard extends ConsumerWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const MemberProfileScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const MemberProfileScreen()),
               );
             },
           ),
@@ -753,22 +751,22 @@ class _QuickActionsRow extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            QuickActionButton(
-              icon: Icons.payment,
-              label: 'Make Payment',
-              isPrimary: true,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => MakePaymentScreen(
-                      memberId: memberId,
-                      memberEmail: memberEmail,
-                    ),
-                  ),
-                );
-              },
-            ),
+            // QuickActionButton(
+            //   icon: Icons.payment,
+            //   label: 'Make Payment',
+            //   isPrimary: true,
+            //   onPressed: () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(
+            //         builder: (_) => MakePaymentScreen(
+            //           memberId: memberId,
+            //           memberEmail: memberEmail,
+            //         ),
+            //       ),
+            //     );
+            //   },
+            // ),
             QuickActionButton(
               icon: Icons.history,
               label: 'View History',
