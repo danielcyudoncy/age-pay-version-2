@@ -32,7 +32,6 @@ class _MockAuthService implements AuthService {
 class _MockReceiptRepo implements ReceiptRepository {
   final List<ReceiptModel> receipts;
 
-
   _MockReceiptRepo({this.receipts = const []});
 
   @override
@@ -204,7 +203,7 @@ void main() {
     });
   });
 
-  group('PaymentHistoryScreen receipt icon', () {
+  group('PaymentHistoryScreen transfer proof', () {
     final approvedPayment = PaymentModel(
       id: 'pay1',
       memberId: 'm1',
@@ -215,13 +214,14 @@ void main() {
       createdAt: testDate,
     );
 
-    final pendingPayment = PaymentModel(
+    final pendingBankTransfer = PaymentModel(
       id: 'pay2',
       memberId: 'm1',
       amount: 3000,
-      method: PaymentMethod.cash,
+      method: PaymentMethod.bankTransfer,
       status: PaymentStatus.pending,
       allocations: const [PaymentAllocationModel(obligationId: 'o2', amount: 3000)],
+      transferProofUrl: 'https://example.com/receipt.jpg',
       createdAt: testDate.add(const Duration(days: 1)),
     );
 
@@ -247,18 +247,15 @@ void main() {
       );
     }
 
-    testWidgets('shows receipt icon for approved payments', (tester) async {
+    testWidgets('shows transfer proof button for bank transfer payments with proof', (tester) async {
       await tester.pumpWidget(buildScreen(
-        payments: [approvedPayment, pendingPayment],
-        receipts: [testReceipt.copyWith(paymentId: 'pay1')],
+        payments: [approvedPayment, pendingBankTransfer],
       ));
       await tester.pumpAndSettle();
 
-      // Should find receipt icons for both cards since the widget renders an icon for all,
-      // but the enabled one has a colored icon and the disabled one is grey.
-      expect(find.byIcon(Icons.receipt), findsWidgets);
       expect(find.text('Approved'), findsOneWidget);
       expect(find.text('Pending'), findsOneWidget);
+      expect(find.byIcon(Icons.receipt), findsOneWidget);
     });
   });
 }

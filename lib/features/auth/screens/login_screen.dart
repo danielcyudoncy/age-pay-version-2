@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../demo/demo_overrides.dart';
 import '../providers/auth_provider.dart';
 import 'register_screen.dart';
 import '../../dashboard/screens/home_router.dart';
@@ -36,15 +35,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           _emailController.text.trim(),
           _passwordController.text,
         );
-    if (mounted) setState(() => _isLoading = false);
-  }
-
-  Future<void> _demoLogin(String email) async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    await ref.read(authProvider.notifier).signIn(email, 'demo123');
     if (mounted) setState(() => _isLoading = false);
   }
 
@@ -84,11 +74,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFF1A5F2A),
                         ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    kDemoMode ? 'Demo Mode — no Firebase required' : 'Sign in to your account',
-                    style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 32),
                   if (_error != null)
@@ -156,73 +141,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     },
                     child: const Text("Don't have an account? Register"),
                   ),
-                  if (kDemoMode) ...[
-                    const SizedBox(height: 24),
-                    const Divider(),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Quick Demo Login',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        _DemoLoginChip(
-                          label: 'Member',
-                          color: Colors.green,
-                          onTap: _isLoading ? null : () => _demoLogin('member@demo.com'),
-                        ),
-                        _DemoLoginChip(
-                          label: 'Treasurer',
-                          color: Colors.orange,
-                          onTap: _isLoading ? null : () => _demoLogin('treasurer@demo.com'),
-                        ),
-                        _DemoLoginChip(
-                          label: 'President',
-                          color: Colors.indigo,
-                          onTap: _isLoading ? null : () => _demoLogin('president@demo.com'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'You can also register a new demo account above.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                    ),
-                  ],
                 ],
               ),
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _DemoLoginChip extends StatelessWidget {
-  final String label;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _DemoLoginChip({
-    required this.label,
-    required this.color,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ActionChip(
-      avatar: CircleAvatar(
-        backgroundColor: color,
-        child: Text(label[0], style: const TextStyle(color: Colors.white, fontSize: 12)),
-      ),
-      label: Text(label),
-      onPressed: onTap,
     );
   }
 }

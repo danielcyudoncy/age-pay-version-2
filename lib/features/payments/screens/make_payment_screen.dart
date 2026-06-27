@@ -156,7 +156,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                   ref.read(paymentFlowProvider.notifier).reset();
                   ref.read(offlinePaymentProvider.notifier).reset();
                   ref.read(selectedObligationsProvider.notifier).clear();
-                  Navigator.pop(context);
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 },
                 child: const Text('Done'),
               ),
@@ -214,7 +214,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                 onPressed: () {
                   ref.read(offlinePaymentProvider.notifier).reset();
                   ref.read(selectedObligationsProvider.notifier).clear();
-                  Navigator.pop(context);
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 },
                 child: const Text('Done'),
               ),
@@ -825,11 +825,15 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1080,
+      maxHeight: 1080,
+      imageQuality: 85,
+    );
     if (picked == null) return;
 
     setState(() {
-      _pickedImage = File(picked.path);
       _isUploading = true;
     });
 
@@ -838,7 +842,16 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
           'transfer_${widget.memberId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final ref = FirebaseStorage.instance
           .ref('receipts/${widget.memberId}/$fileName');
-      await ref.putFile(_pickedImage!);
+
+      if (kIsWeb) {
+        final bytes = await picked.readAsBytes();
+        await ref.putData(bytes);
+      } else {
+        setState(() {
+          _pickedImage = File(picked.path);
+        });
+        await ref.putFile(_pickedImage!);
+      }
       final url = await ref.getDownloadURL();
 
       setState(() {

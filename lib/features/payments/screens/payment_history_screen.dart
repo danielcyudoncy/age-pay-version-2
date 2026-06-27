@@ -4,17 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/data/models/payment_model.dart';
-import 'package:cls/data/models/receipt_model.dart';
-import 'package:cls/features/receipts/providers/receipt_provider.dart';
-import 'package:cls/features/receipts/screens/receipt_detail_screen.dart';
+import 'package:cls/features/payments/screens/transfer_proof_screen.dart';
 import 'package:cls/features/dashboard/providers/member_dashboard_provider.dart'
     show paymentRepositoryProvider;
 
 final paymentHistoryProvider = StreamProvider.autoDispose
     .family<List<PaymentModel>, String>((ref, memberId) {
-      final repo = ref.watch(paymentRepositoryProvider);
-      return repo.getMemberPayments(memberId);
-    });
+  final repo = ref.watch(paymentRepositoryProvider);
+  return repo.getMemberPayments(memberId);
+});
 
 class PaymentHistoryScreen extends ConsumerWidget {
   final String memberId;
@@ -106,41 +104,26 @@ class _PaymentHistoryCard extends ConsumerWidget {
     }
   }
 
-  Widget _buildReceiptButton(
-    BuildContext context,
-    AsyncValue<ReceiptModel?> receiptAsync,
-  ) {
-    return receiptAsync.when(
-      data: (receipt) {
-        if (receipt == null) {
-          return Icon(Icons.receipt, size: 20, color: Colors.grey.shade400);
-        }
-        return IconButton(
-          icon: Icon(
-            Icons.receipt,
-            size: 20,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ReceiptDetailScreen(receipt: receipt),
-              ),
-            );
-          },
-          tooltip: 'View Receipt',
-          constraints: const BoxConstraints(),
-          padding: EdgeInsets.zero,
-        );
-      },
-      loading: () => const SizedBox(
-        width: 20,
-        height: 20,
-        child: CircularProgressIndicator(strokeWidth: 2),
+  Widget _buildReceiptButton(BuildContext context, PaymentModel payment) {
+    return IconButton(
+      icon: Icon(
+        Icons.receipt,
+        size: 20,
+        color: Theme.of(context).colorScheme.primary,
       ),
-      error: (_, _) =>
-          Icon(Icons.receipt, size: 20, color: Colors.grey.shade400),
+      onPressed: () async {
+        if (payment.transferProofUrl != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TransferProofScreen(payment: payment),
+            ),
+          );
+        }
+      },
+      tooltip: 'View Transfer Proof',
+      constraints: const BoxConstraints(),
+      padding: EdgeInsets.zero,
     );
   }
 
@@ -157,8 +140,6 @@ class _PaymentHistoryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final receiptAsync = ref.watch(receiptByPaymentIdProvider(payment.id));
-
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -194,8 +175,11 @@ class _PaymentHistoryCard extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                _buildReceiptButton(context, receiptAsync),
+                if (payment.method == PaymentMethod.bankTransfer &&
+                    payment.transferProofUrl != null) ...[
+                  const SizedBox(width: 8),
+                  _buildReceiptButton(context, payment),
+                ],
               ],
             ),
             const SizedBox(height: 8),
