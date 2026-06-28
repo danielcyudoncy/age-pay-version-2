@@ -296,7 +296,11 @@ class _OverviewCard extends StatelessWidget {
     );
 
     if (onTap == null) return card;
-    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(12), child: card);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: card,
+    );
   }
 }
 
@@ -643,7 +647,9 @@ class _RecentActivitySection extends StatelessWidget {
                             const SizedBox(height: 2),
                             Container(
                               decoration: BoxDecoration(
-                                color: _statusColor(p.status).withValues(alpha: 0.12),
+                                color: _statusColor(
+                                  p.status,
+                                ).withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               padding: const EdgeInsets.symmetric(
@@ -719,8 +725,7 @@ class _QuickActionsRow extends ConsumerWidget {
               onPressed: () {
                 final currentUser = authState.valueOrNull;
                 final memberIds =
-                    membersAsync.valueOrNull?.map((m) => m.id).toList() ??
-                    [];
+                    membersAsync.valueOrNull?.map((m) => m.id).toList() ?? [];
                 if (currentUser != null) {
                   Navigator.push(
                     context,

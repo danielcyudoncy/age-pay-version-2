@@ -52,8 +52,7 @@ class PresidentDashboard extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
               const SizedBox(height: 16),
-              Text('Error: $error',
-                  style: const TextStyle(color: Colors.red)),
+              Text('Error: $error', style: const TextStyle(color: Colors.red)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.read(authProvider.notifier).refreshUser(),
@@ -86,9 +85,9 @@ class PresidentDashboard extends ConsumerWidget {
           children: [
             Text(
               'Welcome, ${ref.read(authProvider).valueOrNull?.displayName ?? 'President'}',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             _OverviewCards(data: data, currency: currency),
@@ -97,7 +96,10 @@ class PresidentDashboard extends ConsumerWidget {
             const SizedBox(height: 20),
             _CollectionsByMethodChart(data: data),
             const SizedBox(height: 20),
-            _ActiveLeviesSection(levies: data.activeLeviesSummary, currency: currency),
+            _ActiveLeviesSection(
+              levies: data.activeLeviesSummary,
+              currency: currency,
+            ),
             const SizedBox(height: 20),
             _RecentExpensesSection(
               expenses: data.recentExpenses,
@@ -205,17 +207,14 @@ class _OverviewCard extends StatelessWidget {
               Text(
                 value,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ],
           ),
@@ -246,8 +245,8 @@ class _MonthlyCollectionsChart extends StatelessWidget {
             Text(
               'Monthly Collections (Last 12 Months)',
               style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 16),
             if (!hasData)
@@ -303,9 +302,11 @@ class _MonthlyCollectionsChart extends StatelessWidget {
                         ),
                       ),
                       topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                       rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                     ),
                     borderData: FlBorderData(show: false),
                     barGroups: monthlyData.asMap().entries.map((entry) {
@@ -317,7 +318,8 @@ class _MonthlyCollectionsChart extends StatelessWidget {
                             color: theme.colorScheme.primary,
                             width: 14,
                             borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(4)),
+                              top: Radius.circular(4),
+                            ),
                           ),
                         ],
                       );
@@ -375,8 +377,8 @@ class _CollectionsByMethodChart extends StatelessWidget {
             Text(
               'Collections by Method',
               style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 16),
             if (!hasData)
@@ -399,14 +401,11 @@ class _CollectionsByMethodChart extends StatelessWidget {
                         PieChartData(
                           sectionsSpace: 2,
                           centerSpaceRadius: 36,
-                          sections:
-                              PaymentMethod.values.map((method) {
+                          sections: PaymentMethod.values.map((method) {
                             final value = methodData[method] ?? 0.0;
                             return PieChartSectionData(
                               value: value,
-                              title: value > 0
-                                  ? '₦${value.toInt()}'
-                                  : '',
+                              title: value > 0 ? '₦${value.toInt()}' : '',
                               color: _methodColor(method, theme),
                               radius: 60,
                               titleStyle: const TextStyle(
@@ -461,10 +460,7 @@ class _ActiveLeviesSection extends StatelessWidget {
   final List<ActiveLevySummary> levies;
   final NumberFormat currency;
 
-  const _ActiveLeviesSection({
-    required this.levies,
-    required this.currency,
-  });
+  const _ActiveLeviesSection({required this.levies, required this.currency});
 
   @override
   Widget build(BuildContext context) {
@@ -475,8 +471,8 @@ class _ActiveLeviesSection extends StatelessWidget {
         Text(
           'Active Levies',
           style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 8),
         if (levies.isEmpty)
@@ -632,9 +628,9 @@ class _RecentExpensesSection extends StatelessWidget {
       children: [
         Text(
           'Recent Expenses',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         if (expenses.isEmpty)
@@ -664,8 +660,9 @@ class _RecentExpensesSection extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 8),
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor:
-                        _expenseColor(expense.category).withValues(alpha: 0.15),
+                    backgroundColor: _expenseColor(
+                      expense.category,
+                    ).withValues(alpha: 0.15),
                     child: Icon(
                       _expenseIcon(expense.category),
                       color: _expenseColor(expense.category),
@@ -674,7 +671,8 @@ class _RecentExpensesSection extends StatelessWidget {
                   ),
                   title: Text(expense.title),
                   subtitle: Text(
-                      '${_categoryLabel(expense.category)} \u2022 ${dateFormat.format(expense.expenseDate)}'),
+                    '${_categoryLabel(expense.category)} \u2022 ${dateFormat.format(expense.expenseDate)}',
+                  ),
                   trailing: Text(
                     currency.format(expense.amount),
                     style: const TextStyle(
@@ -701,8 +699,8 @@ class _ReportsAccessSection extends StatelessWidget {
         Text(
           'Reports',
           style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 8),
         Card(

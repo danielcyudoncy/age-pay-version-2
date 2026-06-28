@@ -26,7 +26,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     precacheImage(const AssetImage('assets/images/logo.png'), context);
-    
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(child: Image.asset('assets/images/logo.png')),

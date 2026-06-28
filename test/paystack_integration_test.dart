@@ -33,11 +33,12 @@ class _MockPaymentService implements PaymentService {
     Map<String, dynamic>? metadata,
   }) async {
     if (_initError != null) throw _initError!;
-    return _initResult ?? PaystackInitResult(
-      authorizationUrl: 'https://paystack.com/pay/test',
-      accessCode: 'acc_test',
-      reference: reference,
-    );
+    return _initResult ??
+        PaystackInitResult(
+          authorizationUrl: 'https://paystack.com/pay/test',
+          accessCode: 'acc_test',
+          reference: reference,
+        );
   }
 
   @override
@@ -48,13 +49,14 @@ class _MockPaymentService implements PaymentService {
     required double amountPaid,
   }) async {
     if (_verifyError != null) throw _verifyError!;
-    return _verifyResult ?? PaystackVerifyResult(
-      paymentId: 'pay_test',
-      receiptId: 'rcp_test',
-      receiptNumber: 'RCP-001',
-      verifiedAmount: amountPaid,
-      status: 'approved',
-    );
+    return _verifyResult ??
+        PaystackVerifyResult(
+          paymentId: 'pay_test',
+          receiptId: 'rcp_test',
+          receiptNumber: 'RCP-001',
+          verifiedAmount: amountPaid,
+          status: 'approved',
+        );
   }
 
   @override
@@ -105,10 +107,14 @@ class _MockReceiptRepository implements ReceiptRepository {
   Future<ReceiptModel?> getReceiptByPaymentId(String paymentId) async => null;
 
   @override
-  Stream<List<ReceiptModel>> getMemberReceipts(String memberId) => Stream.value([]);
+  Stream<List<ReceiptModel>> getMemberReceipts(String memberId) =>
+      Stream.value([]);
 
   @override
-  Stream<List<ReceiptModel>> getReceiptsByDateRange(DateTime start, DateTime end) => Stream.value([]);
+  Stream<List<ReceiptModel>> getReceiptsByDateRange(
+    DateTime start,
+    DateTime end,
+  ) => Stream.value([]);
 
   @override
   Future<ReceiptModel?> getReceiptById(String id) async => null;
@@ -123,15 +129,19 @@ class _MockReceiptRepository implements ReceiptRepository {
 class _MockObligationRepository implements ObligationRepository {
   List<ObligationModel> _obligations = [];
 
-  void setObligations(List<ObligationModel> obligations) => _obligations = obligations;
+  void setObligations(List<ObligationModel> obligations) =>
+      _obligations = obligations;
 
   @override
   Stream<List<ObligationModel>> getMemberActiveObligations(String memberId) {
     return Stream.value(
       _obligations
-          .where((o) =>
-              o.memberId == memberId &&
-              (o.status == ObligationStatus.unpaid || o.status == ObligationStatus.partial))
+          .where(
+            (o) =>
+                o.memberId == memberId &&
+                (o.status == ObligationStatus.unpaid ||
+                    o.status == ObligationStatus.partial),
+          )
           .toList(),
     );
   }
@@ -139,7 +149,6 @@ class _MockObligationRepository implements ObligationRepository {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
-
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -202,11 +211,13 @@ void main() {
   group('PaymentFlowNotifier', () {
     test('initializes payment successfully', () async {
       final mockService = _MockPaymentService();
-      mockService.setInitResult(PaystackInitResult(
-        authorizationUrl: 'https://paystack.test/pay',
-        accessCode: 'acc123',
-        reference: 'ref123',
-      ));
+      mockService.setInitResult(
+        PaystackInitResult(
+          authorizationUrl: 'https://paystack.test/pay',
+          accessCode: 'acc123',
+          reference: 'ref123',
+        ),
+      );
 
       final notifier = PaymentFlowNotifier(paymentService: mockService);
 
@@ -241,13 +252,15 @@ void main() {
 
     test('verifies payment successfully', () async {
       final mockService = _MockPaymentService();
-      mockService.setVerifyResult(PaystackVerifyResult(
-        paymentId: 'pay123',
-        receiptId: 'rcp123',
-        receiptNumber: 'RCP-001',
-        verifiedAmount: 5000,
-        status: 'approved',
-      ));
+      mockService.setVerifyResult(
+        PaystackVerifyResult(
+          paymentId: 'pay123',
+          receiptId: 'rcp123',
+          receiptNumber: 'RCP-001',
+          verifiedAmount: 5000,
+          status: 'approved',
+        ),
+      );
 
       final notifier = PaymentFlowNotifier(paymentService: mockService);
 
@@ -294,7 +307,9 @@ void main() {
       return ProviderScope(
         overrides: [
           paymentServiceProvider.overrideWith((ref) => mockService),
-          obligationRepositoryProvider.overrideWith((ref) => mockObligationRepo),
+          obligationRepositoryProvider.overrideWith(
+            (ref) => mockObligationRepo,
+          ),
         ],
         child: MaterialApp(
           home: MakePaymentScreen(
@@ -334,7 +349,9 @@ void main() {
       expect(find.textContaining('Total to Pay'), findsOneWidget);
     });
 
-    testWidgets('pay button disabled when no obligations selected', (tester) async {
+    testWidgets('pay button disabled when no obligations selected', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildScreen(obligations: testObligations));
       await tester.pumpAndSettle();
 
@@ -354,7 +371,9 @@ void main() {
         ProviderScope(
           overrides: [
             paymentServiceProvider.overrideWith((ref) => mockService),
-            obligationRepositoryProvider.overrideWith((ref) => mockObligationRepo),
+            obligationRepositoryProvider.overrideWith(
+              (ref) => mockObligationRepo,
+            ),
           ],
           child: MaterialApp(
             home: MakePaymentScreen(
@@ -385,14 +404,14 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            paymentHistoryProvider('member1').overrideWith(
-              (ref) => Stream.value([]),
+            paymentHistoryProvider(
+              'member1',
+            ).overrideWith((ref) => Stream.value([])),
+            receiptRepositoryProvider.overrideWith(
+              (ref) => _MockReceiptRepository(),
             ),
-            receiptRepositoryProvider.overrideWith((ref) => _MockReceiptRepository()),
           ],
-          child: MaterialApp(
-            home: PaymentHistoryScreen(memberId: 'member1'),
-          ),
+          child: MaterialApp(home: PaymentHistoryScreen(memberId: 'member1')),
         ),
       );
       await tester.pumpAndSettle();
@@ -405,14 +424,14 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            paymentHistoryProvider('member1').overrideWith(
-              (ref) => Stream.value(testPayments),
+            paymentHistoryProvider(
+              'member1',
+            ).overrideWith((ref) => Stream.value(testPayments)),
+            receiptRepositoryProvider.overrideWith(
+              (ref) => _MockReceiptRepository(),
             ),
-            receiptRepositoryProvider.overrideWith((ref) => _MockReceiptRepository()),
           ],
-          child: MaterialApp(
-            home: PaymentHistoryScreen(memberId: 'member1'),
-          ),
+          child: MaterialApp(home: PaymentHistoryScreen(memberId: 'member1')),
         ),
       );
       await tester.pumpAndSettle();

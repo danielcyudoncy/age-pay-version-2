@@ -5,10 +5,11 @@ import '../../../core/constants/enums.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
-final authProvider = StateNotifierProvider<AuthNotifier, AsyncValue<UserModel?>>((ref) {
-  final authService = ref.watch(authServiceProvider);
-  return AuthNotifier(authService);
-});
+final authProvider =
+    StateNotifierProvider<AuthNotifier, AsyncValue<UserModel?>>((ref) {
+      final authService = ref.watch(authServiceProvider);
+      return AuthNotifier(authService);
+    });
 
 class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   final AuthService _authService;
@@ -30,7 +31,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   Future<void> signIn(String email, String password) async {
     state = const AsyncValue.loading();
     try {
-      final user = await _authService.signInWithEmailAndPassword(email, password);
+      final user = await _authService.signInWithEmailAndPassword(
+        email,
+        password,
+      );
       state = AsyncValue.data(user);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

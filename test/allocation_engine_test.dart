@@ -298,11 +298,10 @@ void main() {
           ),
         ];
 
-        final result = AllocationService.reallocate(
-          8000,
-          newObligations,
-          {'oldObl1': 3000, 'oldObl2': 5000},
-        );
+        final result = AllocationService.reallocate(8000, newObligations, {
+          'oldObl1': 3000,
+          'oldObl2': 5000,
+        });
 
         expect(result.allocations, {'obl1': 5000.0});
         expect(result.leftover, 3000.0);
@@ -329,11 +328,9 @@ void main() {
           ),
         ];
 
-        final result = AllocationService.reallocate(
-          7000,
-          newObligations,
-          {'oldObl1': 7000},
-        );
+        final result = AllocationService.reallocate(7000, newObligations, {
+          'oldObl1': 7000,
+        });
 
         expect(result.allocations['obl1'], 3000.0);
         expect(result.allocations['obl2'], 2000.0);

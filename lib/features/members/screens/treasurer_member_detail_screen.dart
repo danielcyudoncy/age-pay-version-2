@@ -22,17 +22,15 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
     final dateFormat = DateFormat('MMM d, yyyy');
-    
+
     final currentUserRole = authState.valueOrNull?.role;
-    final canEdit = currentUserRole == UserRole.treasurer ||
-                    currentUserRole == UserRole.president ||
-                    currentUserRole == UserRole.superAdmin;
+    final canEdit =
+        currentUserRole == UserRole.treasurer ||
+        currentUserRole == UserRole.president ||
+        currentUserRole == UserRole.superAdmin;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Member Details'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Member Details'), centerTitle: true),
       body: membersAsync.when(
         data: (members) {
           final member = members.firstWhere(
@@ -92,13 +90,17 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                     children: [
                       Text(
                         'Obligations',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       if (canEdit)
                         TextButton.icon(
-                          onPressed: () => _showCreateObligationDialog(context, ref, memberId, currency),
+                          onPressed: () => _showCreateObligationDialog(
+                            context,
+                            ref,
+                            memberId,
+                            currency,
+                          ),
                           icon: const Icon(Icons.add),
                           label: const Text('Add Past Obligation'),
                         ),
@@ -136,7 +138,8 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
                                       child: Text(
@@ -197,9 +200,17 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                                   SizedBox(
                                     width: double.infinity,
                                     child: OutlinedButton.icon(
-                                      onPressed: () => _showUpdateObligationDialog(context, ref, o, currency),
+                                      onPressed: () =>
+                                          _showUpdateObligationDialog(
+                                            context,
+                                            ref,
+                                            o,
+                                            currency,
+                                          ),
                                       icon: const Icon(Icons.edit, size: 18),
-                                      label: const Text('Update Payment Status'),
+                                      label: const Text(
+                                        'Update Payment Status',
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -239,9 +250,7 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
   ) async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => EditMemberScreen(member: member),
-      ),
+      MaterialPageRoute(builder: (_) => EditMemberScreen(member: member)),
     );
     if (result == true) {
       ref.invalidate(membersStreamProvider);
@@ -254,9 +263,13 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
     String memberId,
     NumberFormat currency,
   ) {
-    final TextEditingController titleController = TextEditingController(text: 'Past Dues');
+    final TextEditingController titleController = TextEditingController(
+      text: 'Past Dues',
+    );
     final TextEditingController amountController = TextEditingController();
-    final TextEditingController paidController = TextEditingController(text: '0');
+    final TextEditingController paidController = TextEditingController(
+      text: '0',
+    );
 
     showDialog(
       context: context,
@@ -277,7 +290,9 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 TextField(
                   controller: amountController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: const InputDecoration(
                     labelText: 'Total Amount Owed',
                     border: OutlineInputBorder(),
@@ -287,7 +302,9 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 TextField(
                   controller: paidController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: const InputDecoration(
                     labelText: 'Amount Already Paid',
                     border: OutlineInputBorder(),
@@ -304,9 +321,17 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
             ),
             ElevatedButton(
               onPressed: () async {
-                final amount = double.tryParse(amountController.text.trim().replaceAll(',', '')) ?? 0.0;
-                final paidAmount = double.tryParse(paidController.text.trim().replaceAll(',', '')) ?? 0.0;
-                
+                final amount =
+                    double.tryParse(
+                      amountController.text.trim().replaceAll(',', ''),
+                    ) ??
+                    0.0;
+                final paidAmount =
+                    double.tryParse(
+                      paidController.text.trim().replaceAll(',', ''),
+                    ) ??
+                    0.0;
+
                 if (amount <= 0) return; // Basic validation
 
                 ObligationStatus newStatus;
@@ -323,17 +348,23 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                   memberId: memberId,
                   levyId: '', // No specific levy
                   type: ObligationType.monthlyDue,
-                  title: titleController.text.trim().isEmpty ? 'Past Dues' : titleController.text.trim(),
+                  title: titleController.text.trim().isEmpty
+                      ? 'Past Dues'
+                      : titleController.text.trim(),
                   description: 'Backdated obligation added manually',
                   amount: amount,
                   paidAmount: paidAmount,
                   status: newStatus,
                   dueDate: DateTime.now(),
                   createdAt: DateTime.now(),
-                  settledAt: newStatus == ObligationStatus.paid ? DateTime.now() : null,
+                  settledAt: newStatus == ObligationStatus.paid
+                      ? DateTime.now()
+                      : null,
                 );
 
-                await ref.read(obligationRepositoryProvider).createObligation(newObligation);
+                await ref
+                    .read(obligationRepositoryProvider)
+                    .createObligation(newObligation);
 
                 if (context.mounted) {
                   Navigator.pop(context);
@@ -372,7 +403,9 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               TextField(
                 controller: controller,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Paid Amount',
                   border: OutlineInputBorder(),
@@ -391,7 +424,8 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                 // Remove commas and whitespace for proper decimal parsing
                 final cleanText = controller.text.trim().replaceAll(',', '');
                 final newPaidAmount = double.tryParse(cleanText) ?? 0.0;
-                final outstandingBalance = (obligation.amount - newPaidAmount).clamp(0.0, double.infinity);
+                final outstandingBalance = (obligation.amount - newPaidAmount)
+                    .clamp(0.0, double.infinity);
 
                 ObligationStatus newStatus;
                 if (newPaidAmount >= obligation.amount) {
@@ -402,13 +436,17 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                   newStatus = ObligationStatus.unpaid;
                 }
 
-                await ref.read(obligationRepositoryProvider).updateObligationStatus(
-                  obligation.id,
-                  paidAmount: newPaidAmount,
-                  outstandingBalance: outstandingBalance,
-                  status: newStatus,
-                  settledAt: newStatus == ObligationStatus.paid ? DateTime.now() : null,
-                );
+                await ref
+                    .read(obligationRepositoryProvider)
+                    .updateObligationStatus(
+                      obligation.id,
+                      paidAmount: newPaidAmount,
+                      outstandingBalance: outstandingBalance,
+                      status: newStatus,
+                      settledAt: newStatus == ObligationStatus.paid
+                          ? DateTime.now()
+                          : null,
+                    );
 
                 if (context.mounted) {
                   Navigator.pop(context);

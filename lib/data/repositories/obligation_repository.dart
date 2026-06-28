@@ -8,7 +8,7 @@ class ObligationRepository {
   final String collection = 'obligations';
 
   ObligationRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   CollectionReference get _collection => _firestore.collection(collection);
 
@@ -16,9 +16,11 @@ class ObligationRepository {
     return _collection
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ObligationModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ObligationModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   Stream<List<ObligationModel>> getMemberObligations(String memberId) {
@@ -26,9 +28,11 @@ class ObligationRepository {
         .where('memberId', isEqualTo: memberId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ObligationModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ObligationModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   Stream<List<ObligationModel>> getMemberActiveObligations(String memberId) {
@@ -37,9 +41,11 @@ class ObligationRepository {
         .where('status', whereIn: ['unpaid', 'partial'])
         .orderBy('dueDate', descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ObligationModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ObligationModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   Stream<List<ObligationModel>> getLevyObligations(String levyId) {
@@ -47,9 +53,11 @@ class ObligationRepository {
         .where('levyId', isEqualTo: levyId)
         .orderBy('createdAt', descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ObligationModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ObligationModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   Future<ObligationModel?> getObligationById(String id) async {
@@ -77,7 +85,9 @@ class ObligationRepository {
   }) async {
     final updates = <String, dynamic>{};
     if (paidAmount != null) updates['paidAmount'] = paidAmount;
-    if (outstandingBalance != null) updates['outstandingBalance'] = outstandingBalance;
+    if (outstandingBalance != null) {
+      updates['outstandingBalance'] = outstandingBalance;
+    }
     if (status != null) updates['status'] = status.name;
     if (settledAt != null) updates['settledAt'] = Timestamp.fromDate(settledAt);
     await _collection.doc(id).update(updates);

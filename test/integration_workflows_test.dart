@@ -23,7 +23,8 @@ import 'package:cls/data/services/notification_service.dart';
 import 'package:cls/features/dashboard/providers/member_dashboard_provider.dart';
 import 'package:cls/features/dashboard/providers/treasurer_dashboard_provider.dart';
 import 'package:cls/features/obligations/providers/obligation_provider.dart';
-import 'package:cls/features/levies/providers/levy_provider.dart' as levy_provider
+import 'package:cls/features/levies/providers/levy_provider.dart'
+    as levy_provider
     show levyRepositoryProvider, obligationRepositoryProvider;
 import 'package:cls/features/expenses/providers/expense_provider.dart';
 import 'package:cls/features/receipts/providers/receipt_provider.dart';
@@ -139,25 +140,26 @@ void main() {
   );
 
   List<Override> buildOverrides(UserModel? user) => [
-        authServiceProvider.overrideWithValue(_MockAuth(user)),
-        memberRepositoryProvider.overrideWithValue(_MockMemberRepo(testMember)),
-        paymentRepositoryProvider.overrideWithValue(_MockPaymentRepo(testPayment)),
-        obligationRepositoryProvider.overrideWithValue(_MockObligationRepo(testObligation)),
-        levy_provider.obligationRepositoryProvider.overrideWithValue(
-            _MockObligationRepo(testObligation)),
-        levy_provider.levyRepositoryProvider.overrideWithValue(
-            _MockLevyRepo(testLevy)),
-        expenseRepositoryProvider.overrideWithValue(_MockExpenseRepo(testExpense)),
-        receiptRepositoryProvider.overrideWithValue(_MockReceiptRepo(testReceipt)),
-        notificationServiceProvider.overrideWithValue(_MockNotificationService()),
-      ];
+    authServiceProvider.overrideWithValue(_MockAuth(user)),
+    memberRepositoryProvider.overrideWithValue(_MockMemberRepo(testMember)),
+    paymentRepositoryProvider.overrideWithValue(_MockPaymentRepo(testPayment)),
+    obligationRepositoryProvider.overrideWithValue(
+      _MockObligationRepo(testObligation),
+    ),
+    levy_provider.obligationRepositoryProvider.overrideWithValue(
+      _MockObligationRepo(testObligation),
+    ),
+    levy_provider.levyRepositoryProvider.overrideWithValue(
+      _MockLevyRepo(testLevy),
+    ),
+    expenseRepositoryProvider.overrideWithValue(_MockExpenseRepo(testExpense)),
+    receiptRepositoryProvider.overrideWithValue(_MockReceiptRepo(testReceipt)),
+    notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+  ];
 
   Future<void> pumpApp(WidgetTester tester, UserModel? user) async {
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: buildOverrides(user),
-        child: const app.MyApp(),
-      ),
+      ProviderScope(overrides: buildOverrides(user), child: const app.MyApp()),
     );
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 3));
@@ -266,9 +268,7 @@ void main() {
     );
 
     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
-    navigator.push(
-      MaterialPageRoute(builder: (_) => const ReportsScreen()),
-    );
+    navigator.push(MaterialPageRoute(builder: (_) => const ReportsScreen()));
     await tester.pumpAndSettle();
 
     expect(find.text('Reports'), findsOneWidget);
@@ -279,9 +279,7 @@ void main() {
     await pumpApp(tester, memberUser);
 
     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
-    navigator.push(
-      MaterialPageRoute(builder: (_) => const ReportsScreen()),
-    );
+    navigator.push(MaterialPageRoute(builder: (_) => const ReportsScreen()));
     await tester.pumpAndSettle();
 
     expect(find.text('Reports'), findsOneWidget);
@@ -404,8 +402,7 @@ class _MockObligationRepo implements ObligationRepository {
   Future<ObligationModel?> getObligationById(String id) async => _obligation;
 
   @override
-  Future<String> createObligation(ObligationModel obligation) async =>
-      'obl-1';
+  Future<String> createObligation(ObligationModel obligation) async => 'obl-1';
 
   @override
   Future<void> updateObligationStatus(
@@ -418,7 +415,8 @@ class _MockObligationRepo implements ObligationRepository {
 
   @override
   Future<void> batchCreateObligations(
-      List<ObligationModel> obligations) async {}
+    List<ObligationModel> obligations,
+  ) async {}
 
   @override
   Future<void> batchCreateFromMaps(List<Map<String, dynamic>> maps) async {}
@@ -462,8 +460,9 @@ class _MockExpenseRepo implements ExpenseRepository {
 
   @override
   Stream<List<ExpenseModel>> getExpensesByDateRange(
-          DateTime start, DateTime end) =>
-      Stream.value([_expense]);
+    DateTime start,
+    DateTime end,
+  ) => Stream.value([_expense]);
 
   @override
   Future<ExpenseModel?> getExpenseById(String id) async => _expense;
@@ -491,8 +490,9 @@ class _MockReceiptRepo implements ReceiptRepository {
 
   @override
   Stream<List<ReceiptModel>> getReceiptsByDateRange(
-          DateTime start, DateTime end) =>
-      Stream.value([_receipt]);
+    DateTime start,
+    DateTime end,
+  ) => Stream.value([_receipt]);
 
   @override
   Future<ReceiptModel?> getReceiptById(String id) async => _receipt;

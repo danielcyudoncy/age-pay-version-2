@@ -6,7 +6,7 @@ class MemberRepository {
   final String collection = 'members';
 
   MemberRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   CollectionReference get _collection => _firestore.collection(collection);
 
@@ -15,8 +15,11 @@ class MemberRepository {
         .where('isActive', isEqualTo: true)
         .orderBy('createdAt', descending: false)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => MemberModel.fromFirestore(doc)).toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => MemberModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   Future<MemberModel?> getMemberById(String id) async {
@@ -28,8 +31,10 @@ class MemberRepository {
   }
 
   Future<MemberModel?> getMemberByUserId(String userId) async {
-    final snapshot =
-        await _collection.where('userId', isEqualTo: userId).limit(1).get();
+    final snapshot = await _collection
+        .where('userId', isEqualTo: userId)
+        .limit(1)
+        .get();
     if (snapshot.docs.isNotEmpty) {
       return MemberModel.fromFirestore(snapshot.docs.first);
     }
@@ -44,9 +49,9 @@ class MemberRepository {
   }
 
   Future<void> updateMember(MemberModel member) async {
-    await _collection.doc(member.id).update(
-      member.copyWith(updatedAt: DateTime.now()).toFirestore(),
-    );
+    await _collection
+        .doc(member.id)
+        .update(member.copyWith(updatedAt: DateTime.now()).toFirestore());
   }
 
   Future<void> deleteMember(String id) async {
@@ -62,10 +67,12 @@ class MemberRepository {
     final queryLower = query.toLowerCase();
     return snapshot.docs
         .map((doc) => MemberModel.fromFirestore(doc))
-        .where((m) =>
-            m.fullName.toLowerCase().contains(queryLower) ||
-            m.email.toLowerCase().contains(queryLower) ||
-            m.phoneNumber.contains(query))
+        .where(
+          (m) =>
+              m.fullName.toLowerCase().contains(queryLower) ||
+              m.email.toLowerCase().contains(queryLower) ||
+              m.phoneNumber.contains(query),
+        )
         .toList();
   }
 }

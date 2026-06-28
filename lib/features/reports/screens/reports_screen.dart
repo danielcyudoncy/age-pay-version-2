@@ -10,31 +10,36 @@ class ReportsScreen extends ConsumerWidget {
     _ReportItem(
       type: ReportType.memberStatement,
       title: 'Member Statement',
-      description: 'Generate a detailed statement for a specific member including obligations and payments.',
+      description:
+          'Generate a detailed statement for a specific member including obligations and payments.',
       icon: Icons.person_outline,
     ),
     _ReportItem(
       type: ReportType.levyReport,
       title: 'Levy Report',
-      description: 'View collection status, obligations, and payments for a specific levy.',
+      description:
+          'View collection status, obligations, and payments for a specific levy.',
       icon: Icons.assessment_outlined,
     ),
     _ReportItem(
       type: ReportType.yearlySummary,
       title: 'Yearly Summary',
-      description: 'Annual financial overview with income, expenses, and net balance.',
+      description:
+          'Annual financial overview with income, expenses, and net balance.',
       icon: Icons.calendar_today_outlined,
     ),
     _ReportItem(
       type: ReportType.expenseBreakdown,
       title: 'Expense Breakdown',
-      description: 'Detailed expense report grouped by category with date range filtering.',
+      description:
+          'Detailed expense report grouped by category with date range filtering.',
       icon: Icons.receipt_long_outlined,
     ),
     _ReportItem(
       type: ReportType.financialSummary,
       title: 'Financial Summary',
-      description: 'Overall financial health: collections, expenses, net position, and outstanding obligations.',
+      description:
+          'Overall financial health: collections, expenses, net position, and outstanding obligations.',
       icon: Icons.account_balance_wallet_outlined,
     ),
   ];
@@ -42,9 +47,7 @@ class ReportsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reports'),
-      ),
+      appBar: AppBar(title: const Text('Reports')),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _reports.length,
@@ -64,10 +67,12 @@ class ReportsScreen extends ConsumerWidget {
               subtitle: Text(report.description),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                ref.read(selectedReportTypeProvider.notifier).state = report.type;
+                ref.read(selectedReportTypeProvider.notifier).state =
+                    report.type;
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => ReportPreviewScreen(reportType: report.type),
+                    builder: (_) =>
+                        ReportPreviewScreen(reportType: report.type),
                   ),
                 );
               },

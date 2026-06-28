@@ -9,8 +9,7 @@ class NotificationService {
 
   final List<String> _subscribedTopics = [];
 
-  NotificationService({FirebaseMessaging? messaging})
-      : _messaging = messaging;
+  NotificationService({FirebaseMessaging? messaging}) : _messaging = messaging;
 
   FirebaseMessaging get _messagingInstance {
     return _messaging ?? FirebaseMessaging.instance;
@@ -18,7 +17,8 @@ class NotificationService {
 
   /// Top-level background message handler.
   static Future<void> firebaseMessagingBackgroundHandler(
-      RemoteMessage message) async {
+    RemoteMessage message,
+  ) async {
     log('Background message received: ${message.messageId}');
   }
 
@@ -47,8 +47,7 @@ class NotificationService {
     });
 
     // Set background message handler
-    FirebaseMessaging.onBackgroundMessage(
-        firebaseMessagingBackgroundHandler);
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
 
   Future<String?> getToken() async {

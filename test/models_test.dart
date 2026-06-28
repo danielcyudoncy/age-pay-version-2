@@ -43,7 +43,10 @@ void main() {
         createdAt: now,
       );
 
-      final copy = obligation.copyWith(status: ObligationStatus.partial, paidAmount: 50.0);
+      final copy = obligation.copyWith(
+        status: ObligationStatus.partial,
+        paidAmount: 50.0,
+      );
 
       expect(copy.status, ObligationStatus.partial);
       expect(copy.paidAmount, 50.0);

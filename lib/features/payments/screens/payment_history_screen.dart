@@ -10,9 +10,9 @@ import 'package:cls/features/dashboard/providers/member_dashboard_provider.dart'
 
 final paymentHistoryProvider = StreamProvider.autoDispose
     .family<List<PaymentModel>, String>((ref, memberId) {
-  final repo = ref.watch(paymentRepositoryProvider);
-  return repo.getMemberPayments(memberId);
-});
+      final repo = ref.watch(paymentRepositoryProvider);
+      return repo.getMemberPayments(memberId);
+    });
 
 class PaymentHistoryScreen extends ConsumerWidget {
   final String memberId;

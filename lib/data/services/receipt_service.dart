@@ -54,10 +54,7 @@ class ReceiptService {
             child: pw.Container(
               margin: const pw.EdgeInsets.all(16),
               decoration: pw.BoxDecoration(
-                border: pw.Border.all(
-                  color: PdfColors.green800,
-                  width: 2.5,
-                ),
+                border: pw.Border.all(color: PdfColors.green800, width: 2.5),
                 borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
               ),
             ),
@@ -139,10 +136,7 @@ class ReceiptService {
           pw.SizedBox(height: 2),
           pw.Text(
             address,
-            style: const pw.TextStyle(
-              fontSize: 10,
-              color: PdfColors.grey700,
-            ),
+            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
             textAlign: pw.TextAlign.center,
           ),
         ],
@@ -150,10 +144,7 @@ class ReceiptService {
           pw.SizedBox(height: 2),
           pw.Text(
             'Tel: $phone',
-            style: const pw.TextStyle(
-              fontSize: 10,
-              color: PdfColors.grey700,
-            ),
+            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
             textAlign: pw.TextAlign.center,
           ),
         ],
@@ -168,10 +159,7 @@ class ReceiptService {
       padding: const pw.EdgeInsets.symmetric(vertical: 8),
       decoration: pw.BoxDecoration(
         color: PdfColors.green50,
-        border: pw.Border.all(
-          color: PdfColors.green800,
-          width: 1.5,
-        ),
+        border: pw.Border.all(color: PdfColors.green800, width: 1.5),
         borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
       ),
       child: pw.Center(
@@ -195,10 +183,7 @@ class ReceiptService {
         children: [
           pw.Text(
             'Receipt No.',
-            style: const pw.TextStyle(
-              fontSize: 10,
-              color: PdfColors.grey600,
-            ),
+            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
           ),
           pw.SizedBox(height: 4),
           pw.Text(
@@ -227,15 +212,9 @@ class ReceiptService {
         children: [
           _buildDetailRow('Member Name:', receipt.memberName),
           pw.SizedBox(height: 6),
-          _buildDetailRow(
-            'Payment Date:',
-            _fmtDateTime(receipt.paymentDate),
-          ),
+          _buildDetailRow('Payment Date:', _fmtDateTime(receipt.paymentDate)),
           pw.SizedBox(height: 6),
-          _buildDetailRow(
-            'Payment Method:',
-            _methodLabel(receipt.method),
-          ),
+          _buildDetailRow('Payment Method:', _methodLabel(receipt.method)),
           pw.SizedBox(height: 6),
           _buildDetailRow(
             'Payment Status:',
@@ -277,10 +256,7 @@ class ReceiptService {
           flex: 2,
           child: pw.Text(
             label,
-            style: const pw.TextStyle(
-              fontSize: 10,
-              color: PdfColors.grey700,
-            ),
+            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
           ),
         ),
         pw.Expanded(
@@ -298,34 +274,24 @@ class ReceiptService {
     );
   }
 
-  pw.Widget _buildObligationsTable(
-    List<Map<String, dynamic>> obligations,
-  ) {
+  pw.Widget _buildObligationsTable(List<Map<String, dynamic>> obligations) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
           'Allocated Obligations',
-          style: pw.TextStyle(
-            fontSize: 13,
-            fontWeight: pw.FontWeight.bold,
-          ),
+          style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 8),
         pw.Table(
-          border: pw.TableBorder.all(
-            color: PdfColors.grey300,
-            width: 0.5,
-          ),
+          border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
           columnWidths: {
             0: const pw.FlexColumnWidth(3),
             1: const pw.FlexColumnWidth(2),
           },
           children: [
             pw.TableRow(
-              decoration: const pw.BoxDecoration(
-                color: PdfColors.grey200,
-              ),
+              decoration: const pw.BoxDecoration(color: PdfColors.grey200),
               children: [
                 _tableCell('Obligation Title', isHeader: true),
                 _tableCell('Amount Allocated', isHeader: true),
@@ -362,9 +328,7 @@ class ReceiptService {
         text,
         style: pw.TextStyle(
           fontSize: 10,
-          fontWeight: isHeader
-              ? pw.FontWeight.bold
-              : pw.FontWeight.normal,
+          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
         ),
       ),
     );
@@ -374,10 +338,7 @@ class ReceiptService {
     return pw.Container(
       padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
-        border: pw.Border.all(
-          color: PdfColors.green800,
-          width: 1.5,
-        ),
+        border: pw.Border.all(color: PdfColors.green800, width: 1.5),
         color: PdfColors.green50,
         borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
       ),
@@ -423,10 +384,7 @@ class ReceiptService {
           pw.SizedBox(height: 4),
           pw.Text(
             'This receipt was automatically generated by the Age Grade Finance App.',
-            style: const pw.TextStyle(
-              fontSize: 9,
-              color: PdfColors.grey500,
-            ),
+            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey500),
           ),
         ],
       ),

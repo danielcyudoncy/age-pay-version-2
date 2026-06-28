@@ -13,39 +13,32 @@ final _receiptServiceProvider = Provider<ReceiptService>((ref) {
 });
 
 /// Stream of all receipts for a specific member.
-final memberReceiptsStreamProvider =
-    StreamProvider.autoDispose.family<List<ReceiptModel>, String>((
-  ref,
-  memberId,
-) {
-  final repo = ref.watch(receiptRepositoryProvider);
-  return repo.getMemberReceipts(memberId);
-});
+final memberReceiptsStreamProvider = StreamProvider.autoDispose
+    .family<List<ReceiptModel>, String>((ref, memberId) {
+      final repo = ref.watch(receiptRepositoryProvider);
+      return repo.getMemberReceipts(memberId);
+    });
 
 /// FutureProvider for a single receipt by ID.
-final receiptByIdProvider =
-    FutureProvider.autoDispose.family<ReceiptModel?, String>((ref, receiptId) {
-  final repo = ref.watch(receiptRepositoryProvider);
-  return repo.getReceiptById(receiptId);
-});
+final receiptByIdProvider = FutureProvider.autoDispose
+    .family<ReceiptModel?, String>((ref, receiptId) {
+      final repo = ref.watch(receiptRepositoryProvider);
+      return repo.getReceiptById(receiptId);
+    });
 
 /// FutureProvider for a single receipt by payment ID.
-final receiptByPaymentIdProvider =
-    FutureProvider.autoDispose.family<ReceiptModel?, String>(
-  (ref, paymentId) {
-    final repo = ref.watch(receiptRepositoryProvider);
-    return repo.getReceiptByPaymentId(paymentId);
-  },
-);
+final receiptByPaymentIdProvider = FutureProvider.autoDispose
+    .family<ReceiptModel?, String>((ref, paymentId) {
+      final repo = ref.watch(receiptRepositoryProvider);
+      return repo.getReceiptByPaymentId(paymentId);
+    });
 
 /// FutureProvider that generates PDF bytes for a receipt.
-final receiptPdfGenerationProvider =
-    FutureProvider.autoDispose.family<Uint8List, ReceiptModel>(
-  (ref, receipt) async {
-    final service = ref.watch(_receiptServiceProvider);
-    return service.generateReceiptPdf(
-      receipt: receipt,
-      associationName: 'Age Grade Association',
-    );
-  },
-);
+final receiptPdfGenerationProvider = FutureProvider.autoDispose
+    .family<Uint8List, ReceiptModel>((ref, receipt) async {
+      final service = ref.watch(_receiptServiceProvider);
+      return service.generateReceiptPdf(
+        receipt: receipt,
+        associationName: 'Age Grade Association',
+      );
+    });

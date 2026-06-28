@@ -42,7 +42,9 @@ class ReceiptModel {
         orElse: () => PaymentMethod.cash,
       ),
       paymentDate: _parseDate(data['paymentDate']),
-      allocatedObligations: List<Map<String, dynamic>>.from(data['allocatedObligations'] ?? []),
+      allocatedObligations: List<Map<String, dynamic>>.from(
+        data['allocatedObligations'] ?? [],
+      ),
       pdfUrl: data['pdfUrl'],
       createdAt: _parseDate(data['createdAt']),
     );

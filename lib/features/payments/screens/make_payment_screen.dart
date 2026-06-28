@@ -42,7 +42,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
   File? _pickedImage;
   String? _uploadedImageUrl;
   bool _isUploading = false;
-  
+
   List<ObligationModel> _cachedObligations = [];
 
   @override
@@ -54,11 +54,15 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
     switch (_paymentMode) {
       case PaymentOptionMode.specific:
       case PaymentOptionMode.bankTransfer:
-        return items.where((o) => _selectedObligationIds.contains(o.id)).toList();
+        return items
+            .where((o) => _selectedObligationIds.contains(o.id))
+            .toList();
       case PaymentOptionMode.allOutstanding:
         return items;
       case PaymentOptionMode.custom:
-        return items.where((o) => _selectedObligationIds.contains(o.id)).toList();
+        return items
+            .where((o) => _selectedObligationIds.contains(o.id))
+            .toList();
     }
   }
 
@@ -97,8 +101,9 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
 
   Widget _buildContent(NumberFormat currency, PaymentFlowState paymentState) {
     final offlineState = ref.watch(offlinePaymentProvider);
-    
-    if (offlineState.isSuccess && _paymentMode == PaymentOptionMode.bankTransfer) {
+
+    if (offlineState.isSuccess &&
+        _paymentMode == PaymentOptionMode.bankTransfer) {
       return _buildTransferPendingView(offlineState);
     }
 
@@ -244,8 +249,10 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
-                  onPressed: () =>
-                      launchUrl(Uri.parse(ref.read(paymentFlowProvider).authorizationUrl!), webOnlyWindowName: '_blank'),
+                  onPressed: () => launchUrl(
+                    Uri.parse(ref.read(paymentFlowProvider).authorizationUrl!),
+                    webOnlyWindowName: '_blank',
+                  ),
                   icon: const Icon(Icons.open_in_new),
                   label: const Text('Open Payment Page'),
                 ),
@@ -311,7 +318,9 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12),
@@ -388,7 +397,9 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
             Icon(
               Icons.check_circle_outline,
               size: 64,
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
@@ -400,8 +411,8 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
             Text(
               'You have no pending payments at this time.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -415,7 +426,9 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
       _paymentMode = mode;
       if (mode == PaymentOptionMode.allOutstanding) {
         _selectedObligationIds.addAll(
-          items.map((o) => o.id).where((id) => !_selectedObligationIds.contains(id)),
+          items
+              .map((o) => o.id)
+              .where((id) => !_selectedObligationIds.contains(id)),
         );
       }
       if (mode != PaymentOptionMode.bankTransfer) {
@@ -441,7 +454,9 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
         decoration: BoxDecoration(
           color: selected
               ? theme.colorScheme.primaryContainer.withValues(alpha: 0.7)
-              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              : theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: selected
@@ -470,221 +485,231 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
   }) {
     final items = obligations ?? [];
 
-      return Column(
-        children: [
-          if (paymentState.error != null)
-            Container(
-              color: Colors.red.shade50,
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  const Icon(Icons.error, color: Colors.red),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      paymentState.error!,
-                      style: const TextStyle(color: Colors.red),
-                    ),
+    return Column(
+      children: [
+        if (paymentState.error != null)
+          Container(
+            color: Colors.red.shade50,
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.red),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    paymentState.error!,
+                    style: const TextStyle(color: Colors.red),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 18),
-                    onPressed: () =>
-                        ref.read(paymentFlowProvider.notifier).clearError(),
-                  ),
-                ],
-              ),
-            ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Payment Options',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _paymentModeChip(
-                        label: 'Specific',
-                        selected: _paymentMode == PaymentOptionMode.specific,
-                        onTap: () => _setPaymentMode(PaymentOptionMode.specific, items),
-                      ),
-                      _paymentModeChip(
-                        label: 'All Outstanding',
-                        selected: _paymentMode == PaymentOptionMode.allOutstanding,
-                        onTap: () => _setPaymentMode(PaymentOptionMode.allOutstanding, items),
-                      ),
-                      _paymentModeChip(
-                        label: 'Custom Amount',
-                        selected: _paymentMode == PaymentOptionMode.custom,
-                        onTap: () => _setPaymentMode(PaymentOptionMode.custom, items),
-                      ),
-                      _paymentModeChip(
-                        label: 'Bank Transfer',
-                        selected: _paymentMode == PaymentOptionMode.bankTransfer,
-                        onTap: () => _setPaymentMode(PaymentOptionMode.bankTransfer, items),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  if (_paymentMode == PaymentOptionMode.custom) ...[
-                    _buildPaymentModeCard(
-                      child: TextField(
-                        controller: _customAmountController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: 'Custom Amount',
-                          hintText: 'Enter any amount',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          prefixText: '₦ ',
-                        ),
-                        onChanged: (_) {
-                          setState(() {
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                  if (_paymentMode == PaymentOptionMode.bankTransfer) ...[
-                    _buildPaymentModeCard(
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 4),
-                          Text(
-                            'Upload your bank transfer receipt and enter the details below.',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _customAmountController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'Transfer Amount',
-                              hintText: 'Enter amount paid',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              prefixText: '₦ ',
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _bankNameController,
-                            decoration: InputDecoration(
-                              labelText: 'Bank Name',
-                              hintText: 'e.g. First Bank of Nigeria',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _notesController,
-                            maxLines: 2,
-                            decoration: InputDecoration(
-                              labelText: 'Notes (optional)',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          OutlinedButton.icon(
-                            onPressed: _isUploading ? null : _pickImage,
-                            icon: _isUploading
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.image),
-                            label: Text(
-                              _uploadedImageUrl != null
-                                  ? 'Receipt Uploaded'
-                                  : 'Upload Transfer Receipt',
-                            ),
-                          ),
-                          if (_uploadedImageUrl != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                'Receipt uploaded successfully',
-                                style: TextStyle(
-                                  color: Colors.green.shade700,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  if (items.isEmpty)
-                    _buildEmptyState('No outstanding obligations')
-                  else
-                    Column(
-                      children: items.map((obligation) {
-                        final isSelected =
-                            _selectedObligationIds.contains(obligation.id);
-
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: CheckboxListTile(
-                            title: Text(obligation.title),
-                            subtitle: Text(
-                              'Outstanding: ${currency.format(obligation.outstandingBalance)}',
-                            ),
-                            secondary: Chip(
-                              label: Text(
-                                obligation.status == ObligationStatus.unpaid
-                                    ? 'Unpaid'
-                                    : 'Partial',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              backgroundColor: obligation.status == ObligationStatus.unpaid
-                                  ? Colors.red
-                                  : Colors.orange,
-                            ),
-                            value: isSelected,
-                            onChanged: (value) {
-                              setState(() {
-                                if (value == true) {
-                                  _selectedObligationIds.add(obligation.id);
-                                } else {
-                                  _selectedObligationIds.remove(obligation.id);
-                                }
-                              });
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                ],
-              ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () =>
+                      ref.read(paymentFlowProvider.notifier).clearError(),
+                ),
+              ],
             ),
           ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Payment Options',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _paymentModeChip(
+                      label: 'Specific',
+                      selected: _paymentMode == PaymentOptionMode.specific,
+                      onTap: () =>
+                          _setPaymentMode(PaymentOptionMode.specific, items),
+                    ),
+                    _paymentModeChip(
+                      label: 'All Outstanding',
+                      selected:
+                          _paymentMode == PaymentOptionMode.allOutstanding,
+                      onTap: () => _setPaymentMode(
+                        PaymentOptionMode.allOutstanding,
+                        items,
+                      ),
+                    ),
+                    _paymentModeChip(
+                      label: 'Custom Amount',
+                      selected: _paymentMode == PaymentOptionMode.custom,
+                      onTap: () =>
+                          _setPaymentMode(PaymentOptionMode.custom, items),
+                    ),
+                    _paymentModeChip(
+                      label: 'Bank Transfer',
+                      selected: _paymentMode == PaymentOptionMode.bankTransfer,
+                      onTap: () => _setPaymentMode(
+                        PaymentOptionMode.bankTransfer,
+                        items,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                if (_paymentMode == PaymentOptionMode.custom) ...[
+                  _buildPaymentModeCard(
+                    child: TextField(
+                      controller: _customAmountController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Custom Amount',
+                        hintText: 'Enter any amount',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        prefixText: '₦ ',
+                      ),
+                      onChanged: (_) {
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                ],
+                if (_paymentMode == PaymentOptionMode.bankTransfer) ...[
+                  _buildPaymentModeCard(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 4),
+                        Text(
+                          'Upload your bank transfer receipt and enter the details below.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _customAmountController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Transfer Amount',
+                            hintText: 'Enter amount paid',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            prefixText: '₦ ',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _bankNameController,
+                          decoration: InputDecoration(
+                            labelText: 'Bank Name',
+                            hintText: 'e.g. First Bank of Nigeria',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _notesController,
+                          maxLines: 2,
+                          decoration: InputDecoration(
+                            labelText: 'Notes (optional)',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton.icon(
+                          onPressed: _isUploading ? null : _pickImage,
+                          icon: _isUploading
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.image),
+                          label: Text(
+                            _uploadedImageUrl != null
+                                ? 'Receipt Uploaded'
+                                : 'Upload Transfer Receipt',
+                          ),
+                        ),
+                        if (_uploadedImageUrl != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              'Receipt uploaded successfully',
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                if (items.isEmpty)
+                  _buildEmptyState('No outstanding obligations')
+                else
+                  Column(
+                    children: items.map((obligation) {
+                      final isSelected = _selectedObligationIds.contains(
+                        obligation.id,
+                      );
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: CheckboxListTile(
+                          title: Text(obligation.title),
+                          subtitle: Text(
+                            'Outstanding: ${currency.format(obligation.outstandingBalance)}',
+                          ),
+                          secondary: Chip(
+                            label: Text(
+                              obligation.status == ObligationStatus.unpaid
+                                  ? 'Unpaid'
+                                  : 'Partial',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                            backgroundColor:
+                                obligation.status == ObligationStatus.unpaid
+                                ? Colors.red
+                                : Colors.orange,
+                          ),
+                          value: isSelected,
+                          onChanged: (value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedObligationIds.add(obligation.id);
+                              } else {
+                                _selectedObligationIds.remove(obligation.id);
+                              }
+                            });
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+              ],
+            ),
+          ),
+        ),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            border: Border(
-              top: BorderSide(color: Colors.grey.shade300),
-            ),
+            border: Border(top: BorderSide(color: Colors.grey.shade300)),
           ),
           child: SafeArea(
             child: Column(
@@ -743,7 +768,8 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
       case PaymentOptionMode.allOutstanding:
         return items.isNotEmpty;
       case PaymentOptionMode.custom:
-        final customAmount = double.tryParse(_customAmountController.text) ?? 0.0;
+        final customAmount =
+            double.tryParse(_customAmountController.text) ?? 0.0;
         return customAmount > 0 && _selectedObligationIds.isNotEmpty;
       case PaymentOptionMode.bankTransfer:
         final amount = double.tryParse(_customAmountController.text) ?? 0.0;
@@ -761,10 +787,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
         return const SizedBox(
           width: 16,
           height: 16,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Colors.white,
-          ),
+          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
         );
       }
       return const Icon(Icons.send);
@@ -773,10 +796,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
       return const SizedBox(
         width: 16,
         height: 16,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: Colors.white,
-        ),
+        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
       );
     }
     return const Icon(Icons.payment);
@@ -787,7 +807,9 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
     if (_paymentMode == PaymentOptionMode.bankTransfer) {
       return offlineState.isLoading ? 'Submitting...' : 'Submit Transfer';
     }
-    return paymentState.isInitializing ? 'Initializing...' : 'Pay with Paystack';
+    return paymentState.isInitializing
+        ? 'Initializing...'
+        : 'Pay with Paystack';
   }
 
   Future<void> _initiatePayment(List<ObligationModel> allItems) async {
@@ -809,7 +831,10 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
     }
   }
 
-  Future<void> _verifyPayment(String reference, List<ObligationModel> allItems) async {
+  Future<void> _verifyPayment(
+    String reference,
+    List<ObligationModel> allItems,
+  ) async {
     final obligationsToPay = _getFilteredObligations(allItems);
     final amount = _getTotalToPay(allItems);
 
@@ -840,8 +865,9 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
     try {
       final fileName =
           'transfer_${widget.memberId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final ref = FirebaseStorage.instance
-          .ref('receipts/${widget.memberId}/$fileName');
+      final ref = FirebaseStorage.instance.ref(
+        'receipts/${widget.memberId}/$fileName',
+      );
 
       if (kIsWeb) {
         final bytes = await picked.readAsBytes();
@@ -863,9 +889,9 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
         _isUploading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
       }
     }
   }
@@ -875,15 +901,19 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
     final selectedIds = _selectedObligationIds.toList();
     if (amount <= 0 || selectedIds.isEmpty || _uploadedImageUrl == null) return;
 
-    await ref.read(offlinePaymentProvider.notifier).submitBankTransfer(
-      memberId: widget.memberId,
-      obligationIds: selectedIds,
-      amount: amount,
-      transferReference: 'TRF-${DateTime.now().millisecondsSinceEpoch}',
-      bankName: _bankNameController.text,
-      receiptUrl: _uploadedImageUrl!,
-      notes: _notesController.text.isNotEmpty ? _notesController.text : null,
-    );
+    await ref
+        .read(offlinePaymentProvider.notifier)
+        .submitBankTransfer(
+          memberId: widget.memberId,
+          obligationIds: selectedIds,
+          amount: amount,
+          transferReference: 'TRF-${DateTime.now().millisecondsSinceEpoch}',
+          bankName: _bankNameController.text,
+          receiptUrl: _uploadedImageUrl!,
+          notes: _notesController.text.isNotEmpty
+              ? _notesController.text
+              : null,
+        );
   }
 
   @override

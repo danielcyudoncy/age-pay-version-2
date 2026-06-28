@@ -36,10 +36,7 @@ class TransferProofScreen extends StatelessWidget {
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Transfer Proof'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Transfer Proof'), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -101,13 +98,15 @@ class TransferProofScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.grey.shade600),
               )
             else
-              ...payment.allocations.map((alloc) => Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      title: Text(alloc.obligationId),
-                      trailing: Text(currency.format(alloc.amount)),
-                    ),
-                  )),
+              ...payment.allocations.map(
+                (alloc) => Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    title: Text(alloc.obligationId),
+                    trailing: Text(currency.format(alloc.amount)),
+                  ),
+                ),
+              ),
             const SizedBox(height: 16),
             Text(
               'Date: ${DateFormat('dd MMM yyyy, HH:mm').format(payment.createdAt)}',

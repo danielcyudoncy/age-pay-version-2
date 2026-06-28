@@ -6,7 +6,7 @@ class ExpenseRepository {
   final String collection = 'expenses';
 
   ExpenseRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   CollectionReference get _collection => _firestore.collection(collection);
 
@@ -14,20 +14,27 @@ class ExpenseRepository {
     return _collection
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ExpenseModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ExpenseModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
-  Stream<List<ExpenseModel>> getExpensesByDateRange(DateTime start, DateTime end) {
+  Stream<List<ExpenseModel>> getExpensesByDateRange(
+    DateTime start,
+    DateTime end,
+  ) {
     return _collection
         .where('expenseDate', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
         .where('expenseDate', isLessThanOrEqualTo: Timestamp.fromDate(end))
         .orderBy('expenseDate', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ExpenseModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ExpenseModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   Future<ExpenseModel?> getExpenseById(String id) async {
@@ -44,9 +51,9 @@ class ExpenseRepository {
   }
 
   Future<void> updateExpense(ExpenseModel expense) async {
-    await _collection.doc(expense.id).update(
-      expense.copyWith(updatedAt: DateTime.now()).toFirestore(),
-    );
+    await _collection
+        .doc(expense.id)
+        .update(expense.copyWith(updatedAt: DateTime.now()).toFirestore());
   }
 
   Future<void> deleteExpense(String id) async {

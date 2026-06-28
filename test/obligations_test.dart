@@ -31,9 +31,12 @@ class _MockObligationRepository implements ObligationRepository {
   Stream<List<ObligationModel>> getMemberActiveObligations(String memberId) {
     return Stream.value(
       _obligations
-          .where((o) =>
-              o.memberId == memberId &&
-              (o.status == ObligationStatus.unpaid || o.status == ObligationStatus.partial))
+          .where(
+            (o) =>
+                o.memberId == memberId &&
+                (o.status == ObligationStatus.unpaid ||
+                    o.status == ObligationStatus.partial),
+          )
           .toList(),
     );
   }
@@ -165,7 +168,9 @@ void main() {
     });
 
     testWidgets('shows summary card for multiple obligations', (tester) async {
-      final member1Obligations = testObligations.where((o) => o.memberId == 'member1').toList();
+      final member1Obligations = testObligations
+          .where((o) => o.memberId == 'member1')
+          .toList();
       await tester.pumpWidget(buildScreen(member1Obligations));
       await tester.pumpAndSettle();
 
@@ -197,9 +202,7 @@ void main() {
         overrides: [
           obligationRepositoryProvider.overrideWith((ref) => mockRepo),
         ],
-        child: MaterialApp(
-          home: TreasurerObligationsScreen(),
-        ),
+        child: MaterialApp(home: TreasurerObligationsScreen()),
       );
     }
 

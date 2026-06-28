@@ -595,9 +595,7 @@ void main() {
       expect(allTexts, contains('Add Expense'));
     });
 
-    testWidgets('Create Levy button is tappable', (
-      tester,
-    ) async {
+    testWidgets('Create Levy button is tappable', (tester) async {
       await tester.pumpWidget(
         buildDashboard(
           payments: testPayments,

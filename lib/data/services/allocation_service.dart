@@ -41,20 +41,16 @@ class AllocationService {
   static List<ObligationModel> sortObligations(
     List<ObligationModel> obligations,
   ) {
-    return List<ObligationModel>.from(obligations)
-      ..sort((a, b) {
-        final dueCompare = a.dueDate.compareTo(b.dueDate);
-        if (dueCompare != 0) return dueCompare;
-        return a.createdAt.compareTo(b.createdAt);
-      });
+    return List<ObligationModel>.from(obligations)..sort((a, b) {
+      final dueCompare = a.dueDate.compareTo(b.dueDate);
+      if (dueCompare != 0) return dueCompare;
+      return a.createdAt.compareTo(b.createdAt);
+    });
   }
 
   /// Compute the total outstanding balance across a list of obligations.
   static double totalOutstanding(List<ObligationModel> obligations) {
-    return obligations.fold(
-      0.0,
-      (sum, o) => sum + o.outstandingBalance,
-    );
+    return obligations.fold(0.0, (sum, o) => sum + o.outstandingBalance);
   }
 
   /// Check whether a manual selection's total outstanding covers at least

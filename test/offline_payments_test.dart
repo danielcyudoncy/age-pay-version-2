@@ -56,11 +56,12 @@ class _MockPaymentService implements PaymentService {
     required String recordedBy,
   }) async {
     if (_cashError != null) throw _cashError!;
-    return _cashResult ?? CashPaymentResult(
-      paymentId: 'pay_cash',
-      receiptId: 'rcp_cash',
-      receiptNumber: 'RCP-CASH-001',
-    );
+    return _cashResult ??
+        CashPaymentResult(
+          paymentId: 'pay_cash',
+          receiptId: 'rcp_cash',
+          receiptNumber: 'RCP-CASH-001',
+        );
   }
 
   @override
@@ -85,11 +86,12 @@ class _MockPaymentService implements PaymentService {
     String? notes,
   }) async {
     if (_verifyError != null) throw _verifyError!;
-    return _verifyResult ?? VerifyPaymentResult(
-      success: true,
-      paymentId: paymentId,
-      receiptId: 'rcp_verify',
-    );
+    return _verifyResult ??
+        VerifyPaymentResult(
+          success: true,
+          paymentId: paymentId,
+          receiptId: 'rcp_verify',
+        );
   }
 }
 
@@ -139,11 +141,13 @@ void main() {
   group('OfflinePaymentNotifier', () {
     test('records cash payment successfully', () async {
       final mockService = _MockPaymentService();
-      mockService.setCashResult(CashPaymentResult(
-        paymentId: 'pay_test',
-        receiptId: 'rcp_test',
-        receiptNumber: 'RCP-001',
-      ));
+      mockService.setCashResult(
+        CashPaymentResult(
+          paymentId: 'pay_test',
+          receiptId: 'rcp_test',
+          receiptNumber: 'RCP-001',
+        ),
+      );
 
       final notifier = OfflinePaymentNotifier(paymentService: mockService);
 
@@ -198,11 +202,13 @@ void main() {
 
     test('verifies payment successfully', () async {
       final mockService = _MockPaymentService();
-      mockService.setVerifyResult(VerifyPaymentResult(
-        success: true,
-        paymentId: 'pay1',
-        receiptId: 'rcp_v',
-      ));
+      mockService.setVerifyResult(
+        VerifyPaymentResult(
+          success: true,
+          paymentId: 'pay1',
+          receiptId: 'rcp_v',
+        ),
+      );
 
       final notifier = OfflinePaymentNotifier(paymentService: mockService);
 
@@ -240,11 +246,11 @@ void main() {
       return ProviderScope(
         overrides: [
           paymentServiceProvider.overrideWith((ref) => mockService),
-          selectedObligationsProvider.overrideWith((ref) => SelectedObligationsNotifier()),
+          selectedObligationsProvider.overrideWith(
+            (ref) => SelectedObligationsNotifier(),
+          ),
         ],
-        child: MaterialApp(
-          home: CashPaymentScreen(recordedBy: 'treasurer1'),
-        ),
+        child: MaterialApp(home: CashPaymentScreen(recordedBy: 'treasurer1')),
       );
     }
 
@@ -273,11 +279,11 @@ void main() {
       return ProviderScope(
         overrides: [
           paymentServiceProvider.overrideWith((ref) => mockService),
-          selectedObligationsProvider.overrideWith((ref) => SelectedObligationsNotifier()),
+          selectedObligationsProvider.overrideWith(
+            (ref) => SelectedObligationsNotifier(),
+          ),
         ],
-        child: MaterialApp(
-          home: BankTransferScreen(memberId: 'user1'),
-        ),
+        child: MaterialApp(home: BankTransferScreen(memberId: 'user1')),
       );
     }
 
@@ -320,7 +326,9 @@ void main() {
       expect(find.text('Bank Transfer'), findsOneWidget);
     });
 
-    testWidgets('shows approve and reject buttons for bank transfer', (tester) async {
+    testWidgets('shows approve and reject buttons for bank transfer', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildScreen(payments: [testPayment]));
       await tester.pumpAndSettle();
 

@@ -55,7 +55,9 @@ void main() {
       expect(find.text('Enter a valid email'), findsOneWidget);
     });
 
-    testWidgets('RegisterScreen validates password confirmation', (tester) async {
+    testWidgets('RegisterScreen validates password confirmation', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
@@ -63,7 +65,9 @@ void main() {
       await tester.enterText(find.byType(TextFormField).at(4), 'password123');
       await tester.enterText(find.byType(TextFormField).at(5), 'different');
       // Scroll to make the button visible before tapping
-      await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Register'));
+      await tester.ensureVisible(
+        find.widgetWithText(ElevatedButton, 'Register'),
+      );
       await tester.tap(find.widgetWithText(ElevatedButton, 'Register'));
       await tester.pump();
 

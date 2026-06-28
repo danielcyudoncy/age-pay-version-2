@@ -8,10 +8,7 @@ import 'package:cls/features/payments/providers/offline_payment_provider.dart';
 class PaymentVerificationScreen extends ConsumerStatefulWidget {
   final String verifiedBy;
 
-  const PaymentVerificationScreen({
-    super.key,
-    required this.verifiedBy,
-  });
+  const PaymentVerificationScreen({super.key, required this.verifiedBy});
 
   @override
   ConsumerState<PaymentVerificationScreen> createState() =>
@@ -90,7 +87,9 @@ class _PaymentVerificationScreenState
                     : payments.where((p) {
                         // We don't have member name in PaymentModel, so we
                         // search by memberId (in real app you'd join member)
-                        return p.memberId.toLowerCase().contains(_searchQuery) ||
+                        return p.memberId.toLowerCase().contains(
+                              _searchQuery,
+                            ) ||
                             p.method.name.toLowerCase().contains(_searchQuery);
                       }).toList();
 
@@ -99,8 +98,11 @@ class _PaymentVerificationScreenState
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.check_circle_outline,
-                            size: 64, color: Colors.green),
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 64,
+                          color: Colors.green,
+                        ),
                         SizedBox(height: 16),
                         Text(
                           'No pending payments',
@@ -154,7 +156,9 @@ class _PaymentVerificationScreenState
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(action == 'approve' ? 'Approve Payment?' : 'Reject Payment?'),
+        title: Text(
+          action == 'approve' ? 'Approve Payment?' : 'Reject Payment?',
+        ),
         content: Text(
           action == 'approve'
               ? 'Are you sure you want to approve this payment of ${NumberFormat.currency(symbol: "₦", decimalDigits: 0).format(payment.amount)}?'
@@ -168,8 +172,7 @@ class _PaymentVerificationScreenState
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
-              backgroundColor:
-                  action == 'approve' ? Colors.green : Colors.red,
+              backgroundColor: action == 'approve' ? Colors.green : Colors.red,
             ),
             child: Text(action == 'approve' ? 'Approve' : 'Reject'),
           ),
@@ -178,12 +181,14 @@ class _PaymentVerificationScreenState
     );
 
     if (confirm == true) {
-      await ref.read(offlinePaymentProvider.notifier).verifyPayment(
-        paymentId: payment.id,
-        action: action,
-        verifiedBy: widget.verifiedBy,
-        notes: payment.notes,
-      );
+      await ref
+          .read(offlinePaymentProvider.notifier)
+          .verifyPayment(
+            paymentId: payment.id,
+            action: action,
+            verifiedBy: widget.verifiedBy,
+            notes: payment.notes,
+          );
     }
   }
 
@@ -234,8 +239,8 @@ class _PaymentVerificationScreenState
                   value: payment.method == PaymentMethod.bankTransfer
                       ? 'Bank Transfer'
                       : payment.method == PaymentMethod.cash
-                          ? 'Cash'
-                          : 'Online',
+                      ? 'Cash'
+                      : 'Online',
                 ),
                 _DetailRow(
                   label: 'Status',
@@ -258,13 +263,14 @@ class _PaymentVerificationScreenState
                           height: 200,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            height: 200,
-                            color: Colors.grey.shade200,
-                            child: const Center(
-                              child: Icon(Icons.broken_image, size: 48),
-                            ),
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                height: 200,
+                                color: Colors.grey.shade200,
+                                child: const Center(
+                                  child: Icon(Icons.broken_image, size: 48),
+                                ),
+                              ),
                         ),
                       ),
                     ],
@@ -275,13 +281,15 @@ class _PaymentVerificationScreenState
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                ...payment.allocations.map((alloc) => Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        title: Text(alloc.obligationId),
-                        trailing: Text(currency.format(alloc.amount)),
-                      ),
-                    )),
+                ...payment.allocations.map(
+                  (alloc) => Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      title: Text(alloc.obligationId),
+                      trailing: Text(currency.format(alloc.amount)),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Date: ${DateFormat('dd MMM yyyy, HH:mm').format(payment.createdAt)}',
@@ -379,10 +387,7 @@ class _PaymentCard extends StatelessWidget {
                   ),
                   Text(
                     DateFormat('dd MMM yyyy').format(payment.createdAt),
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                   ),
                 ],
               ),
@@ -420,8 +425,10 @@ class _PaymentCard extends StatelessWidget {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Icon(Icons.check_circle,
-                                  color: Colors.green),
+                              : const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                ),
                           label: Text(
                             isProcessing ? 'Processing...' : 'Approve',
                             style: const TextStyle(color: Colors.green),

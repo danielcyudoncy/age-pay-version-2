@@ -12,7 +12,10 @@ class AuthService {
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
+  Future<UserModel?> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
     try {
       final result = await _auth.signInWithEmailAndPassword(
         email: email,
@@ -49,7 +52,10 @@ class AuthService {
           role: role,
           createdAt: DateTime.now(),
         );
-        await _firestore.collection('users').doc(user.uid).set(user.toFirestore());
+        await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .set(user.toFirestore());
 
         final member = MemberModel(
           id: '',

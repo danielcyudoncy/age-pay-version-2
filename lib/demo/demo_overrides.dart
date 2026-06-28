@@ -19,7 +19,8 @@ import '../data/services/payment_service.dart';
 import '../features/auth/models/user_model.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/obligations/providers/obligation_provider.dart';
-import '../features/levies/providers/levy_provider.dart' as levy_provider
+import '../features/levies/providers/levy_provider.dart'
+    as levy_provider
     show levyRepositoryProvider, obligationRepositoryProvider;
 import '../features/dashboard/providers/member_dashboard_provider.dart'
     show paymentRepositoryProvider;
@@ -98,11 +99,9 @@ class DemoMemberRepository implements MemberRepository {
       Stream.value(List.unmodifiable(_members));
 
   @override
-  Future<MemberModel?> getMemberByUserId(String userId) async =>
-      _members.cast<MemberModel?>().firstWhere(
-            (m) => m?.userId == userId,
-            orElse: () => null,
-          );
+  Future<MemberModel?> getMemberByUserId(String userId) async => _members
+      .cast<MemberModel?>()
+      .firstWhere((m) => m?.userId == userId, orElse: () => null);
 
   @override
   Future<String> createMember(MemberModel member) async {
@@ -122,19 +121,18 @@ class DemoPaymentRepository implements PaymentRepository {
       Stream.value(_payments.where((p) => p.memberId == memberId).toList());
 
   @override
-  Stream<List<PaymentModel>> getPendingPayments() =>
-      Stream.value(_payments.where((p) => p.status == PaymentStatus.pending).toList());
+  Stream<List<PaymentModel>> getPendingPayments() => Stream.value(
+    _payments.where((p) => p.status == PaymentStatus.pending).toList(),
+  );
 
   @override
   Stream<List<PaymentModel>> getAllPayments() =>
       Stream.value(List.unmodifiable(_payments));
 
   @override
-  Future<PaymentModel?> getPaymentById(String id) async =>
-      _payments.cast<PaymentModel?>().firstWhere(
-            (p) => p?.id == id,
-            orElse: () => null,
-          );
+  Future<PaymentModel?> getPaymentById(String id) async => _payments
+      .cast<PaymentModel?>()
+      .firstWhere((p) => p?.id == id, orElse: () => null);
 
   @override
   Future<String> createPayment(PaymentModel payment) async {
@@ -184,12 +182,16 @@ class DemoObligationRepository implements ObligationRepository {
 
   @override
   Stream<List<ObligationModel>> getMemberActiveObligations(String memberId) =>
-      Stream.value(_obligations
-          .where((o) =>
-              o.memberId == memberId &&
-              (o.status == ObligationStatus.unpaid ||
-                  o.status == ObligationStatus.partial))
-          .toList());
+      Stream.value(
+        _obligations
+            .where(
+              (o) =>
+                  o.memberId == memberId &&
+                  (o.status == ObligationStatus.unpaid ||
+                      o.status == ObligationStatus.partial),
+            )
+            .toList(),
+      );
 
   @override
   Stream<List<ObligationModel>> getLevyObligations(String levyId) =>
@@ -198,17 +200,16 @@ class DemoObligationRepository implements ObligationRepository {
   Stream<List<ObligationModel>> getMemberObligationsByStatus(
     String memberId, {
     required ObligationStatus status,
-  }) =>
-      Stream.value(_obligations
-          .where((o) => o.memberId == memberId && o.status == status)
-          .toList());
+  }) => Stream.value(
+    _obligations
+        .where((o) => o.memberId == memberId && o.status == status)
+        .toList(),
+  );
 
   @override
-  Future<ObligationModel?> getObligationById(String id) async =>
-      _obligations.cast<ObligationModel?>().firstWhere(
-            (o) => o?.id == id,
-            orElse: () => null,
-          );
+  Future<ObligationModel?> getObligationById(String id) async => _obligations
+      .cast<ObligationModel?>()
+      .firstWhere((o) => o?.id == id, orElse: () => null);
 
   @override
   Future<String> createObligation(ObligationModel obligation) async {
@@ -256,11 +257,9 @@ class DemoLevyRepository implements LevyRepository {
       Stream.value(_levies.where((l) => l.isActive).toList());
 
   @override
-  Future<LevyModel?> getLevyById(String id) async =>
-      _levies.cast<LevyModel?>().firstWhere(
-            (l) => l?.id == id,
-            orElse: () => null,
-          );
+  Future<LevyModel?> getLevyById(String id) async => _levies
+      .cast<LevyModel?>()
+      .firstWhere((l) => l?.id == id, orElse: () => null);
 
   @override
   Future<String> createLevy(LevyModel levy) async {
@@ -288,19 +287,23 @@ class DemoExpenseRepository implements ExpenseRepository {
       Stream.value(List.unmodifiable(_expenses));
 
   @override
-  Stream<List<ExpenseModel>> getExpensesByDateRange(DateTime start, DateTime end) =>
-      Stream.value(_expenses
-          .where((e) =>
+  Stream<List<ExpenseModel>> getExpensesByDateRange(
+    DateTime start,
+    DateTime end,
+  ) => Stream.value(
+    _expenses
+        .where(
+          (e) =>
               e.expenseDate.isAfter(start.subtract(const Duration(days: 1))) &&
-              e.expenseDate.isBefore(end.add(const Duration(days: 1))))
-          .toList());
+              e.expenseDate.isBefore(end.add(const Duration(days: 1))),
+        )
+        .toList(),
+  );
 
   @override
-  Future<ExpenseModel?> getExpenseById(String id) async =>
-      _expenses.cast<ExpenseModel?>().firstWhere(
-            (e) => e?.id == id,
-            orElse: () => null,
-          );
+  Future<ExpenseModel?> getExpenseById(String id) async => _expenses
+      .cast<ExpenseModel?>()
+      .firstWhere((e) => e?.id == id, orElse: () => null);
 
   @override
   Future<String> createExpense(ExpenseModel expense) async {
@@ -330,28 +333,31 @@ class DemoReceiptRepository implements ReceiptRepository {
   Stream<List<ReceiptModel>> getMemberReceipts(String memberId) =>
       Stream.value(_receipts.where((r) => r.memberId == memberId).toList());
 
-
   @override
-  Stream<List<ReceiptModel>> getReceiptsByDateRange(DateTime start, DateTime end) =>
-      Stream.value(_receipts
-          .where((r) =>
+  Stream<List<ReceiptModel>> getReceiptsByDateRange(
+    DateTime start,
+    DateTime end,
+  ) => Stream.value(
+    _receipts
+        .where(
+          (r) =>
               r.paymentDate.isAfter(start.subtract(const Duration(days: 1))) &&
-              r.paymentDate.isBefore(end.add(const Duration(days: 1))))
-          .toList());
+              r.paymentDate.isBefore(end.add(const Duration(days: 1))),
+        )
+        .toList(),
+  );
 
   @override
-  Future<ReceiptModel?> getReceiptById(String id) async =>
-      _receipts.cast<ReceiptModel?>().firstWhere(
-            (r) => r?.id == id,
-            orElse: () => null,
-          );
+  Future<ReceiptModel?> getReceiptById(String id) async => _receipts
+      .cast<ReceiptModel?>()
+      .firstWhere((r) => r?.id == id, orElse: () => null);
 
   @override
   Future<ReceiptModel?> getReceiptByPaymentId(String paymentId) async =>
       _receipts.cast<ReceiptModel?>().firstWhere(
-            (r) => r?.paymentId == paymentId,
-            orElse: () => null,
-          );
+        (r) => r?.paymentId == paymentId,
+        orElse: () => null,
+      );
 
   @override
   Future<String> createReceipt(ReceiptModel receipt) async {
@@ -645,16 +651,16 @@ final _demoPaymentService = DemoPaymentService();
 
 /// Provider overrides to inject when running in demo mode.
 List<Override> get demoOverrides => [
-      authServiceProvider.overrideWithValue(_demoAuthService),
-      memberRepositoryProvider.overrideWithValue(_demoMemberRepo),
-      paymentRepositoryProvider.overrideWithValue(_demoPaymentRepo),
-      obligationRepositoryProvider.overrideWithValue(_demoObligationRepo),
-      levy_provider.levyRepositoryProvider
-          .overrideWithValue(_demoLevyRepo),
-      levy_provider.obligationRepositoryProvider
-          .overrideWithValue(_demoObligationRepo),
-      expenseRepositoryProvider.overrideWithValue(_demoExpenseRepo),
-      receiptRepositoryProvider.overrideWithValue(_demoReceiptRepo),
-      notificationServiceProvider.overrideWithValue(_demoNotificationService),
-      paymentServiceProvider.overrideWithValue(_demoPaymentService),
-    ];
+  authServiceProvider.overrideWithValue(_demoAuthService),
+  memberRepositoryProvider.overrideWithValue(_demoMemberRepo),
+  paymentRepositoryProvider.overrideWithValue(_demoPaymentRepo),
+  obligationRepositoryProvider.overrideWithValue(_demoObligationRepo),
+  levy_provider.levyRepositoryProvider.overrideWithValue(_demoLevyRepo),
+  levy_provider.obligationRepositoryProvider.overrideWithValue(
+    _demoObligationRepo,
+  ),
+  expenseRepositoryProvider.overrideWithValue(_demoExpenseRepo),
+  receiptRepositoryProvider.overrideWithValue(_demoReceiptRepo),
+  notificationServiceProvider.overrideWithValue(_demoNotificationService),
+  paymentServiceProvider.overrideWithValue(_demoPaymentService),
+];

@@ -91,11 +91,7 @@ class AllocationNotifier extends StateNotifier<AllocationState> {
       amount,
       state.selectedObligations,
     );
-    state = state.copyWith(
-      result: result,
-      isManual: true,
-      clearError: true,
-    );
+    state = state.copyWith(result: result, isManual: true, clearError: true);
   }
 
   /// Re-allocate an existing payment across a new set of obligations.
@@ -125,7 +121,9 @@ class AllocationNotifier extends StateNotifier<AllocationState> {
 
   /// Toggle an obligation in the selection.
   void toggleObligation(ObligationModel obligation) {
-    final isSelected = state.selectedObligations.any((o) => o.id == obligation.id);
+    final isSelected = state.selectedObligations.any(
+      (o) => o.id == obligation.id,
+    );
     if (isSelected) {
       deselectObligation(obligation);
     } else {
@@ -144,5 +142,5 @@ class AllocationNotifier extends StateNotifier<AllocationState> {
 
 final allocationProvider =
     StateNotifierProvider<AllocationNotifier, AllocationState>((ref) {
-  return AllocationNotifier();
-});
+      return AllocationNotifier();
+    });

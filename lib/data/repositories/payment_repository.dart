@@ -7,7 +7,7 @@ class PaymentRepository {
   final String collection = 'payments';
 
   PaymentRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   CollectionReference get _collection => _firestore.collection(collection);
 
@@ -16,9 +16,11 @@ class PaymentRepository {
         .where('memberId', isEqualTo: memberId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => PaymentModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => PaymentModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   Stream<List<PaymentModel>> getPendingPayments() {
@@ -26,9 +28,11 @@ class PaymentRepository {
         .where('status', isEqualTo: PaymentStatus.pending.name)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => PaymentModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => PaymentModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   Future<PaymentModel?> getPaymentById(String id) async {
@@ -51,11 +55,11 @@ class PaymentRepository {
     DateTime? verifiedAt,
     String? receiptUrl,
   }) async {
-    final updates = <String, dynamic>{
-      'status': status.name,
-    };
+    final updates = <String, dynamic>{'status': status.name};
     if (verifiedBy != null) updates['verifiedBy'] = verifiedBy;
-    if (verifiedAt != null) updates['verifiedAt'] = Timestamp.fromDate(verifiedAt);
+    if (verifiedAt != null) {
+      updates['verifiedAt'] = Timestamp.fromDate(verifiedAt);
+    }
     if (receiptUrl != null) updates['receiptUrl'] = receiptUrl;
     await _collection.doc(id).update(updates);
   }
@@ -73,8 +77,10 @@ class PaymentRepository {
     return _collection
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => PaymentModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => PaymentModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 }

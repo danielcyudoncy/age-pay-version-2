@@ -31,10 +31,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _isLoading = true;
       _error = null;
     });
-    await ref.read(authProvider.notifier).signIn(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
+    await ref
+        .read(authProvider.notifier)
+        .signIn(_emailController.text.trim(), _passwordController.text);
     if (mounted) setState(() => _isLoading = false);
   }
 
@@ -66,14 +65,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.account_balance, size: 80, color: Color(0xFF1A5F2A)),
+                  const Icon(
+                    Icons.account_balance,
+                    size: 80,
+                    color: Color(0xFF1A5F2A),
+                  ),
                   const SizedBox(height: 24),
                   Text(
                     'Age Grade Finance',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1A5F2A),
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1A5F2A),
+                    ),
                   ),
                   const SizedBox(height: 32),
                   if (_error != null)
@@ -98,7 +101,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       prefixIcon: Icon(Icons.email),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Email is required';
+                      if (value == null || value.isEmpty) {
+                        return 'Email is required';
+                      }
                       if (!value.contains('@')) return 'Enter a valid email';
                       return null;
                     },
@@ -112,8 +117,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       prefixIcon: Icon(Icons.lock),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Password is required';
-                      if (value.length < 6) return 'Password must be at least 6 characters';
+                      if (value == null || value.isEmpty) {
+                        return 'Password is required';
+                      }
+                      if (value.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
                       return null;
                     },
                   ),
@@ -127,16 +136,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          : const Text('Sign In', style: TextStyle(fontSize: 16)),
+                          : const Text(
+                              'Sign In',
+                              style: TextStyle(fontSize: 16),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const RegisterScreen(),
+                        ),
                       );
                     },
                     child: const Text("Don't have an account? Register"),

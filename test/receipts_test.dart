@@ -13,7 +13,8 @@ import 'package:cls/features/payments/screens/payment_history_screen.dart';
 import 'package:cls/features/receipts/providers/receipt_provider.dart';
 import 'package:cls/features/receipts/screens/receipt_detail_screen.dart';
 import 'package:cls/features/receipts/screens/receipt_list_screen.dart';
-import 'package:cls/features/payments/screens/payment_history_screen.dart' as payment_history;
+import 'package:cls/features/payments/screens/payment_history_screen.dart'
+    as payment_history;
 
 class _MockAuthService implements AuthService {
   final UserModel? user;
@@ -58,7 +59,10 @@ class _MockReceiptRepo implements ReceiptRepository {
   }
 
   @override
-  Stream<List<ReceiptModel>> getReceiptsByDateRange(DateTime start, DateTime end) => Stream.value([]);
+  Stream<List<ReceiptModel>> getReceiptsByDateRange(
+    DateTime start,
+    DateTime end,
+  ) => Stream.value([]);
 
   @override
   Future<String> createReceipt(ReceiptModel receipt) async => '';
@@ -210,7 +214,9 @@ void main() {
       amount: 5000,
       method: PaymentMethod.online,
       status: PaymentStatus.approved,
-      allocations: const [PaymentAllocationModel(obligationId: 'o1', amount: 5000)],
+      allocations: const [
+        PaymentAllocationModel(obligationId: 'o1', amount: 5000),
+      ],
       createdAt: testDate,
     );
 
@@ -220,7 +226,9 @@ void main() {
       amount: 3000,
       method: PaymentMethod.bankTransfer,
       status: PaymentStatus.pending,
-      allocations: const [PaymentAllocationModel(obligationId: 'o2', amount: 3000)],
+      allocations: const [
+        PaymentAllocationModel(obligationId: 'o2', amount: 3000),
+      ],
       transferProofUrl: 'https://example.com/receipt.jpg',
       createdAt: testDate.add(const Duration(days: 1)),
     );
@@ -233,9 +241,9 @@ void main() {
 
       return ProviderScope(
         overrides: [
-          payment_history.paymentHistoryProvider('m1').overrideWith(
-            (ref) => Stream.value(payments),
-          ),
+          payment_history
+              .paymentHistoryProvider('m1')
+              .overrideWith((ref) => Stream.value(payments)),
           receiptRepositoryProvider.overrideWith((ref) => mockRepo),
         ],
         child: MaterialApp(
@@ -247,15 +255,18 @@ void main() {
       );
     }
 
-    testWidgets('shows transfer proof button for bank transfer payments with proof', (tester) async {
-      await tester.pumpWidget(buildScreen(
-        payments: [approvedPayment, pendingBankTransfer],
-      ));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'shows transfer proof button for bank transfer payments with proof',
+      (tester) async {
+        await tester.pumpWidget(
+          buildScreen(payments: [approvedPayment, pendingBankTransfer]),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Approved'), findsOneWidget);
-      expect(find.text('Pending'), findsOneWidget);
-      expect(find.byIcon(Icons.receipt), findsOneWidget);
-    });
+        expect(find.text('Approved'), findsOneWidget);
+        expect(find.text('Pending'), findsOneWidget);
+        expect(find.byIcon(Icons.receipt), findsOneWidget);
+      },
+    );
   });
 }

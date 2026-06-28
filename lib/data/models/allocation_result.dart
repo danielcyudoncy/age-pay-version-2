@@ -158,22 +158,25 @@ class AllocationResult {
         other.totalAllocated == totalAllocated &&
         _listEquals(other.fullyPaidObligationIds, fullyPaidObligationIds) &&
         _listEquals(
-            other.partiallyPaidObligationIds, partiallyPaidObligationIds);
+          other.partiallyPaidObligationIds,
+          partiallyPaidObligationIds,
+        );
   }
 
   @override
   int get hashCode => Object.hash(
-        _mapHash(allocations),
-        leftover,
-        totalAllocated,
-        Object.hashAll(fullyPaidObligationIds),
-        Object.hashAll(partiallyPaidObligationIds),
-      );
+    _mapHash(allocations),
+    leftover,
+    totalAllocated,
+    Object.hashAll(fullyPaidObligationIds),
+    Object.hashAll(partiallyPaidObligationIds),
+  );
 }
 
 int _mapHash(Map<String, double> map) {
   var hash = 0;
-  for (final entry in map.entries.toList()..sort((a, b) => a.key.compareTo(b.key))) {
+  for (final entry
+      in map.entries.toList()..sort((a, b) => a.key.compareTo(b.key))) {
     hash = Object.hash(hash, entry.key, entry.value);
   }
   return hash;

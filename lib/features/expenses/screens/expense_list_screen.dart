@@ -9,10 +9,7 @@ import 'expense_form_screen.dart';
 class ExpenseListScreen extends ConsumerWidget {
   final String currentUserId;
 
-  const ExpenseListScreen({
-    super.key,
-    required this.currentUserId,
-  });
+  const ExpenseListScreen({super.key, required this.currentUserId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -71,7 +68,8 @@ class ExpenseListScreen extends ConsumerWidget {
                       label: _categoryLabel(category),
                       selected: selectedFilter == category,
                       onSelected: (_) {
-                        ref.read(expenseFilterProvider.notifier).state = category;
+                        ref.read(expenseFilterProvider.notifier).state =
+                            category;
                       },
                     );
                   }),
@@ -90,7 +88,9 @@ class ExpenseListScreen extends ConsumerWidget {
                 data: (expenses) {
                   final filtered = selectedFilter == null
                       ? expenses
-                      : expenses.where((e) => e.category == selectedFilter).toList();
+                      : expenses
+                            .where((e) => e.category == selectedFilter)
+                            .toList();
 
                   if (filtered.isEmpty) {
                     return LayoutBuilder(
@@ -98,16 +98,25 @@ class ExpenseListScreen extends ConsumerWidget {
                         return SingleChildScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           child: ConstrainedBox(
-                            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                            ),
                             child: const Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.receipt_long, size: 64, color: Colors.grey),
+                                  Icon(
+                                    Icons.receipt_long,
+                                    size: 64,
+                                    color: Colors.grey,
+                                  ),
                                   SizedBox(height: 16),
                                   Text(
                                     'No expenses recorded',
-                                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -144,7 +153,11 @@ class ExpenseListScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Colors.red,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'Failed to load expenses',
@@ -168,9 +181,7 @@ class ExpenseListScreen extends ConsumerWidget {
         onPressed: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => ExpenseFormScreen(
-                currentUserId: currentUserId,
-              ),
+              builder: (_) => ExpenseFormScreen(currentUserId: currentUserId),
             ),
           );
         },
@@ -216,10 +227,7 @@ class _ExpenseCard extends StatelessWidget {
   final ExpenseModel expense;
   final VoidCallback onTap;
 
-  const _ExpenseCard({
-    required this.expense,
-    required this.onTap,
-  });
+  const _ExpenseCard({required this.expense, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -249,14 +257,17 @@ class _ExpenseCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (expense.receiptUrl != null && expense.receiptUrl!.isNotEmpty)
+                  if (expense.receiptUrl != null &&
+                      expense.receiptUrl!.isNotEmpty)
                     const Icon(Icons.receipt, size: 20, color: Colors.green),
                 ],
               ),
               const SizedBox(height: 4),
               Text(
                 expense.description,
-                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),

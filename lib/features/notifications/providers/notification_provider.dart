@@ -16,7 +16,9 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
   NotificationListNotifier(NotificationService service) : super([]) {
     _subscription = service.onForegroundMessage.listen((message) {
       final notification = NotificationModel(
-        id: message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        id:
+            message.messageId ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         title: message.notification?.title ?? 'Notification',
         body: message.notification?.body ?? '',
         type: message.data['type'] ?? 'general',
@@ -35,7 +37,7 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
   void markAsRead(String id) {
     state = [
       for (final n in state)
-        if (n.id == id) n.copyWith(read: true) else n
+        if (n.id == id) n.copyWith(read: true) else n,
     ];
   }
 
@@ -56,14 +58,16 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
 }
 
 final notificationListProvider =
-    StateNotifierProvider<NotificationListNotifier, List<NotificationModel>>(
-        (ref) {
-  final service = ref.watch(notificationServiceProvider);
-  return NotificationListNotifier(service);
-});
+    StateNotifierProvider<NotificationListNotifier, List<NotificationModel>>((
+      ref,
+    ) {
+      final service = ref.watch(notificationServiceProvider);
+      return NotificationListNotifier(service);
+    });
 
-final notificationStreamProvider =
-    StreamProvider<List<NotificationModel>>((ref) {
+final notificationStreamProvider = StreamProvider<List<NotificationModel>>((
+  ref,
+) {
   final list = ref.watch(notificationListProvider);
   return Stream.value(list);
 });

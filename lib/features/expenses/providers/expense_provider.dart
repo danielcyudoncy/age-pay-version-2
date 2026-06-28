@@ -12,10 +12,15 @@ final expensesStreamProvider = StreamProvider<List<ExpenseModel>>((ref) {
 });
 
 final expensesByCategoryProvider =
-    Provider.family<AsyncValue<List<ExpenseModel>>, ExpenseCategory>((ref, category) {
-  final asyncExpenses = ref.watch(expensesStreamProvider);
-  return asyncExpenses.whenData((list) => list.where((e) => e.category == category).toList());
-});
+    Provider.family<AsyncValue<List<ExpenseModel>>, ExpenseCategory>((
+      ref,
+      category,
+    ) {
+      final asyncExpenses = ref.watch(expensesStreamProvider);
+      return asyncExpenses.whenData(
+        (list) => list.where((e) => e.category == category).toList(),
+      );
+    });
 
 final expenseTotalProvider = Provider<double>((ref) {
   final asyncExpenses = ref.watch(expensesStreamProvider);

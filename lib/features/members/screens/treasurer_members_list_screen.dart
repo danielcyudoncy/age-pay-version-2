@@ -102,10 +102,9 @@ class _TreasurerMembersListScreenState
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  TreasurerMemberDetailScreen(
-                                    memberId: member.userId,
-                                  ),
+                              builder: (_) => TreasurerMemberDetailScreen(
+                                memberId: member.userId,
+                              ),
                             ),
                           );
                         },

@@ -6,7 +6,7 @@ class ReceiptRepository {
   final String collection = 'receipts';
 
   ReceiptRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   CollectionReference get _collection => _firestore.collection(collection);
 
@@ -15,20 +15,27 @@ class ReceiptRepository {
         .where('memberId', isEqualTo: memberId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ReceiptModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ReceiptModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
-  Stream<List<ReceiptModel>> getReceiptsByDateRange(DateTime start, DateTime end) {
+  Stream<List<ReceiptModel>> getReceiptsByDateRange(
+    DateTime start,
+    DateTime end,
+  ) {
     return _collection
         .where('paymentDate', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
         .where('paymentDate', isLessThanOrEqualTo: Timestamp.fromDate(end))
         .orderBy('paymentDate', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ReceiptModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ReceiptModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   Future<ReceiptModel?> getReceiptById(String id) async {
@@ -38,8 +45,10 @@ class ReceiptRepository {
   }
 
   Future<ReceiptModel?> getReceiptByPaymentId(String paymentId) async {
-    final snapshot =
-        await _collection.where('paymentId', isEqualTo: paymentId).limit(1).get();
+    final snapshot = await _collection
+        .where('paymentId', isEqualTo: paymentId)
+        .limit(1)
+        .get();
     if (snapshot.docs.isNotEmpty) {
       return ReceiptModel.fromFirestore(snapshot.docs.first);
     }

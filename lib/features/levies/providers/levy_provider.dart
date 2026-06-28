@@ -55,9 +55,9 @@ class LevyCreationNotifier extends StateNotifier<LevyCreationState> {
   LevyCreationNotifier({
     required LevyRepository levyRepository,
     required ObligationRepository obligationRepository,
-  })  : _levyRepository = levyRepository,
-        _obligationRepository = obligationRepository,
-        super(const LevyCreationState());
+  }) : _levyRepository = levyRepository,
+       _obligationRepository = obligationRepository,
+       super(const LevyCreationState());
 
   Future<void> createLevy({
     required String title,
@@ -117,10 +117,7 @@ class LevyCreationNotifier extends StateNotifier<LevyCreationState> {
         createdLevyId: levyId,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
@@ -130,14 +127,14 @@ class LevyCreationNotifier extends StateNotifier<LevyCreationState> {
 }
 
 final levyCreationProvider =
-    StateNotifierProvider.autoDispose<LevyCreationNotifier, LevyCreationState>(
-  (ref) {
-    return LevyCreationNotifier(
-      levyRepository: ref.watch(levyRepositoryProvider),
-      obligationRepository: ref.watch(obligationRepositoryProvider),
-    );
-  },
-);
+    StateNotifierProvider.autoDispose<LevyCreationNotifier, LevyCreationState>((
+      ref,
+    ) {
+      return LevyCreationNotifier(
+        levyRepository: ref.watch(levyRepositoryProvider),
+        obligationRepository: ref.watch(obligationRepositoryProvider),
+      );
+    });
 
 final obligationRepositoryProvider = Provider<ObligationRepository>((ref) {
   return ObligationRepository();

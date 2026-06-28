@@ -31,7 +31,9 @@ void main() {
       return ProviderScope(
         overrides: [
           levyRepositoryProvider.overrideWith((ref) => mockLevyRepo),
-          obligationRepositoryProvider.overrideWith((ref) => mockObligationRepo),
+          obligationRepositoryProvider.overrideWith(
+            (ref) => mockObligationRepo,
+          ),
         ],
         child: MaterialApp(
           home: MediaQuery(
@@ -58,17 +60,17 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(
-        find.textContaining('3 member(s) will receive'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('3 member(s) will receive'), findsOneWidget);
     });
 
     testWidgets('validates empty title on submit', (tester) async {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      final submitButton = find.widgetWithText(FilledButton, 'Create Levy & Generate Obligations');
+      final submitButton = find.widgetWithText(
+        FilledButton,
+        'Create Levy & Generate Obligations',
+      );
       expect(submitButton, findsOneWidget);
       await tester.ensureVisible(submitButton);
       await tester.tap(submitButton);
@@ -81,7 +83,10 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      final submitButton = find.widgetWithText(FilledButton, 'Create Levy & Generate Obligations');
+      final submitButton = find.widgetWithText(
+        FilledButton,
+        'Create Levy & Generate Obligations',
+      );
       await tester.ensureVisible(submitButton);
       await tester.tap(submitButton);
       await tester.pumpAndSettle();
@@ -93,7 +98,10 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(find.byType(DropdownButtonFormField<ObligationType>), findsOneWidget);
+      expect(
+        find.byType(DropdownButtonFormField<ObligationType>),
+        findsOneWidget,
+      );
       expect(find.text('Monthly Due'), findsOneWidget);
     });
   });

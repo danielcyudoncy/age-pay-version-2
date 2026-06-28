@@ -17,10 +17,7 @@ class MemberObligationsScreen extends ConsumerWidget {
     final dateFormat = DateFormat('MMM d, yyyy');
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Obligations'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('My Obligations'), centerTitle: true),
       body: obligationsAsync.when(
         data: (obligations) {
           if (obligations.isEmpty) {
@@ -28,7 +25,11 @@ class MemberObligationsScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
+                  Icon(
+                    Icons.check_circle_outline,
+                    size: 64,
+                    color: Colors.green,
+                  ),
                   SizedBox(height: 16),
                   Text(
                     'No obligations found',
@@ -45,12 +46,18 @@ class MemberObligationsScreen extends ConsumerWidget {
           }
 
           final totalOutstanding = obligations.fold<double>(
-            0, (sum, o) => sum + o.outstandingBalance,
+            0,
+            (sum, o) => sum + o.outstandingBalance,
           );
 
           return Column(
             children: [
-              _buildSummaryCard(context, obligations, totalOutstanding, currency),
+              _buildSummaryCard(
+                context,
+                obligations,
+                totalOutstanding,
+                currency,
+              ),
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -70,7 +77,10 @@ class MemberObligationsScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
-          child: Text('Error: $error', style: const TextStyle(color: Colors.red)),
+          child: Text(
+            'Error: $error',
+            style: const TextStyle(color: Colors.red),
+          ),
         ),
       ),
     );
@@ -82,9 +92,15 @@ class MemberObligationsScreen extends ConsumerWidget {
     double totalOutstanding,
     NumberFormat currency,
   ) {
-    final paidCount = obligations.where((o) => o.status == ObligationStatus.paid).length;
-    final partialCount = obligations.where((o) => o.status == ObligationStatus.partial).length;
-    final unpaidCount = obligations.where((o) => o.status == ObligationStatus.unpaid).length;
+    final paidCount = obligations
+        .where((o) => o.status == ObligationStatus.paid)
+        .length;
+    final partialCount = obligations
+        .where((o) => o.status == ObligationStatus.partial)
+        .length;
+    final unpaidCount = obligations
+        .where((o) => o.status == ObligationStatus.unpaid)
+        .length;
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -95,9 +111,9 @@ class MemberObligationsScreen extends ConsumerWidget {
           children: [
             Text(
               'Summary',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Row(
@@ -181,8 +197,8 @@ class _ObligationCard extends StatelessWidget {
                   child: Text(
                     obligation.title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 Chip(
@@ -203,10 +219,7 @@ class _ObligationCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               obligation.description,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -252,7 +265,11 @@ class _ObligationCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade500),
+                    Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: Colors.grey.shade500,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Due: ${dateFormat.format(obligation.dueDate)}',
@@ -306,10 +323,7 @@ class _SummaryItem extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey.shade600,
-          ),
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
           textAlign: TextAlign.center,
         ),
       ],
@@ -337,10 +351,7 @@ class _AmountRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey.shade500,
-          ),
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
         ),
         const SizedBox(height: 2),
         Text(

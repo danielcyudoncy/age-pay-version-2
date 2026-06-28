@@ -18,10 +18,7 @@ class PaymentAllocationModel {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'obligationId': obligationId,
-      'amount': amount,
-    };
+    return {'obligationId': obligationId, 'amount': amount};
   }
 }
 
@@ -78,7 +75,9 @@ class PaymentModel {
       paystackReference: data['paystackReference'],
       notes: data['notes'],
       verifiedBy: data['verifiedBy'],
-      verifiedAt: data['verifiedAt'] != null ? _parseDate(data['verifiedAt']) : null,
+      verifiedAt: data['verifiedAt'] != null
+          ? _parseDate(data['verifiedAt'])
+          : null,
       createdAt: _parseDate(data['createdAt']),
     );
   }

@@ -11,10 +11,7 @@ import 'package:cls/features/obligations/providers/obligation_provider.dart';
 class CashPaymentScreen extends ConsumerStatefulWidget {
   final String recordedBy;
 
-  const CashPaymentScreen({
-    super.key,
-    required this.recordedBy,
-  });
+  const CashPaymentScreen({super.key, required this.recordedBy});
 
   @override
   ConsumerState<CashPaymentScreen> createState() => _CashPaymentScreenState();
@@ -107,9 +104,7 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
                 );
               }
               if (members.isEmpty) {
-                return const Center(
-                  child: Text('No members found'),
-                );
+                return const Center(child: Text('No members found'));
               }
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -119,9 +114,7 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
-                      leading: const CircleAvatar(
-                        child: Icon(Icons.person),
-                      ),
+                      leading: const CircleAvatar(child: Icon(Icons.person)),
                       title: Text(member.fullName),
                       subtitle: Text(member.email),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -141,7 +134,10 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(
-              child: Text('Error: $err', style: const TextStyle(color: Colors.red)),
+              child: Text(
+                'Error: $err',
+                style: const TextStyle(color: Colors.red),
+              ),
             ),
           ),
         ),
@@ -176,7 +172,8 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.close, size: 18),
-                  onPressed: () => ref.read(offlinePaymentProvider.notifier).clearError(),
+                  onPressed: () =>
+                      ref.read(offlinePaymentProvider.notifier).clearError(),
                 ),
               ],
             ),
@@ -234,7 +231,9 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
                 itemCount: obligations.length,
                 itemBuilder: (context, index) {
                   final obligation = obligations[index];
-                  final isSelected = selectedObligations.any((o) => o.id == obligation.id);
+                  final isSelected = selectedObligations.any(
+                    (o) => o.id == obligation.id,
+                  );
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -255,12 +254,14 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
                         ),
                         backgroundColor:
                             obligation.status == ObligationStatus.unpaid
-                                ? Colors.red
-                                : Colors.orange,
+                            ? Colors.red
+                            : Colors.orange,
                       ),
                       value: isSelected,
                       onChanged: (value) {
-                        ref.read(selectedObligationsProvider.notifier).toggle(obligation);
+                        ref
+                            .read(selectedObligationsProvider.notifier)
+                            .toggle(obligation);
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           _updateAmountFromSelection();
                         });
@@ -272,7 +273,10 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(
-              child: Text('Error: $err', style: const TextStyle(color: Colors.red)),
+              child: Text(
+                'Error: $err',
+                style: const TextStyle(color: Colors.red),
+              ),
             ),
           ),
         ),
@@ -280,9 +284,7 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            border: Border(
-              top: BorderSide(color: Colors.grey.shade300),
-            ),
+            border: Border(top: BorderSide(color: Colors.grey.shade300)),
           ),
           child: SafeArea(
             child: Column(
@@ -316,10 +318,7 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Total:',
-                      style: TextStyle(fontSize: 16),
-                    ),
+                    const Text('Total:', style: TextStyle(fontSize: 16)),
                     Text(
                       currency.format(
                         double.tryParse(_amountController.text) ?? 0.0,
@@ -420,12 +419,16 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
     final selected = ref.read(selectedObligationsProvider);
     if (amount <= 0 || selected.isEmpty) return;
 
-    await ref.read(offlinePaymentProvider.notifier).recordCashPayment(
-      memberId: _selectedMember!.userId,
-      obligationIds: selected.map((o) => o.id).toList(),
-      amount: amount,
-      notes: _notesController.text.isNotEmpty ? _notesController.text : null,
-      recordedBy: widget.recordedBy,
-    );
+    await ref
+        .read(offlinePaymentProvider.notifier)
+        .recordCashPayment(
+          memberId: _selectedMember!.userId,
+          obligationIds: selected.map((o) => o.id).toList(),
+          amount: amount,
+          notes: _notesController.text.isNotEmpty
+              ? _notesController.text
+              : null,
+          recordedBy: widget.recordedBy,
+        );
   }
 }

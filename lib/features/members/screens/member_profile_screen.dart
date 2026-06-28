@@ -119,9 +119,7 @@ class MemberProfileScreen extends ConsumerWidget {
         if (member != null) {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => EditMemberScreen(member: member),
-            ),
+            MaterialPageRoute(builder: (_) => EditMemberScreen(member: member)),
           );
         }
       },
@@ -160,10 +158,7 @@ class _ProfileHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              member.email,
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
+            Text(member.email, style: TextStyle(color: Colors.grey.shade600)),
           ],
         ),
       ),
@@ -184,17 +179,15 @@ class _ProfileSection extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: children,
-            ),
+            child: Column(children: children),
           ),
         ),
       ],
@@ -227,10 +220,7 @@ class _ProfileInfoRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                 ),
                 const SizedBox(height: 2),
                 Text(

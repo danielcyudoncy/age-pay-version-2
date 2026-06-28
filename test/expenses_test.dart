@@ -106,8 +106,9 @@ void main() {
       expect(find.textContaining('₦'), findsWidgets);
     });
 
-    testWidgets('displays expense cards with title, amount, category chip',
-        (tester) async {
+    testWidgets('displays expense cards with title, amount, category chip', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildScreen(expenses: testExpenses));
       await tester.pumpAndSettle();
 
@@ -122,7 +123,9 @@ void main() {
       expect(find.widgetWithText(Chip, 'Welfare'), findsOneWidget);
     });
 
-    testWidgets('shows receipt icon only when receiptUrl exists', (tester) async {
+    testWidgets('shows receipt icon only when receiptUrl exists', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildScreen(expenses: testExpenses));
       await tester.pumpAndSettle();
 
@@ -187,15 +190,11 @@ void main() {
   });
 
   group('ExpenseFormScreen', () {
-    Widget buildCreateScreen({
-      ExpenseModel? expense,
-    }) {
+    Widget buildCreateScreen({ExpenseModel? expense}) {
       final mockRepo = _MockExpenseRepo();
 
       return ProviderScope(
-        overrides: [
-          expenseRepositoryProvider.overrideWith((ref) => mockRepo),
-        ],
+        overrides: [expenseRepositoryProvider.overrideWith((ref) => mockRepo)],
         child: MaterialApp(
           home: MediaQuery(
             data: const MediaQueryData(size: Size(800, 1200)),
@@ -214,7 +213,10 @@ void main() {
 
       expect(find.text('Add Expense'), findsOneWidget);
       expect(find.byType(TextFormField), findsNWidgets(3));
-      expect(find.byType(DropdownButtonFormField<ExpenseCategory>), findsOneWidget);
+      expect(
+        find.byType(DropdownButtonFormField<ExpenseCategory>),
+        findsOneWidget,
+      );
       expect(find.text('Save Expense'), findsOneWidget);
       expect(find.text('No receipt uploaded'), findsOneWidget);
     });
@@ -278,7 +280,10 @@ void main() {
       // Fill title
       await tester.enterText(find.byType(TextFormField).at(0), 'New Expense');
       // Fill description
-      await tester.enterText(find.byType(TextFormField).at(1), 'Test description');
+      await tester.enterText(
+        find.byType(TextFormField).at(1),
+        'Test description',
+      );
       // Fill amount
       await tester.enterText(find.byType(TextFormField).at(2), '10000');
 

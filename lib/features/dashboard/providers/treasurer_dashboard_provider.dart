@@ -21,22 +21,21 @@ final memberRepositoryProvider = Provider<MemberRepository>((ref) {
 // ---------------------------------------------------------------------------
 // Streams
 // ---------------------------------------------------------------------------
-final allPaymentsStreamProvider = StreamProvider.autoDispose<List<PaymentModel>>(
-  (ref) {
-    return ref.watch(paymentRepositoryProvider).getAllPayments();
-  },
-);
+final allPaymentsStreamProvider =
+    StreamProvider.autoDispose<List<PaymentModel>>((ref) {
+      return ref.watch(paymentRepositoryProvider).getAllPayments();
+    });
 
-final membersStreamProvider = StreamProvider.autoDispose<List<MemberModel>>(
-  (ref) {
-    return ref.watch(memberRepositoryProvider).getMembers();
-  },
-);
-
-final memberByUserIdProvider =
-    FutureProvider.autoDispose.family<MemberModel?, String>((ref, userId) {
-  return ref.watch(memberRepositoryProvider).getMemberByUserId(userId);
+final membersStreamProvider = StreamProvider.autoDispose<List<MemberModel>>((
+  ref,
+) {
+  return ref.watch(memberRepositoryProvider).getMembers();
 });
+
+final memberByUserIdProvider = FutureProvider.autoDispose
+    .family<MemberModel?, String>((ref, userId) {
+      return ref.watch(memberRepositoryProvider).getMemberByUserId(userId);
+    });
 
 // ---------------------------------------------------------------------------
 // Data models
@@ -77,10 +76,7 @@ class RecentPaymentItem {
   final PaymentModel payment;
   final String memberName;
 
-  RecentPaymentItem({
-    required this.payment,
-    required this.memberName,
-  });
+  RecentPaymentItem({required this.payment, required this.memberName});
 }
 
 class TreasurerDashboardData {
@@ -133,22 +129,29 @@ final totalCollectedProvider = Provider.autoDispose<AsyncValue<double>>((ref) {
   // Sum paidAmount from obligations directly - this captures both manual
   // payment updates (via "Update Payment Status") and actual payment transactions.
   final obligationsAsync = ref.watch(allObligationsProvider);
-  return obligationsAsync.whenData((list) =>
-      list.fold<double>(0.0, (sum, o) => sum + o.paidAmount));
+  return obligationsAsync.whenData(
+    (list) => list.fold<double>(0.0, (sum, o) => sum + o.paidAmount),
+  );
 });
 
-final totalOutstandingProvider = Provider.autoDispose<AsyncValue<double>>((ref) {
+final totalOutstandingProvider = Provider.autoDispose<AsyncValue<double>>((
+  ref,
+) {
   final obligationsAsync = ref.watch(allObligationsProvider);
-  return obligationsAsync.whenData((list) => list
-      .where((o) => o.status != ObligationStatus.paid)
-      .fold<double>(0.0, (sum, o) => sum + o.outstandingBalance));
+  return obligationsAsync.whenData(
+    (list) => list
+        .where((o) => o.status != ObligationStatus.paid)
+        .fold<double>(0.0, (sum, o) => sum + o.outstandingBalance),
+  );
 });
 
 final totalPendingProvider = Provider.autoDispose<AsyncValue<double>>((ref) {
   final paymentsAsync = ref.watch(allPaymentsStreamProvider);
-  return paymentsAsync.whenData((list) => list
-      .where((p) => p.status == PaymentStatus.pending)
-      .fold<double>(0.0, (sum, p) => sum + p.amount));
+  return paymentsAsync.whenData(
+    (list) => list
+        .where((p) => p.status == PaymentStatus.pending)
+        .fold<double>(0.0, (sum, p) => sum + p.amount),
+  );
 });
 
 final totalMembersProvider = Provider.autoDispose<AsyncValue<int>>((ref) {
@@ -158,183 +161,199 @@ final totalMembersProvider = Provider.autoDispose<AsyncValue<int>>((ref) {
 
 final memberArrearsProvider =
     Provider.autoDispose<AsyncValue<List<MemberArrears>>>((ref) {
-  final obligationsAsync = ref.watch(allObligationsProvider);
-  final membersAsync = ref.watch(membersStreamProvider);
+      final obligationsAsync = ref.watch(allObligationsProvider);
+      final membersAsync = ref.watch(membersStreamProvider);
 
-  return _combine<List<MemberArrears>>([obligationsAsync, membersAsync], () {
-    final obligations = obligationsAsync.valueOrNull ?? [];
-    final members = membersAsync.valueOrNull ?? [];
+      return _combine<
+        List<MemberArrears>
+      >([obligationsAsync, membersAsync], () {
+        final obligations = obligationsAsync.valueOrNull ?? [];
+        final members = membersAsync.valueOrNull ?? [];
 
-    // Build member lookup maps
-    // memberByDocId: document ID -> MemberModel
-    // memberByUserId: user ID -> document ID
-    final memberByDocId = <String, MemberModel>{};
-    final memberByUserId = <String, String>{};
+        // Build member lookup maps
+        // memberByDocId: document ID -> MemberModel
+        // memberByUserId: user ID -> document ID
+        final memberByDocId = <String, MemberModel>{};
+        final memberByUserId = <String, String>{};
 
-    for (final m in members) {
-      memberByDocId[m.id] = m;
-      if (m.userId.isNotEmpty) {
-        memberByUserId[m.userId] = m.id;
-      }
-    }
+        for (final m in members) {
+          memberByDocId[m.id] = m;
+          if (m.userId.isNotEmpty) {
+            memberByUserId[m.userId] = m.id;
+          }
+        }
 
-    // Group obligations by RESOLVED member document ID to prevent duplicates
-    // (obligations may reference member by userId or by document ID)
-    final memberObligations = <String, List<ObligationModel>>{};
+        // Group obligations by RESOLVED member document ID to prevent duplicates
+        // (obligations may reference member by userId or by document ID)
+        final memberObligations = <String, List<ObligationModel>>{};
 
-    for (final o in obligations) {
-      if (o.outstandingBalance <= 0) continue;
+        for (final o in obligations) {
+          if (o.outstandingBalance <= 0) continue;
 
-      // Resolve to document ID
-      String resolvedMemberId = o.memberId;
-      if (!memberByDocId.containsKey(o.memberId) &&
-          memberByUserId.containsKey(o.memberId)) {
-        // memberId is a userId, convert to document ID
-        resolvedMemberId = memberByUserId[o.memberId]!;
-      } else if (!memberByDocId.containsKey(o.memberId)) {
-        // Unknown member, keep original ID
-        resolvedMemberId = o.memberId;
-      }
+          // Resolve to document ID
+          String resolvedMemberId = o.memberId;
+          if (!memberByDocId.containsKey(o.memberId) &&
+              memberByUserId.containsKey(o.memberId)) {
+            // memberId is a userId, convert to document ID
+            resolvedMemberId = memberByUserId[o.memberId]!;
+          } else if (!memberByDocId.containsKey(o.memberId)) {
+            // Unknown member, keep original ID
+            resolvedMemberId = o.memberId;
+          }
 
-      (memberObligations[resolvedMemberId] ??= []).add(o);
-    }
+          (memberObligations[resolvedMemberId] ??= []).add(o);
+        }
 
-    // Build result
-    final result = memberObligations.entries.map((e) {
-      final member = memberByDocId[e.key];
-      final totalOutstanding =
-          e.value.fold<double>(0.0, (sum, o) => sum + o.outstandingBalance);
-      return MemberArrears(
-        memberId: e.key,
-        memberName: member?.fullName ?? 'Unknown',
-        totalOutstanding: totalOutstanding,
-        unpaidCount: e.value.where((o) => o.status != ObligationStatus.paid).length,
-      );
-    }).toList();
+        // Build result
+        final result = memberObligations.entries.map((e) {
+          final member = memberByDocId[e.key];
+          final totalOutstanding = e.value.fold<double>(
+            0.0,
+            (sum, o) => sum + o.outstandingBalance,
+          );
+          return MemberArrears(
+            memberId: e.key,
+            memberName: member?.fullName ?? 'Unknown',
+            totalOutstanding: totalOutstanding,
+            unpaidCount: e.value
+                .where((o) => o.status != ObligationStatus.paid)
+                .length,
+          );
+        }).toList();
 
-    result.sort((a, b) => b.totalOutstanding.compareTo(a.totalOutstanding));
-    return result;
-  });
-});
+        result.sort((a, b) => b.totalOutstanding.compareTo(a.totalOutstanding));
+        return result;
+      });
+    });
 
 final levyCollectionProvider =
     Provider.autoDispose<AsyncValue<List<LevyCollectionSummary>>>((ref) {
-  final leviesAsync = ref.watch(activeLeviesProvider);
-  final obligationsAsync = ref.watch(allObligationsProvider);
+      final leviesAsync = ref.watch(activeLeviesProvider);
+      final obligationsAsync = ref.watch(allObligationsProvider);
 
-  return _combine<List<LevyCollectionSummary>>(
-    [leviesAsync, obligationsAsync],
-    () {
-      final levies = leviesAsync.valueOrNull ?? [];
-      final obligations = obligationsAsync.valueOrNull ?? [];
+      return _combine<List<LevyCollectionSummary>>(
+        [leviesAsync, obligationsAsync],
+        () {
+          final levies = leviesAsync.valueOrNull ?? [];
+          final obligations = obligationsAsync.valueOrNull ?? [];
 
-      return levies.map((levy) {
-        final levyObligations =
-            obligations.where((o) => o.levyId == levy.id).toList();
-        final target =
-            levyObligations.fold<double>(0.0, (sum, o) => sum + o.amount);
-        final collected =
-            levyObligations.fold<double>(0.0, (sum, o) => sum + o.paidAmount);
-        final percentage = target > 0 ? (collected / target).clamp(0.0, 1.0) : 0.0;
-        return LevyCollectionSummary(
-          levyId: levy.id,
-          title: levy.title,
-          collected: collected,
-          target: target,
-          percentage: percentage,
-          memberCount: levyObligations.length,
-        );
-      }).toList();
-    },
-  );
-});
+          return levies.map((levy) {
+            final levyObligations = obligations
+                .where((o) => o.levyId == levy.id)
+                .toList();
+            final target = levyObligations.fold<double>(
+              0.0,
+              (sum, o) => sum + o.amount,
+            );
+            final collected = levyObligations.fold<double>(
+              0.0,
+              (sum, o) => sum + o.paidAmount,
+            );
+            final percentage = target > 0
+                ? (collected / target).clamp(0.0, 1.0)
+                : 0.0;
+            return LevyCollectionSummary(
+              levyId: levy.id,
+              title: levy.title,
+              collected: collected,
+              target: target,
+              percentage: percentage,
+              memberCount: levyObligations.length,
+            );
+          }).toList();
+        },
+      );
+    });
 
 final expenseTotalProvider = Provider.autoDispose<AsyncValue<double>>((ref) {
   final expensesAsync = ref.watch(expensesStreamProvider);
   return expensesAsync.whenData((list) {
     final now = DateTime.now();
     return list
-        .where((e) =>
-            e.expenseDate.year == now.year && e.expenseDate.month == now.month)
+        .where(
+          (e) =>
+              e.expenseDate.year == now.year &&
+              e.expenseDate.month == now.month,
+        )
         .fold<double>(0.0, (sum, e) => sum + e.amount);
   });
 });
 
 final treasurerFinancialSummaryProvider =
     Provider.autoDispose<AsyncValue<double>>((ref) {
-  final collectedAsync = ref.watch(totalCollectedProvider);
-  final expenseAsync = ref.watch(expenseTotalProvider);
+      final collectedAsync = ref.watch(totalCollectedProvider);
+      final expenseAsync = ref.watch(expenseTotalProvider);
 
-  return _combine<double>([collectedAsync, expenseAsync], () {
-    final collected = collectedAsync.valueOrNull ?? 0.0;
-    final expenses = expenseAsync.valueOrNull ?? 0.0;
-    return collected - expenses;
-  });
-});
+      return _combine<double>([collectedAsync, expenseAsync], () {
+        final collected = collectedAsync.valueOrNull ?? 0.0;
+        final expenses = expenseAsync.valueOrNull ?? 0.0;
+        return collected - expenses;
+      });
+    });
 
 // ---------------------------------------------------------------------------
 // Main dashboard provider
 // ---------------------------------------------------------------------------
 final treasurerDashboardProvider =
     Provider.autoDispose<AsyncValue<TreasurerDashboardData>>((ref) {
-  final collectedAsync = ref.watch(totalCollectedProvider);
-  final outstandingAsync = ref.watch(totalOutstandingProvider);
-  final pendingAsync = ref.watch(totalPendingProvider);
-  final membersCountAsync = ref.watch(totalMembersProvider);
-  final arrearsAsync = ref.watch(memberArrearsProvider);
-  final levyAsync = ref.watch(levyCollectionProvider);
-  final expenseAsync = ref.watch(expenseTotalProvider);
-  final netAsync = ref.watch(treasurerFinancialSummaryProvider);
-  final paymentsAsync = ref.watch(allPaymentsStreamProvider);
-  final membersAsync = ref.watch(membersStreamProvider);
+      final collectedAsync = ref.watch(totalCollectedProvider);
+      final outstandingAsync = ref.watch(totalOutstandingProvider);
+      final pendingAsync = ref.watch(totalPendingProvider);
+      final membersCountAsync = ref.watch(totalMembersProvider);
+      final arrearsAsync = ref.watch(memberArrearsProvider);
+      final levyAsync = ref.watch(levyCollectionProvider);
+      final expenseAsync = ref.watch(expenseTotalProvider);
+      final netAsync = ref.watch(treasurerFinancialSummaryProvider);
+      final paymentsAsync = ref.watch(allPaymentsStreamProvider);
+      final membersAsync = ref.watch(membersStreamProvider);
 
-  return _combine<TreasurerDashboardData>(
-    [
-      collectedAsync,
-      outstandingAsync,
-      pendingAsync,
-      membersCountAsync,
-      arrearsAsync,
-      levyAsync,
-      expenseAsync,
-      netAsync,
-      paymentsAsync,
-      membersAsync,
-    ],
-    () {
-      final payments = paymentsAsync.valueOrNull ?? [];
-      final members = membersAsync.valueOrNull ?? [];
-      final sorted = [...payments]
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      final recent = sorted.take(5).map((p) {
-        final member = members.firstWhere(
-          (m) => m.userId == p.memberId || m.id == p.memberId,
-          orElse: () => MemberModel(
-            id: p.memberId,
-            userId: p.memberId,
-            fullName: 'Unknown',
-            email: '',
-            phoneNumber: '',
-            dateOfBirth: DateTime(2000),
-            joinedDate: DateTime(2000),
-            createdAt: DateTime(2000),
-            updatedAt: DateTime(2000),
-          ),
-        );
-        return RecentPaymentItem(payment: p, memberName: member.fullName);
-      }).toList();
+      return _combine<TreasurerDashboardData>(
+        [
+          collectedAsync,
+          outstandingAsync,
+          pendingAsync,
+          membersCountAsync,
+          arrearsAsync,
+          levyAsync,
+          expenseAsync,
+          netAsync,
+          paymentsAsync,
+          membersAsync,
+        ],
+        () {
+          final payments = paymentsAsync.valueOrNull ?? [];
+          final members = membersAsync.valueOrNull ?? [];
+          final sorted = [...payments]
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          final recent = sorted.take(5).map((p) {
+            final member = members.firstWhere(
+              (m) => m.userId == p.memberId || m.id == p.memberId,
+              orElse: () => MemberModel(
+                id: p.memberId,
+                userId: p.memberId,
+                fullName: 'Unknown',
+                email: '',
+                phoneNumber: '',
+                dateOfBirth: DateTime(2000),
+                joinedDate: DateTime(2000),
+                createdAt: DateTime(2000),
+                updatedAt: DateTime(2000),
+              ),
+            );
+            return RecentPaymentItem(payment: p, memberName: member.fullName);
+          }).toList();
 
-      return TreasurerDashboardData(
-        totalCollected: collectedAsync.valueOrNull ?? 0.0,
-        totalOutstanding: outstandingAsync.valueOrNull ?? 0.0,
-        totalPending: pendingAsync.valueOrNull ?? 0.0,
-        totalMembers: membersCountAsync.valueOrNull ?? 0,
-        memberArrears: arrearsAsync.valueOrNull ?? [],
-        levyCollection: levyAsync.valueOrNull ?? [],
-        expenseTotal: expenseAsync.valueOrNull ?? 0.0,
-        netPosition: netAsync.valueOrNull ?? 0.0,
-        recentPayments: recent,
+          return TreasurerDashboardData(
+            totalCollected: collectedAsync.valueOrNull ?? 0.0,
+            totalOutstanding: outstandingAsync.valueOrNull ?? 0.0,
+            totalPending: pendingAsync.valueOrNull ?? 0.0,
+            totalMembers: membersCountAsync.valueOrNull ?? 0,
+            memberArrears: arrearsAsync.valueOrNull ?? [],
+            levyCollection: levyAsync.valueOrNull ?? [],
+            expenseTotal: expenseAsync.valueOrNull ?? 0.0,
+            netPosition: netAsync.valueOrNull ?? 0.0,
+            recentPayments: recent,
+          );
+        },
       );
-    },
-  );
-});
+    });

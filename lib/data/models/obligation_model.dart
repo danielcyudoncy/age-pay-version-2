@@ -46,14 +46,17 @@ class ObligationModel {
       description: data['description'] ?? '',
       amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
       paidAmount: (data['paidAmount'] as num?)?.toDouble() ?? 0.0,
-      outstandingBalance: (data['outstandingBalance'] as num?)?.toDouble() ?? 0.0,
+      outstandingBalance:
+          (data['outstandingBalance'] as num?)?.toDouble() ?? 0.0,
       status: ObligationStatus.values.firstWhere(
         (e) => e.name == (data['status'] ?? 'unpaid'),
         orElse: () => ObligationStatus.unpaid,
       ),
       dueDate: _parseDate(data['dueDate']),
       createdAt: _parseDate(data['createdAt']),
-      settledAt: data['settledAt'] != null ? _parseDate(data['settledAt']) : null,
+      settledAt: data['settledAt'] != null
+          ? _parseDate(data['settledAt'])
+          : null,
     );
   }
 

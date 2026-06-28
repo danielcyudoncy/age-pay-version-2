@@ -11,10 +11,7 @@ import 'package:cls/features/obligations/providers/obligation_provider.dart';
 class BankTransferScreen extends ConsumerStatefulWidget {
   final String memberId;
 
-  const BankTransferScreen({
-    super.key,
-    required this.memberId,
-  });
+  const BankTransferScreen({super.key, required this.memberId});
 
   @override
   ConsumerState<BankTransferScreen> createState() => _BankTransferScreenState();
@@ -64,8 +61,9 @@ class _BankTransferScreenState extends ConsumerState<BankTransferScreen> {
     try {
       final fileName =
           'transfer_${widget.memberId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final ref = FirebaseStorage.instance
-          .ref('receipts/${widget.memberId}/$fileName');
+      final ref = FirebaseStorage.instance.ref(
+        'receipts/${widget.memberId}/$fileName',
+      );
       await ref.putFile(_pickedImage!);
       final url = await ref.getDownloadURL();
 
@@ -78,9 +76,9 @@ class _BankTransferScreenState extends ConsumerState<BankTransferScreen> {
         _isUploading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
       }
     }
   }
@@ -246,16 +244,15 @@ class _BankTransferScreenState extends ConsumerState<BankTransferScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              border: Border(
-                top: BorderSide(color: Colors.grey.shade300),
-              ),
+              border: Border(top: BorderSide(color: Colors.grey.shade300)),
             ),
             child: SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   FilledButton.icon(
-                    onPressed: state.isLoading ||
+                    onPressed:
+                        state.isLoading ||
                             selectedObligations.isEmpty ||
                             _uploadedImageUrl == null
                         ? null
@@ -301,8 +298,9 @@ class _BankTransferScreenState extends ConsumerState<BankTransferScreen> {
         final selectedObligations = ref.watch(selectedObligationsProvider);
         return Column(
           children: obligations.map((obligation) {
-            final isSelected =
-                selectedObligations.any((o) => o.id == obligation.id);
+            final isSelected = selectedObligations.any(
+              (o) => o.id == obligation.id,
+            );
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
               child: CheckboxListTile(
@@ -315,15 +313,11 @@ class _BankTransferScreenState extends ConsumerState<BankTransferScreen> {
                     obligation.status == ObligationStatus.unpaid
                         ? 'Unpaid'
                         : 'Partial',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                    ),
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
                   ),
-                  backgroundColor:
-                      obligation.status == ObligationStatus.unpaid
-                          ? Colors.red
-                          : Colors.orange,
+                  backgroundColor: obligation.status == ObligationStatus.unpaid
+                      ? Colors.red
+                      : Colors.orange,
                 ),
                 value: isSelected,
                 onChanged: (value) {
@@ -406,14 +400,18 @@ class _BankTransferScreenState extends ConsumerState<BankTransferScreen> {
     final selected = ref.read(selectedObligationsProvider);
     if (amount <= 0 || selected.isEmpty || _uploadedImageUrl == null) return;
 
-    await ref.read(offlinePaymentProvider.notifier).submitBankTransfer(
-      memberId: widget.memberId,
-      obligationIds: selected.map((o) => o.id).toList(),
-      amount: amount,
-      transferReference: _referenceController.text,
-      bankName: _bankNameController.text,
-      receiptUrl: _uploadedImageUrl!,
-      notes: _notesController.text.isNotEmpty ? _notesController.text : null,
-    );
+    await ref
+        .read(offlinePaymentProvider.notifier)
+        .submitBankTransfer(
+          memberId: widget.memberId,
+          obligationIds: selected.map((o) => o.id).toList(),
+          amount: amount,
+          transferReference: _referenceController.text,
+          bankName: _bankNameController.text,
+          receiptUrl: _uploadedImageUrl!,
+          notes: _notesController.text.isNotEmpty
+              ? _notesController.text
+              : null,
+        );
   }
 }

@@ -10,7 +10,11 @@ class EditMemberScreen extends ConsumerStatefulWidget {
   final MemberModel member;
   final String? memberIdOverride;
 
-  const EditMemberScreen({super.key, required this.member, this.memberIdOverride});
+  const EditMemberScreen({
+    super.key,
+    required this.member,
+    this.memberIdOverride,
+  });
 
   @override
   ConsumerState<EditMemberScreen> createState() => _EditMemberScreenState();
@@ -55,9 +59,7 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
     final initialDate = isDob
         ? (_selectedDob ?? DateTime.now())
         : (_selectedJoinedDate ?? DateTime.now());
-    final firstDate = isDob
-        ? DateTime(1900)
-        : DateTime(2000);
+    final firstDate = isDob ? DateTime(1900) : DateTime(2000);
     final lastDate = isDob ? DateTime.now() : DateTime(2100);
 
     final picked = await showDatePicker(
@@ -106,9 +108,7 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
         updatedAt: DateTime.now(),
       );
 
-      await ref
-          .read(memberRepositoryProvider)
-          .updateMember(updatedMember);
+      await ref.read(memberRepositoryProvider).updateMember(updatedMember);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -129,10 +129,7 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
     final canEditJoined = _canEditJoinedDate();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Member'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Edit Member'), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -142,9 +139,9 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
             children: [
               Text(
                 'Member Information',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -241,10 +238,7 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     'Contact admin to update joined date',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                 ),
               if (_error != null)

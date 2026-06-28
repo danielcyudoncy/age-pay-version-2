@@ -6,7 +6,7 @@ class LevyRepository {
   final String collection = 'levies';
 
   LevyRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   CollectionReference get _collection => _firestore.collection(collection);
 
@@ -15,18 +15,20 @@ class LevyRepository {
         .where('isActive', isEqualTo: true)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => LevyModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => LevyModel.fromFirestore(doc)).toList(),
+        );
   }
 
   Stream<List<LevyModel>> getAllLevies() {
     return _collection
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => LevyModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => LevyModel.fromFirestore(doc)).toList(),
+        );
   }
 
   Future<LevyModel?> getLevyById(String id) async {
@@ -43,9 +45,9 @@ class LevyRepository {
   }
 
   Future<void> updateLevy(LevyModel levy) async {
-    await _collection.doc(levy.id).update(
-      levy.copyWith(updatedAt: DateTime.now()).toFirestore(),
-    );
+    await _collection
+        .doc(levy.id)
+        .update(levy.copyWith(updatedAt: DateTime.now()).toFirestore());
   }
 
   Future<void> deactivateLevy(String id) async {
