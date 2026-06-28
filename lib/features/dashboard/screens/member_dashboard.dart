@@ -113,7 +113,7 @@ class MemberDashboard extends ConsumerWidget {
       memberRecentPaymentsProvider(memberId),
     );
     final registrationStatusAsync = ref.watch(
-      memberRegistrationFeeStatusProvider(memberId),
+      memberRegistrationStatusProvider(memberId),
     );
     final activeObligationsAsync = ref.watch(
       memberActiveObligationsProvider(memberId),
@@ -313,7 +313,7 @@ class _RegistrationStatusCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isRegistered ? 'Registered \u2713' : 'Incomplete',
+                      isRegistered ? 'Complete' : 'Incomplete',
                       style: TextStyle(
                         fontSize: 14,
                         color: isRegistered

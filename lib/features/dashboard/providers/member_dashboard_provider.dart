@@ -47,14 +47,19 @@ final memberRecentPaymentsProvider = Provider.autoDispose
       });
     });
 
-final memberRegistrationFeeStatusProvider = Provider.autoDispose
+final memberRegistrationStatusProvider = Provider.autoDispose
     .family<AsyncValue<bool>, String>((ref, memberId) {
       final asyncObligations = ref.watch(memberObligationsProvider(memberId));
       return asyncObligations.whenData(
-        (list) => list.any(
-          (o) =>
-              o.type == ObligationType.registrationFee &&
-              o.status == ObligationStatus.paid,
-        ),
+        (list) {
+          if (list.isEmpty) return true;
+          final sorted = [...list]..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          final earliestDate = sorted.first.createdAt;
+          final backfilledObligations = sorted
+              .takeWhile((o) => o.createdAt == earliestDate)
+              .toList();
+          return backfilledObligations
+              .every((o) => o.status == ObligationStatus.paid);
+        },
       );
     });
