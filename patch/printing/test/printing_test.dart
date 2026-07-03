@@ -131,6 +131,17 @@ class MockPrinting extends Mock
     List<int>? pages,
     double dpi,
   ) async* {}
+
+  @override
+  Future<Uint8List> convertHtml(
+    String html,
+    String? baseUrl,
+    PdfPageFormat format,
+  ) async =>
+      Uint8List(0);
+
+  @override
+  Future<List<Printer>> listPrinters() async => <Printer>[];
 }
 
-class MockContext extends Mock implements BuildContext {}
+class MockContext extends Fake implements BuildContext {}

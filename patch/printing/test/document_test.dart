@@ -62,8 +62,7 @@ void main() {
   setUpAll(() {
     pw.Document.debug = true;
     pw.RichText.debug = true;
-    final fontData = File('$path/../pdf/open-sans.ttf').readAsBytesSync();
-    ttf = pw.Font.ttf(fontData.buffer.asByteData());
+    ttf = pw.Font.helvetica();
     doc = pw.Document();
   });
 
