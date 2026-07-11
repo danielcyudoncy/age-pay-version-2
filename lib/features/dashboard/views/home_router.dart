@@ -6,7 +6,7 @@ import '../../../core/constants/enums.dart';
 import '../views/member_dashboard.dart';
 import '../views/treasurer_dashboard.dart';
 import '../views/president_dashboard.dart';
-import '../views/admin_dashboard.dart';
+import 'package:cls/features/admin/views/admin_dashboard.dart';
 import '../../auth/views/login_screen.dart';
 
 class HomeRouter extends ConsumerWidget {
