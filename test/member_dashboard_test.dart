@@ -3,16 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/models/payment_model.dart';
-import 'package:cls/data/models/obligation_model.dart';
-import 'package:cls/data/repositories/payment_repository.dart';
-import 'package:cls/data/repositories/obligation_repository.dart';
-import 'package:cls/data/services/auth_service.dart';
+import 'package:cls/features/payments/models/payment_model.dart';
+import 'package:cls/features/obligations/models/obligation_model.dart';
+import 'package:cls/features/payments/repositories/payment_repository.dart';
+import 'package:cls/features/obligations/repositories/obligation_repository.dart';
+import 'package:cls/features/auth/services/auth_service.dart';
 import 'package:cls/features/auth/models/user_model.dart';
-import 'package:cls/features/auth/providers/auth_provider.dart';
-import 'package:cls/features/dashboard/screens/member_dashboard.dart';
-import 'package:cls/features/dashboard/providers/member_dashboard_provider.dart';
-import 'package:cls/features/obligations/providers/obligation_provider.dart';
+import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/dashboard/views/member_dashboard.dart';
+import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dart';
+import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 
 class _MockAuthService implements AuthService {
   final UserModel? user;

@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cls/data/repositories/member_repository.dart';
-import 'package:cls/data/repositories/obligation_repository.dart';
-import 'package:cls/data/repositories/payment_repository.dart';
-import 'package:cls/data/repositories/expense_repository.dart';
-import 'package:cls/data/repositories/levy_repository.dart';
-import 'package:cls/data/repositories/receipt_repository.dart';
+import 'package:cls/features/members/repositories/member_repository.dart';
+import 'package:cls/features/obligations/repositories/obligation_repository.dart';
+import 'package:cls/features/payments/repositories/payment_repository.dart';
+import 'package:cls/features/expenses/repositories/expense_repository.dart';
+import 'package:cls/features/levies/repositories/levy_repository.dart';
+import 'package:cls/features/receipts/repositories/receipt_repository.dart';
 
 class _MockFirestore implements FirebaseFirestore {
   @override

@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/models/obligation_model.dart';
-import 'package:cls/data/models/payment_model.dart';
-import 'package:cls/data/repositories/obligation_repository.dart';
-import 'package:cls/data/services/payment_service.dart';
-import 'package:cls/features/payments/providers/payment_provider.dart';
-import 'package:cls/features/payments/screens/make_payment_screen.dart';
-import 'package:cls/features/payments/screens/payment_history_screen.dart';
-import 'package:cls/features/obligations/providers/obligation_provider.dart';
-import 'package:cls/features/receipts/providers/receipt_provider.dart';
-import 'package:cls/data/repositories/receipt_repository.dart';
-import 'package:cls/data/models/receipt_model.dart';
+import 'package:cls/features/obligations/models/obligation_model.dart';
+import 'package:cls/features/payments/models/payment_model.dart';
+import 'package:cls/features/obligations/repositories/obligation_repository.dart';
+import 'package:cls/features/payments/services/payment_service.dart';
+import 'package:cls/features/payments/controllers/payment_provider.dart';
+import 'package:cls/features/payments/views/make_payment_screen.dart';
+import 'package:cls/features/payments/views/payment_history_screen.dart';
+import 'package:cls/features/obligations/controllers/obligation_provider.dart';
+import 'package:cls/features/receipts/controllers/receipt_provider.dart';
+import 'package:cls/features/receipts/repositories/receipt_repository.dart';
+import 'package:cls/features/receipts/models/receipt_model.dart';
 
 class _MockPaymentService implements PaymentService {
   PaystackInitResult? _initResult;

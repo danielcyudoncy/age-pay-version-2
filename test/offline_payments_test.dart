@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/models/member_model.dart';
-import 'package:cls/data/models/obligation_model.dart';
-import 'package:cls/data/models/payment_model.dart';
-import 'package:cls/data/services/payment_service.dart';
-import 'package:cls/features/payments/providers/offline_payment_provider.dart';
-import 'package:cls/features/payments/providers/payment_provider.dart';
-import 'package:cls/features/payments/screens/cash_payment_screen.dart';
-import 'package:cls/features/payments/screens/payment_verification_screen.dart';
-import 'package:cls/features/payments/screens/bank_transfer_screen.dart';
+import 'package:cls/features/members/models/member_model.dart';
+import 'package:cls/features/obligations/models/obligation_model.dart';
+import 'package:cls/features/payments/models/payment_model.dart';
+import 'package:cls/features/payments/services/payment_service.dart';
+import 'package:cls/features/payments/controllers/offline_payment_provider.dart';
+import 'package:cls/features/payments/controllers/payment_provider.dart';
+import 'package:cls/features/payments/views/cash_payment_screen.dart';
+import 'package:cls/features/payments/views/payment_verification_screen.dart';
+import 'package:cls/features/payments/views/bank_transfer_screen.dart';
 
 class _MockPaymentService implements PaymentService {
   CashPaymentResult? _cashResult;
