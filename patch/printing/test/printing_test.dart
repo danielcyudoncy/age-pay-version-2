@@ -1,3 +1,4 @@
+// patch/printing/test/printing_test.dart
 /*
  * Copyright (C) 2017, David PHAM-VAN <dev.nfet.net@gmail.com>
  *
@@ -18,7 +19,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:pdf/pdf.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:printing/printing.dart';
@@ -48,19 +48,11 @@ void main() {
   });
 
   test('sharePdf', () async {
-    expect(
-      await Printing.sharePdf(
-        bytes: Uint8List(0),
-      ),
-      true,
-    );
+    expect(await Printing.sharePdf(bytes: Uint8List(0)), true);
   });
 
   test('pickPrinter', () async {
-    expect(
-      await Printing.pickPrinter(context: MockContext()),
-      null,
-    );
+    expect(await Printing.pickPrinter(context: MockContext()), null);
   });
 
   test('directPrintPdf', () async {
@@ -74,10 +66,7 @@ void main() {
   });
 
   test('raster', () async {
-    expect(
-      Printing.raster(Uint8List(0)),
-      isInstanceOf<Stream>(),
-    );
+    expect(Printing.raster(Uint8List(0)), isInstanceOf<Stream>());
   });
 
   test('test image', () async {
@@ -94,7 +83,7 @@ void main() {
   });
 }
 
-class MockPrinting extends Mock
+class MockPrinting extends Fake
     with MockPlatformInterfaceMixin
     implements PrintingPlatform {
   @override
@@ -108,8 +97,7 @@ class MockPrinting extends Mock
     PdfPageFormat format,
     bool dynamicLayout,
     bool usePrinterSettings,
-  ) async =>
-      true;
+  ) async => true;
 
   @override
   Future<bool> sharePdf(
@@ -119,8 +107,7 @@ class MockPrinting extends Mock
     String? subject,
     String? body,
     List<String>? emails,
-  ) async =>
-      true;
+  ) async => true;
 
   @override
   Future<Printer?> pickPrinter(Rect bounds) async => null;
@@ -137,8 +124,7 @@ class MockPrinting extends Mock
     String html,
     String? baseUrl,
     PdfPageFormat format,
-  ) async =>
-      Uint8List(0);
+  ) async => Uint8List(0);
 
   @override
   Future<List<Printer>> listPrinters() async => <Printer>[];
