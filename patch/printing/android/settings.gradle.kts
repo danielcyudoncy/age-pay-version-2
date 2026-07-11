@@ -6,8 +6,4 @@ pluginManagement {
     }
 }
 
-plugins {
-    id("com.android.library") version "8.11.1" apply false
-}
-
-include("src")
+rootProject.name = "printing"
