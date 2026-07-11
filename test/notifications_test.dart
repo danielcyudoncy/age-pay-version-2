@@ -9,8 +9,8 @@ import 'package:cls/core/constants/enums.dart';
 import 'package:cls/data/services/notification_service.dart';
 import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/notifications/models/notification_model.dart';
-import 'package:cls/features/notifications/providers/notification_provider.dart';
-import 'package:cls/features/notifications/screens/notifications_screen.dart';
+import 'package:cls/features/notifications/controllers/notification_provider.dart';
+import 'package:cls/features/notifications/views/notifications_screen.dart';
 
 class _MockFirebaseMessaging {
   final List<String> subscribedTopics = [];

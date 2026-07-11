@@ -11,8 +11,8 @@ import 'package:cls/data/models/payment_model.dart';
 import 'package:cls/data/services/auth_service.dart';
 import 'package:cls/data/services/pdf_service.dart';
 import 'package:cls/features/auth/models/user_model.dart';
-import 'package:cls/features/auth/providers/auth_provider.dart';
-import 'package:cls/features/reports/screens/reports_screen.dart';
+import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/reports/views/reports_screen.dart';
 
 class _MockAuthService implements AuthService {
   final UserModel? user;

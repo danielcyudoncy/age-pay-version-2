@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/data/repositories/levy_repository.dart';
 import 'package:cls/data/repositories/obligation_repository.dart';
-import 'package:cls/features/levies/screens/create_levy_screen.dart';
-import 'package:cls/features/levies/providers/levy_provider.dart';
+import 'package:cls/features/levies/views/create_levy_screen.dart';
+import 'package:cls/features/levies/controllers/levy_provider.dart';
 
 class _MockLevyRepository implements LevyRepository {
   @override

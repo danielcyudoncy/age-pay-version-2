@@ -5,7 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cls/main.dart' as app;
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/auth/models/user_model.dart';
-import 'package:cls/features/auth/providers/auth_provider.dart';
+import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/data/models/member_model.dart';
 import 'package:cls/data/models/payment_model.dart';
 import 'package:cls/data/models/obligation_model.dart';
@@ -20,20 +20,20 @@ import 'package:cls/data/repositories/expense_repository.dart';
 import 'package:cls/data/repositories/receipt_repository.dart';
 import 'package:cls/data/services/auth_service.dart';
 import 'package:cls/data/services/notification_service.dart';
-import 'package:cls/features/dashboard/providers/member_dashboard_provider.dart';
-import 'package:cls/features/dashboard/providers/treasurer_dashboard_provider.dart';
-import 'package:cls/features/obligations/providers/obligation_provider.dart';
-import 'package:cls/features/levies/providers/levy_provider.dart'
+import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dart';
+import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
+import 'package:cls/features/obligations/controllers/obligation_provider.dart';
+import 'package:cls/features/levies/controllers/levy_provider.dart'
     as levy_provider
     show levyRepositoryProvider, obligationRepositoryProvider;
-import 'package:cls/features/expenses/providers/expense_provider.dart';
-import 'package:cls/features/receipts/providers/receipt_provider.dart';
-import 'package:cls/features/notifications/providers/notification_provider.dart';
-import 'package:cls/features/levies/screens/create_levy_screen.dart';
-import 'package:cls/features/expenses/screens/expense_list_screen.dart';
-import 'package:cls/features/reports/screens/reports_screen.dart';
-import 'package:cls/features/receipts/screens/receipt_list_screen.dart';
-import 'package:cls/features/notifications/screens/notifications_screen.dart';
+import 'package:cls/features/expenses/controllers/expense_provider.dart';
+import 'package:cls/features/receipts/controllers/receipt_provider.dart';
+import 'package:cls/features/notifications/controllers/notification_provider.dart';
+import 'package:cls/features/levies/views/create_levy_screen.dart';
+import 'package:cls/features/expenses/views/expense_list_screen.dart';
+import 'package:cls/features/reports/views/reports_screen.dart';
+import 'package:cls/features/receipts/views/receipt_list_screen.dart';
+import 'package:cls/features/notifications/views/notifications_screen.dart';
 
 void main() {
   final now = DateTime.now();

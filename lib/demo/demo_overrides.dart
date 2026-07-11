@@ -17,21 +17,21 @@ import '../data/services/auth_service.dart';
 import '../data/services/notification_service.dart';
 import '../data/services/payment_service.dart';
 import '../features/auth/models/user_model.dart';
-import '../features/auth/providers/auth_provider.dart';
-import '../features/obligations/providers/obligation_provider.dart';
-import '../features/levies/providers/levy_provider.dart'
+import '../features/auth/controllers/auth_provider.dart';
+import '../features/obligations/controllers/obligation_provider.dart';
+import '../features/levies/controllers/levy_provider.dart'
     as levy_provider
     show levyRepositoryProvider, obligationRepositoryProvider;
-import '../features/dashboard/providers/member_dashboard_provider.dart'
+import '../features/dashboard/controllers/member_dashboard_provider.dart'
     show paymentRepositoryProvider;
-import '../features/dashboard/providers/treasurer_dashboard_provider.dart'
+import '../features/dashboard/controllers/treasurer_dashboard_provider.dart'
     show memberRepositoryProvider;
-import '../features/expenses/providers/expense_provider.dart'
+import '../features/expenses/controllers/expense_provider.dart'
     show expenseRepositoryProvider;
-import '../features/receipts/providers/receipt_provider.dart'
+import '../features/receipts/controllers/receipt_provider.dart'
     show receiptRepositoryProvider;
-import '../features/notifications/providers/notification_provider.dart';
-import '../features/payments/providers/payment_provider.dart'
+import '../features/notifications/controllers/notification_provider.dart';
+import '../features/payments/controllers/payment_provider.dart'
     show paymentServiceProvider;
 
 bool kDemoMode = false;

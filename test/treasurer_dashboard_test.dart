@@ -15,14 +15,14 @@ import 'package:cls/data/repositories/obligation_repository.dart';
 import 'package:cls/data/repositories/payment_repository.dart';
 import 'package:cls/data/services/auth_service.dart';
 import 'package:cls/features/auth/models/user_model.dart';
-import 'package:cls/features/auth/providers/auth_provider.dart';
-import 'package:cls/features/dashboard/providers/treasurer_dashboard_provider.dart';
-import 'package:cls/features/dashboard/screens/treasurer_dashboard.dart';
-import 'package:cls/features/expenses/providers/expense_provider.dart';
-import 'package:cls/features/levies/providers/levy_provider.dart'
+import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
+import 'package:cls/features/dashboard/views/treasurer_dashboard.dart';
+import 'package:cls/features/expenses/controllers/expense_provider.dart';
+import 'package:cls/features/levies/controllers/levy_provider.dart'
     hide obligationRepositoryProvider;
-import 'package:cls/features/obligations/providers/obligation_provider.dart';
-import 'package:cls/features/dashboard/providers/member_dashboard_provider.dart';
+import 'package:cls/features/obligations/controllers/obligation_provider.dart';
+import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dart';
 
 class _MockAuthService implements AuthService {
   final UserModel? user;

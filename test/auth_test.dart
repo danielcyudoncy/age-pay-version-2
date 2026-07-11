@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/features/auth/screens/login_screen.dart';
-import 'package:cls/features/auth/screens/register_screen.dart';
+import 'package:cls/features/auth/views/login_screen.dart';
+import 'package:cls/features/auth/views/register_screen.dart';
 
 void main() {
   group('Auth Screens', () {

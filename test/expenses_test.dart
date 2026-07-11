@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/data/models/expense_model.dart';
 import 'package:cls/data/repositories/expense_repository.dart';
-import 'package:cls/features/expenses/providers/expense_provider.dart';
-import 'package:cls/features/expenses/screens/expense_list_screen.dart';
-import 'package:cls/features/expenses/screens/expense_form_screen.dart';
+import 'package:cls/features/expenses/controllers/expense_provider.dart';
+import 'package:cls/features/expenses/views/expense_list_screen.dart';
+import 'package:cls/features/expenses/views/expense_form_screen.dart';
 
 class _MockExpenseRepo implements ExpenseRepository {
   bool createCalled = false;

@@ -8,12 +8,12 @@ import 'package:cls/data/repositories/receipt_repository.dart';
 import 'package:cls/data/services/auth_service.dart';
 import 'package:cls/data/services/receipt_service.dart';
 import 'package:cls/features/auth/models/user_model.dart';
-import 'package:cls/features/auth/providers/auth_provider.dart';
-import 'package:cls/features/payments/screens/payment_history_screen.dart';
-import 'package:cls/features/receipts/providers/receipt_provider.dart';
-import 'package:cls/features/receipts/screens/receipt_detail_screen.dart';
-import 'package:cls/features/receipts/screens/receipt_list_screen.dart';
-import 'package:cls/features/payments/screens/payment_history_screen.dart'
+import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/payments/views/payment_history_screen.dart';
+import 'package:cls/features/receipts/controllers/receipt_provider.dart';
+import 'package:cls/features/receipts/views/receipt_detail_screen.dart';
+import 'package:cls/features/receipts/views/receipt_list_screen.dart';
+import 'package:cls/features/payments/views/payment_history_screen.dart'
     as payment_history;
 
 class _MockAuthService implements AuthService {

@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/data/models/obligation_model.dart';
 import 'package:cls/data/repositories/obligation_repository.dart';
-import 'package:cls/features/obligations/screens/member_obligations_screen.dart';
-import 'package:cls/features/obligations/screens/treasurer_obligations_screen.dart';
-import 'package:cls/features/obligations/providers/obligation_provider.dart';
+import 'package:cls/features/obligations/views/member_obligations_screen.dart';
+import 'package:cls/features/obligations/views/treasurer_obligations_screen.dart';
+import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 
 class _MockObligationRepository implements ObligationRepository {
   List<ObligationModel> _obligations = [];
