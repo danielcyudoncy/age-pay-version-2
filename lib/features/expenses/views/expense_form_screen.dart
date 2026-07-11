@@ -7,7 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl/intl.dart';
 // path package not needed – using DateTime-based file names
 import '../../../core/constants/enums.dart';
-import '../../../data/models/expense_model.dart';
+import '../models/expense_model.dart';
 import '../controllers/expense_provider.dart';
 
 class ExpenseFormScreen extends ConsumerStatefulWidget {

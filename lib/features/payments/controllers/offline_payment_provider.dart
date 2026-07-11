@@ -1,15 +1,15 @@
 // features/payments/controllers/offline_payment_provider.dart
 import 'package:cls/features/payments/controllers/payment_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cls/data/models/payment_model.dart';
-import 'package:cls/data/models/obligation_model.dart';
-import 'package:cls/data/models/member_model.dart';
+import 'package:cls/features/payments/models/payment_model.dart';
+import 'package:cls/features/obligations/models/obligation_model.dart';
+import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dart'
     show paymentRepositoryProvider;
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart'
     show memberRepositoryProvider;
 
-import 'package:cls/data/services/payment_service.dart';
+import 'package:cls/features/payments/services/payment_service.dart';
 
 // Pending payments stream provider
 final pendingPaymentsProvider = StreamProvider.autoDispose<List<PaymentModel>>((

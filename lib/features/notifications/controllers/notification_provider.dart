@@ -3,7 +3,7 @@ import 'dart:developer';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import '../../../data/services/notification_service.dart';
+import '../services/notification_service.dart';
 import '../models/notification_model.dart';
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {

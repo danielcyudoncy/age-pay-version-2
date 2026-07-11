@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/models/payment_model.dart';
+import 'package:cls/features/payments/models/payment_model.dart';
 
 class TransferProofScreen extends StatelessWidget {
   final PaymentModel payment;

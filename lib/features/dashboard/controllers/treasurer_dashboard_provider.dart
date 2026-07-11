@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/models/obligation_model.dart';
-import 'package:cls/data/models/member_model.dart';
-import 'package:cls/data/models/payment_model.dart';
-import 'package:cls/data/repositories/member_repository.dart';
+import 'package:cls/features/obligations/models/obligation_model.dart';
+import 'package:cls/features/members/models/member_model.dart';
+import 'package:cls/features/payments/models/payment_model.dart';
+import 'package:cls/features/members/repositories/member_repository.dart';
 import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dart'
     show paymentRepositoryProvider;
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';

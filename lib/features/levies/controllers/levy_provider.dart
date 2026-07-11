@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/models/levy_model.dart';
-import 'package:cls/data/repositories/levy_repository.dart';
-import 'package:cls/data/repositories/obligation_repository.dart';
+import 'package:cls/features/levies/models/levy_model.dart';
+import 'package:cls/features/levies/repositories/levy_repository.dart';
+import 'package:cls/features/obligations/repositories/obligation_repository.dart';
 
 final levyRepositoryProvider = Provider<LevyRepository>((ref) {
   return LevyRepository();

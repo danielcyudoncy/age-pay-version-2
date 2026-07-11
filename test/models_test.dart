@@ -1,6 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/models/models.dart';
+import 'package:cls/features/members/models/member_model.dart';
+import 'package:cls/features/obligations/models/obligation_model.dart';
+import 'package:cls/features/payments/models/payment_model.dart';
+import 'package:cls/features/expenses/models/expense_model.dart';
+import 'package:cls/features/levies/models/levy_model.dart';
+import 'package:cls/features/receipts/models/receipt_model.dart';
 
 void main() {
   group('MemberModel', () {

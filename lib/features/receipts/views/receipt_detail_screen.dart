@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/models/receipt_model.dart';
+import 'package:cls/features/receipts/models/receipt_model.dart';
 import 'package:cls/features/receipts/controllers/receipt_provider.dart';
 
 class ReceiptDetailScreen extends ConsumerWidget {

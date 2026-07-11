@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/models/obligation_model.dart';
+import 'package:cls/features/obligations/models/obligation_model.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:intl/intl.dart';
+import '../widgets/obligation_widgets.dart';
 
 class MemberObligationsScreen extends ConsumerWidget {
   final String memberId;
@@ -64,7 +65,7 @@ class MemberObligationsScreen extends ConsumerWidget {
                   itemCount: obligations.length,
                   itemBuilder: (context, index) {
                     final obligation = obligations[index];
-                    return _ObligationCard(
+                    return ObligationCard(
                       obligation: obligation,
                       currency: currency,
                       dateFormat: dateFormat,
@@ -119,28 +120,28 @@ class MemberObligationsScreen extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: _SummaryItem(
+                  child: SummaryItem(
                     label: 'Total Outstanding',
                     value: currency.format(totalOutstanding),
                     color: Colors.red,
                   ),
                 ),
                 Expanded(
-                  child: _SummaryItem(
+                  child: SummaryItem(
                     label: 'Paid',
                     value: '$paidCount',
                     color: Colors.green,
                   ),
                 ),
                 Expanded(
-                  child: _SummaryItem(
+                  child: SummaryItem(
                     label: 'Partial',
                     value: '$partialCount',
                     color: Colors.orange,
                   ),
                 ),
                 Expanded(
-                  child: _SummaryItem(
+                  child: SummaryItem(
                     label: 'Unpaid',
                     value: '$unpaidCount',
                     color: Colors.red.shade300,
@@ -155,214 +156,5 @@ class MemberObligationsScreen extends ConsumerWidget {
   }
 }
 
-class _ObligationCard extends StatelessWidget {
-  final ObligationModel obligation;
-  final NumberFormat currency;
-  final DateFormat dateFormat;
 
-  const _ObligationCard({
-    required this.obligation,
-    required this.currency,
-    required this.dateFormat,
-  });
 
-  @override
-  Widget build(BuildContext context) {
-    final statusColors = {
-      ObligationStatus.unpaid: Colors.red,
-      ObligationStatus.partial: Colors.orange,
-      ObligationStatus.paid: Colors.green,
-    };
-
-    final statusLabels = {
-      ObligationStatus.unpaid: 'Unpaid',
-      ObligationStatus.partial: 'Partial',
-      ObligationStatus.paid: 'Paid',
-    };
-
-    final progress = obligation.amount > 0
-        ? obligation.paidAmount / obligation.amount
-        : 0.0;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    obligation.title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Chip(
-                  label: Text(
-                    statusLabels[obligation.status] ?? 'Unknown',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  backgroundColor: statusColors[obligation.status],
-                  padding: EdgeInsets.zero,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              obligation.description,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _AmountRow(
-                    label: 'Amount',
-                    value: currency.format(obligation.amount),
-                    isBold: true,
-                  ),
-                ),
-                Expanded(
-                  child: _AmountRow(
-                    label: 'Paid',
-                    value: currency.format(obligation.paidAmount),
-                    color: Colors.green,
-                  ),
-                ),
-                Expanded(
-                  child: _AmountRow(
-                    label: 'Outstanding',
-                    value: currency.format(obligation.outstandingBalance),
-                    color: Colors.red,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            LinearProgressIndicator(
-              value: progress.clamp(0.0, 1.0),
-              backgroundColor: Colors.grey.shade200,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                statusColors[obligation.status]!,
-              ),
-              minHeight: 6,
-              borderRadius: BorderRadius.circular(3),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 14,
-                      color: Colors.grey.shade500,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Due: ${dateFormat.format(obligation.dueDate)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  '${(progress * 100).toStringAsFixed(0)}% paid',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: statusColors[obligation.status],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryItem extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _SummaryItem({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-}
-
-class _AmountRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool isBold;
-  final Color? color;
-
-  const _AmountRow({
-    required this.label,
-    required this.value,
-    this.isBold = false,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-            color: color ?? Colors.black87,
-          ),
-        ),
-      ],
-    );
-  }
-}

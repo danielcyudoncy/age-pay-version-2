@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/enums.dart';
-import '../../../data/models/expense_model.dart';
+import '../models/expense_model.dart';
 import '../controllers/expense_provider.dart';
 import 'expense_form_screen.dart';
 

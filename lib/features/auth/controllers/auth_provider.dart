@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../data/services/auth_service.dart';
+import '../services/auth_service.dart';
 import '../models/user_model.dart';
 import '../../../core/constants/enums.dart';
 

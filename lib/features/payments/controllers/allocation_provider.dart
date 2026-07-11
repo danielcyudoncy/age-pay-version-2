@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cls/data/models/allocation_result.dart';
-import 'package:cls/data/models/obligation_model.dart';
-import 'package:cls/data/services/allocation_service.dart';
+import 'package:cls/features/payments/models/allocation_result.dart';
+import 'package:cls/features/obligations/models/obligation_model.dart';
+import 'package:cls/features/obligations/services/allocation_service.dart';
 
 /// State for allocation operations.
 class AllocationState {

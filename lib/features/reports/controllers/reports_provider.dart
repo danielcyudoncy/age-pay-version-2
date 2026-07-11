@@ -1,7 +1,11 @@
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../data/models/models.dart';
-import '../../../data/services/pdf_service.dart';
+import '../../members/models/member_model.dart';
+import '../../levies/models/levy_model.dart';
+import '../../obligations/models/obligation_model.dart';
+import '../../payments/models/payment_model.dart';
+import '../../expenses/models/expense_model.dart';
+import '../services/pdf_service.dart';
 
 enum ReportType {
   memberStatement,

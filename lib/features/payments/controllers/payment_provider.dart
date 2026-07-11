@@ -1,7 +1,7 @@
 // features/payments/controllers/payment_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cls/data/models/obligation_model.dart';
-import 'package:cls/data/services/payment_service.dart';
+import 'package:cls/features/obligations/models/obligation_model.dart';
+import 'package:cls/features/payments/services/payment_service.dart';
 
 final paymentServiceProvider = Provider<PaymentService>((ref) {
   return CloudFunctionPaymentService();

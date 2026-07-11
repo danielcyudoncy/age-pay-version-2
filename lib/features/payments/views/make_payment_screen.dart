@@ -8,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/models/obligation_model.dart';
+import 'package:cls/features/obligations/models/obligation_model.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/payments/controllers/payment_provider.dart';
 import 'package:cls/features/payments/controllers/offline_payment_provider.dart';

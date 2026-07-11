@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:cls/data/models/member_model.dart';
+import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
 import 'edit_member_screen.dart';

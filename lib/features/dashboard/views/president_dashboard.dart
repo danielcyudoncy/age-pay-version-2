@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/models/expense_model.dart';
+import 'package:cls/features/expenses/models/expense_model.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/dashboard/controllers/president_dashboard_provider.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';

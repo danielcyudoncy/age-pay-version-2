@@ -1,5 +1,5 @@
 // features/obligations/views/treasurer_obligations_screen.dart
-import 'package:cls/data/models/obligation_model.dart';
+import 'package:cls/features/obligations/models/obligation_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cls/core/constants/enums.dart';

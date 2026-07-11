@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
 import '../../../core/constants/enums.dart';
-import '../../../data/models/models.dart';
+import '../../members/models/member_model.dart';
+import '../../levies/models/levy_model.dart';
 import '../controllers/reports_provider.dart';
 
 class ReportPreviewScreen extends ConsumerStatefulWidget {

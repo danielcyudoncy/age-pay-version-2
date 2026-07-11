@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/services/notification_service.dart';
+import 'package:cls/features/notifications/services/notification_service.dart';
 import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/notifications/models/notification_model.dart';
 import 'package:cls/features/notifications/controllers/notification_provider.dart';

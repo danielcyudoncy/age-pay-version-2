@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cls/data/models/receipt_model.dart';
-import 'package:cls/data/repositories/receipt_repository.dart';
-import 'package:cls/data/services/receipt_service.dart';
+import 'package:cls/features/receipts/models/receipt_model.dart';
+import 'package:cls/features/receipts/repositories/receipt_repository.dart';
+import 'package:cls/features/receipts/services/receipt_service.dart';
 
 final receiptRepositoryProvider = Provider<ReceiptRepository>((ref) {
   return ReceiptRepository();

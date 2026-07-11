@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/data/models/payment_model.dart';
+import 'package:cls/features/payments/models/payment_model.dart';
 import 'package:cls/features/payments/views/transfer_proof_screen.dart';
 import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dart'
     show paymentRepositoryProvider;
