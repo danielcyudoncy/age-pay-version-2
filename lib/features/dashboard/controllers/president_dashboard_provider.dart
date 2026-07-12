@@ -38,6 +38,18 @@ class MonthlyCollection {
   MonthlyCollection({required this.monthLabel, required this.amount});
 }
 
+class MemberCollectionSummary {
+  final String memberId;
+  final String fullName;
+  final double totalAmount;
+
+  MemberCollectionSummary({
+    required this.memberId,
+    required this.fullName,
+    required this.totalAmount,
+  });
+}
+
 class ActiveLevySummary {
   final String title;
   final double totalCollected;
@@ -64,6 +76,7 @@ class PresidentDashboardData {
   final List<ExpenseModel> recentExpenses;
   final double totalExpenses;
   final double netPosition;
+  final List<MemberCollectionSummary> memberCollectionSummary;
 
   PresidentDashboardData({
     required this.totalMembers,
@@ -75,6 +88,7 @@ class PresidentDashboardData {
     required this.recentExpenses,
     required this.totalExpenses,
     required this.netPosition,
+    required this.memberCollectionSummary,
   });
 }
 
@@ -193,6 +207,46 @@ final collectionsByMethodProvider =
       });
     });
 
+final memberCollectionSummaryProvider =
+    Provider.autoDispose<AsyncValue<List<MemberCollectionSummary>>>((ref) {
+      final paymentsAsync = ref.watch(presidentAllPaymentsStreamProvider);
+      final membersAsync = ref.watch(presidentMembersStreamProvider);
+
+      return _combine<List<MemberCollectionSummary>>(
+        [paymentsAsync, membersAsync],
+        () {
+          final payments = paymentsAsync.valueOrNull ?? [];
+          final members = membersAsync.valueOrNull ?? [];
+
+          final now = DateTime.now();
+          final twelveMonthsAgo = DateTime(now.year, now.month - 12, now.day);
+
+          final approvedInPeriod = payments.where((p) {
+            return p.status == PaymentStatus.approved &&
+                p.createdAt.isAfter(twelveMonthsAgo);
+          }).toList();
+
+          final memberTotals = <String, double>{};
+          for (final payment in approvedInPeriod) {
+            memberTotals[payment.memberId] =
+                (memberTotals[payment.memberId] ?? 0.0) + payment.amount;
+          }
+
+          final summaries = members.map((member) {
+            return MemberCollectionSummary(
+              memberId: member.id,
+              fullName: member.fullName,
+              totalAmount: memberTotals[member.id] ?? 0.0,
+            );
+          }).toList();
+
+          summaries.sort((a, b) => b.totalAmount.compareTo(a.totalAmount));
+
+          return summaries;
+        },
+      );
+    });
+
 final activeLeviesSummaryProvider =
     Provider.autoDispose<AsyncValue<List<ActiveLevySummary>>>((ref) {
       final leviesAsync = ref.watch(activeLeviesProvider);
@@ -277,6 +331,7 @@ final presidentDashboardProvider =
       final leviesAsync = ref.watch(activeLeviesSummaryProvider);
       final recentExpensesAsync = ref.watch(recentExpensesProvider);
       final financialAsync = ref.watch(financialOverviewProvider);
+      final memberSummaryAsync = ref.watch(memberCollectionSummaryProvider);
 
       return _combine<PresidentDashboardData>(
         [
@@ -288,6 +343,7 @@ final presidentDashboardProvider =
           leviesAsync,
           recentExpensesAsync,
           financialAsync,
+          memberSummaryAsync,
         ],
         () {
           final financial =
@@ -307,6 +363,7 @@ final presidentDashboardProvider =
             recentExpenses: recentExpensesAsync.valueOrNull ?? [],
             totalExpenses: financial['totalExpenses'] ?? 0.0,
             netPosition: financial['netPosition'] ?? 0.0,
+            memberCollectionSummary: memberSummaryAsync.valueOrNull ?? [],
           );
         },
       );

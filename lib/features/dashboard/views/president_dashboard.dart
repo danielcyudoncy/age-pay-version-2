@@ -10,6 +10,7 @@ import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/levies/controllers/levy_provider.dart'
     hide obligationRepositoryProvider;
 import 'package:cls/features/dashboard/views/member_dashboard.dart';
+import 'package:cls/features/reports/views/reports_screen.dart';
 
 class PresidentDashboard extends ConsumerWidget {
   const PresidentDashboard({super.key});
@@ -232,8 +233,9 @@ class _MonthlyCollectionsChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final monthlyData = data.monthlyCollections;
-    final hasData = monthlyData.any((m) => m.amount > 0);
+    final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
+    final summaries = data.memberCollectionSummary;
+    final hasData = summaries.any((s) => s.totalAmount > 0);
 
     return Card(
       elevation: 2,
@@ -261,70 +263,39 @@ class _MonthlyCollectionsChart extends StatelessWidget {
               )
             else
               SizedBox(
-                height: 240,
-                child: BarChart(
-                  BarChartData(
-                    gridData: const FlGridData(show: false),
-                    titlesData: FlTitlesData(
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 30,
-                          getTitlesWidget: (value, meta) {
-                            final index = value.toInt();
-                            if (index < 0 || index >= monthlyData.length) {
-                              return const SizedBox.shrink();
-                            }
-                            final label = monthlyData[index].monthLabel;
-                            final short = label.split(' ').first;
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                short,
-                                style: const TextStyle(fontSize: 10),
+                height: 300,
+                child: ListView.builder(
+                  itemCount: summaries.length,
+                  itemBuilder: (context, index) {
+                    final summary = summaries[index];
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  summary.fullName,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 40,
-                          getTitlesWidget: (value, meta) {
-                            return Text(
-                              value >= 1000
-                                  ? '₦${(value / 1000).toStringAsFixed(0)}k'
-                                  : '₦${value.toInt()}',
-                              style: const TextStyle(fontSize: 10),
-                            );
-                          },
-                        ),
-                      ),
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                    ),
-                    borderData: FlBorderData(show: false),
-                    barGroups: monthlyData.asMap().entries.map((entry) {
-                      return BarChartGroupData(
-                        x: entry.key,
-                        barRods: [
-                          BarChartRodData(
-                            toY: entry.value.amount,
-                            color: theme.colorScheme.primary,
-                            width: 14,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(4),
-                            ),
+                              Text(
+                                currency.format(summary.totalAmount),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
+                        ),
+                        if (index < summaries.length - 1)
+                          Divider(height: 1, color: Colors.grey.shade300),
+                      ],
+                    );
+                  },
                 ),
               ),
           ],
@@ -714,7 +685,11 @@ class _ReportsAccessSection extends StatelessWidget {
             subtitle: const Text('Access detailed financial reports'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              // Placeholder – navigation not wired yet
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ReportsScreen(),
+                ),
+              );
             },
           ),
         ),

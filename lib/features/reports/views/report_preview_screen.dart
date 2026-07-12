@@ -1,11 +1,10 @@
 // features/reports/views/report_preview_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:printing/printing.dart';
-import '../../../core/constants/enums.dart';
 import '../../members/models/member_model.dart';
 import '../../levies/models/levy_model.dart';
 import '../controllers/reports_provider.dart';
+import 'pdf_viewer_screen.dart';
 
 class ReportPreviewScreen extends ConsumerStatefulWidget {
   final ReportType reportType;
@@ -21,66 +20,12 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
   bool _isGenerating = false;
   String? _error;
 
-  // Parameters
   MemberModel? _selectedMember;
   LevyModel? _selectedLevy;
   int _selectedYear = DateTime.now().year;
   DateTime? _startDate;
   DateTime? _endDate;
   int _totalMembers = 0;
-
-  // Placeholder data for dropdowns
-  final List<MemberModel> _placeholderMembers = [
-    MemberModel(
-      id: 'm1',
-      userId: 'u1',
-      fullName: 'John Doe',
-      email: 'john@test.com',
-      phoneNumber: '+2348012345678',
-      dateOfBirth: DateTime(1990, 1, 1),
-      joinedDate: DateTime(2020, 1, 1),
-      isActive: true,
-      createdAt: DateTime(2020, 1, 1),
-      updatedAt: DateTime(2024, 1, 1),
-    ),
-    MemberModel(
-      id: 'm2',
-      userId: 'u2',
-      fullName: 'Jane Smith',
-      email: 'jane@test.com',
-      phoneNumber: '+2348098765432',
-      dateOfBirth: DateTime(1992, 5, 10),
-      joinedDate: DateTime(2021, 3, 15),
-      isActive: true,
-      createdAt: DateTime(2021, 3, 15),
-      updatedAt: DateTime(2024, 1, 1),
-    ),
-  ];
-
-  final List<LevyModel> _placeholderLevies = [
-    LevyModel(
-      id: 'l1',
-      title: 'Annual Dues 2024',
-      description: 'Annual membership dues',
-      type: ObligationType.monthlyDue,
-      amountPerMember: 12000.0,
-      dueDate: DateTime(2024, 12, 31),
-      createdBy: 'admin',
-      createdAt: DateTime(2024, 1, 1),
-      updatedAt: DateTime(2024, 1, 1),
-    ),
-    LevyModel(
-      id: 'l2',
-      title: 'Building Project Levy',
-      description: 'Community hall construction',
-      type: ObligationType.projectContribution,
-      amountPerMember: 50000.0,
-      dueDate: DateTime(2024, 6, 30),
-      createdBy: 'admin',
-      createdAt: DateTime(2024, 1, 1),
-      updatedAt: DateTime(2024, 1, 1),
-    ),
-  ];
 
   String get _reportTitle {
     switch (widget.reportType) {
@@ -137,12 +82,15 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
     });
 
     try {
-      final request = _buildRequest();
-      final pdfBytes = await ref.read(pdfGenerationProvider(request).future);
+      final request = await _buildRequest();
 
       if (!mounted) return;
 
-      await Printing.sharePdf(bytes: pdfBytes, filename: '$_fileName.pdf');
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PdfViewerScreen(request: request),
+        ),
+      );
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -156,95 +104,185 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
     }
   }
 
-  ReportRequest _buildRequest() {
+  Future<ReportRequest> _buildRequest() async {
     switch (widget.reportType) {
       case ReportType.memberStatement:
+        final member = _selectedMember;
+        if (member == null) {
+          throw Exception('Please select a member');
+        }
+        final obligations = await ref
+            .read(reportsAllObligationsStreamProvider.future);
+        final payments = await ref.read(reportsAllPaymentsStreamProvider.future);
+
+        final memberObligations = obligations
+            .where((o) => o.memberId == member.id)
+            .toList();
+        final memberPayments = payments
+            .where((p) => p.memberId == member.id)
+            .toList();
+
         return ReportRequest(
           type: ReportType.memberStatement,
-          member: _selectedMember ?? _placeholderMembers.first,
-          obligations: const [],
-          payments: const [],
+          member: member,
+          obligations: memberObligations,
+          payments: memberPayments,
           reportDate: DateTime.now(),
         );
       case ReportType.levyReport:
+        final levy = _selectedLevy;
+        if (levy == null) {
+          throw Exception('Please select a levy');
+        }
+        final obligations = await ref
+            .read(reportsAllObligationsStreamProvider.future);
+        final payments = await ref.read(reportsAllPaymentsStreamProvider.future);
+
+        final levyObligations = obligations
+            .where((o) => o.levyId == levy.id)
+            .toList();
+        final levyPayments = payments.where((p) {
+          return p.allocations.any((a) {
+            return levyObligations.any((o) => o.id == a.obligationId);
+          });
+        }).toList();
+
         return ReportRequest(
           type: ReportType.levyReport,
-          levy: _selectedLevy ?? _placeholderLevies.first,
-          obligations: const [],
-          payments: const [],
-          totalMembers: _totalMembers > 0 ? _totalMembers : 10,
+          levy: levy,
+          obligations: levyObligations,
+          payments: levyPayments,
+          totalMembers: _totalMembers > 0 ? _totalMembers : null,
         );
       case ReportType.yearlySummary:
+        final year = _selectedYear;
+        final payments = await ref.read(reportsAllPaymentsStreamProvider.future);
+        final expenses = await ref.read(reportsAllExpensesStreamProvider.future);
+        final obligations =
+            await ref.read(reportsAllObligationsStreamProvider.future);
+
+        final yearPayments = payments.where((p) => p.createdAt.year == year).toList();
+        final yearExpenses = expenses.where((e) => e.expenseDate.year == year).toList();
+        final yearObligations = obligations
+            .where((o) => o.createdAt.year == year)
+            .toList();
+
         return ReportRequest(
           type: ReportType.yearlySummary,
-          year: _selectedYear,
-          payments: const [],
-          expenses: const [],
-          obligations: const [],
+          year: year,
+          payments: yearPayments,
+          expenses: yearExpenses,
+          obligations: yearObligations,
         );
       case ReportType.expenseBreakdown:
+        final expenses = await ref.read(reportsAllExpensesStreamProvider.future);
+        final filtered = expenses.where((e) {
+          if (_startDate == null && _endDate == null) return true;
+          if (_startDate != null && e.expenseDate.isBefore(_startDate!)) {
+            return false;
+          }
+          if (_endDate != null && e.expenseDate.isAfter(_endDate!)) {
+            return false;
+          }
+          return true;
+        }).toList();
+
         return ReportRequest(
           type: ReportType.expenseBreakdown,
-          expenses: const [],
+          expenses: filtered,
           startDate: _startDate,
           endDate: _endDate,
         );
       case ReportType.financialSummary:
+        final payments = await ref.read(reportsAllPaymentsStreamProvider.future);
+        final expenses = await ref.read(reportsAllExpensesStreamProvider.future);
+        final members = await ref.read(reportsMembersStreamProvider.future);
+        final obligations =
+            await ref.read(reportsAllObligationsStreamProvider.future);
+
+        final filteredPayments = payments.where((p) {
+          if (_startDate == null && _endDate == null) return true;
+          if (_startDate != null && p.createdAt.isBefore(_startDate!)) {
+            return false;
+          }
+          if (_endDate != null && p.createdAt.isAfter(_endDate!)) {
+            return false;
+          }
+          return true;
+        }).toList();
+        final filteredExpenses = expenses.where((e) {
+          if (_startDate == null && _endDate == null) return true;
+          if (_startDate != null && e.expenseDate.isBefore(_startDate!)) {
+            return false;
+          }
+          if (_endDate != null && e.expenseDate.isAfter(_endDate!)) {
+            return false;
+          }
+          return true;
+        }).toList();
+
         return ReportRequest(
           type: ReportType.financialSummary,
-          payments: const [],
-          expenses: const [],
-          members: const [],
-          obligations: const [],
+          payments: filteredPayments,
+          expenses: filteredExpenses,
+          members: members,
+          obligations: obligations,
           startDate: _startDate,
           endDate: _endDate,
         );
     }
   }
 
-  String get _fileName {
-    final now = DateTime.now();
-    final ts =
-        '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+  Widget _buildParams(
+    AsyncValue<List<MemberModel>> membersAsync,
+    AsyncValue<List<LevyModel>> leviesAsync,
+  ) {
     switch (widget.reportType) {
       case ReportType.memberStatement:
-        return 'member_statement_$ts';
-      case ReportType.levyReport:
-        return 'levy_report_$ts';
-      case ReportType.yearlySummary:
-        return 'yearly_summary_$_selectedYear';
-      case ReportType.expenseBreakdown:
-        return 'expense_breakdown_$ts';
-      case ReportType.financialSummary:
-        return 'financial_summary_$ts';
-    }
-  }
-
-  Widget _buildParams() {
-    switch (widget.reportType) {
-      case ReportType.memberStatement:
-        return DropdownButtonFormField<MemberModel>(
-          initialValue: _selectedMember,
-          decoration: const InputDecoration(labelText: 'Select Member'),
-          items: _placeholderMembers.map((m) {
-            return DropdownMenuItem(value: m, child: Text(m.fullName));
-          }).toList(),
-          onChanged: (v) => setState(() => _selectedMember = v),
+        return membersAsync.when(
+          data: (members) {
+            return DropdownButtonFormField<MemberModel>(
+              initialValue: _selectedMember,
+              decoration: const InputDecoration(labelText: 'Select Member'),
+              items: members.map((m) {
+                return DropdownMenuItem(value: m, child: Text(m.fullName));
+              }).toList(),
+              onChanged: (v) => setState(() => _selectedMember = v),
+            );
+          },
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+          error: (e, _) => Text('Error loading members: $e'),
         );
       case ReportType.levyReport:
         return Column(
           children: [
-            DropdownButtonFormField<LevyModel>(
-              initialValue: _selectedLevy,
-              decoration: const InputDecoration(labelText: 'Select Levy'),
-              items: _placeholderLevies.map((l) {
-                return DropdownMenuItem(value: l, child: Text(l.title));
-              }).toList(),
-              onChanged: (v) => setState(() => _selectedLevy = v),
+            leviesAsync.when(
+              data: (levies) {
+                return DropdownButtonFormField<LevyModel>(
+                  initialValue: _selectedLevy,
+                  decoration: const InputDecoration(labelText: 'Select Levy'),
+                  items: levies.map((l) {
+                    return DropdownMenuItem(value: l, child: Text(l.title));
+                  }).toList(),
+                  onChanged: (v) => setState(() => _selectedLevy = v),
+                );
+              },
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (e, _) => Text('Error loading levies: $e'),
             ),
             const SizedBox(height: 12),
             TextFormField(
-              initialValue: '10',
+              initialValue: _totalMembers > 0 ? '$_totalMembers' : '10',
               decoration: const InputDecoration(labelText: 'Total Members'),
               keyboardType: TextInputType.number,
               onChanged: (v) =>
@@ -307,6 +345,9 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final membersAsync = ref.watch(reportsMembersStreamProvider);
+    final leviesAsync = ref.watch(reportsAllLeviesStreamProvider);
+
     return Scaffold(
       appBar: AppBar(title: Text(_reportTitle)),
       body: Padding(
@@ -330,7 +371,7 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 16),
-                    _buildParams(),
+                    _buildParams(membersAsync, leviesAsync),
                   ],
                 ),
               ),

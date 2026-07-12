@@ -511,7 +511,7 @@ void main() {
       expect(allTexts, contains('₦8,000'));
     });
 
-    testWidgets('shows monthly collections chart (BarChart widget present)', (
+    testWidgets('shows monthly collections list (ListView widget present)', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -525,7 +525,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(BarChart), findsOneWidget);
+      expect(find.byType(ListView), findsWidgets);
       expect(find.text('Monthly Collections (Last 12 Months)'), findsOneWidget);
     });
 

@@ -1,10 +1,15 @@
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../members/models/member_model.dart';
+import '../../members/repositories/member_repository.dart';
 import '../../levies/models/levy_model.dart';
+import '../../levies/repositories/levy_repository.dart';
 import '../../obligations/models/obligation_model.dart';
+import '../../obligations/repositories/obligation_repository.dart';
 import '../../payments/models/payment_model.dart';
+import '../../payments/repositories/payment_repository.dart';
 import '../../expenses/models/expense_model.dart';
+import '../../expenses/repositories/expense_repository.dart';
 import '../services/pdf_service.dart';
 
 enum ReportType {
@@ -20,6 +25,51 @@ final pdfServiceProvider = Provider<PdfService>((ref) => PdfService());
 final selectedReportTypeProvider = StateProvider<ReportType?>((ref) => null);
 
 final reportParamsProvider = StateProvider<Map<String, dynamic>>((ref) => {});
+
+final reportsMemberRepositoryProvider = Provider<MemberRepository>((ref) {
+  return MemberRepository();
+});
+
+final reportsLevyRepositoryProvider = Provider<LevyRepository>((ref) {
+  return LevyRepository();
+});
+
+final reportsObligationRepositoryProvider = Provider<ObligationRepository>((ref) {
+  return ObligationRepository();
+});
+
+final reportsPaymentRepositoryProvider = Provider<PaymentRepository>((ref) {
+  return PaymentRepository();
+});
+
+final reportsExpenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
+  return ExpenseRepository();
+});
+
+final reportsMembersStreamProvider =
+    StreamProvider.autoDispose<List<MemberModel>>((ref) {
+      return ref.watch(reportsMemberRepositoryProvider).getMembers();
+    });
+
+final reportsAllLeviesStreamProvider =
+    StreamProvider.autoDispose<List<LevyModel>>((ref) {
+      return ref.watch(reportsLevyRepositoryProvider).getAllLevies();
+    });
+
+final reportsAllObligationsStreamProvider =
+    StreamProvider.autoDispose<List<ObligationModel>>((ref) {
+      return ref.watch(reportsObligationRepositoryProvider).getAllObligations();
+    });
+
+final reportsAllPaymentsStreamProvider =
+    StreamProvider.autoDispose<List<PaymentModel>>((ref) {
+      return ref.watch(reportsPaymentRepositoryProvider).getAllPayments();
+    });
+
+final reportsAllExpensesStreamProvider =
+    StreamProvider.autoDispose<List<ExpenseModel>>((ref) {
+      return ref.watch(reportsExpenseRepositoryProvider).getExpenses();
+    });
 
 final pdfGenerationProvider = FutureProvider.family<Uint8List, ReportRequest>((
   ref,
