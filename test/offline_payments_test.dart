@@ -28,7 +28,8 @@ class _MockPaymentService implements PaymentService {
   void setVerifyError(Exception e) => _verifyError = e;
 
   @override
-  Future<PaystackInitResult> initializePaystackPayment({
+  Future<PaymentInitResult> initializePayment({
+    required PaymentProvider provider,
     required String email,
     required double amountNaira,
     required String reference,
@@ -38,7 +39,8 @@ class _MockPaymentService implements PaymentService {
   }
 
   @override
-  Future<PaystackVerifyResult> verifyPaystackTransaction({
+  Future<PaymentVerifyResult> verifyPayment({
+    required PaymentProvider provider,
     required String reference,
     required String memberId,
     required List<String> obligationIds,
@@ -79,7 +81,7 @@ class _MockPaymentService implements PaymentService {
   }
 
   @override
-  Future<VerifyPaymentResult> verifyPayment({
+  Future<VerifyPaymentResult> verifyPendingPayment({
     required String paymentId,
     required String action,
     required String verifiedBy,
@@ -212,7 +214,7 @@ void main() {
 
       final notifier = OfflinePaymentNotifier(paymentService: mockService);
 
-      await notifier.verifyPayment(
+      await notifier.verifyPendingPayment(
         paymentId: 'pay1',
         action: 'approve',
         verifiedBy: 'treasurer1',

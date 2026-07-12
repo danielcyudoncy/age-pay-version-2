@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cls/features/obligations/models/obligation_model.dart';
 import 'package:cls/features/payments/services/payment_service.dart';
+import 'package:cls/core/constants/enums.dart';
 
 final paymentServiceProvider = Provider<PaymentService>((ref) {
   return CloudFunctionPaymentService();
@@ -17,6 +18,7 @@ class PaymentFlowState {
   final String? paymentId;
   final String? receiptNumber;
   final String? error;
+  final PaymentProvider selectedProvider;
 
   const PaymentFlowState({
     this.isInitializing = false,
@@ -27,6 +29,7 @@ class PaymentFlowState {
     this.paymentId,
     this.receiptNumber,
     this.error,
+    this.selectedProvider = PaymentProvider.paystack,
   });
 
   PaymentFlowState copyWith({
@@ -38,6 +41,7 @@ class PaymentFlowState {
     String? paymentId,
     String? receiptNumber,
     String? error,
+    PaymentProvider? selectedProvider,
   }) {
     return PaymentFlowState(
       isInitializing: isInitializing ?? this.isInitializing,
@@ -48,6 +52,7 @@ class PaymentFlowState {
       paymentId: paymentId ?? this.paymentId,
       receiptNumber: receiptNumber ?? this.receiptNumber,
       error: error ?? this.error,
+      selectedProvider: selectedProvider ?? this.selectedProvider,
     );
   }
 
@@ -61,7 +66,7 @@ class PaymentFlowNotifier extends StateNotifier<PaymentFlowState> {
     : _paymentService = paymentService,
       super(const PaymentFlowState());
 
-  /// Initialize a Paystack payment and return the authorization URL
+  /// Initialize an online payment and return the authorization URL
   Future<void> initializePayment({
     required String email,
     required double amountNaira,
@@ -79,7 +84,8 @@ class PaymentFlowNotifier extends StateNotifier<PaymentFlowState> {
         'cancel_action': 'https://example.com/cancel',
       };
 
-      final result = await _paymentService.initializePaystackPayment(
+      final result = await _paymentService.initializePayment(
+        provider: state.selectedProvider,
         email: email,
         amountNaira: amountNaira,
         reference: reference,
@@ -96,7 +102,7 @@ class PaymentFlowNotifier extends StateNotifier<PaymentFlowState> {
     }
   }
 
-  /// Verify a completed Paystack transaction
+  /// Verify a completed online payment
   Future<void> verifyPayment({
     required String reference,
     required String memberId,
@@ -106,7 +112,8 @@ class PaymentFlowNotifier extends StateNotifier<PaymentFlowState> {
     state = state.copyWith(isVerifying: true, error: null);
 
     try {
-      final result = await _paymentService.verifyPaystackTransaction(
+      final result = await _paymentService.verifyPayment(
+        provider: state.selectedProvider,
         reference: reference,
         memberId: memberId,
         obligationIds: obligationIds,
@@ -132,9 +139,8 @@ class PaymentFlowNotifier extends StateNotifier<PaymentFlowState> {
     state = state.copyWith(error: null);
   }
 
-  void markUrlOpened() {
-    // Once the webview is opened, we enter verification-ready state
-    state = state.copyWith(isInitializing: false);
+  void selectProvider(PaymentProvider provider) {
+    state = state.copyWith(selectedProvider: provider);
   }
 }
 

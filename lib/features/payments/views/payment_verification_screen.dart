@@ -183,7 +183,7 @@ class _PaymentVerificationScreenState
     if (confirm == true) {
       await ref
           .read(offlinePaymentProvider.notifier)
-          .verifyPayment(
+          .verifyPendingPayment(
             paymentId: payment.id,
             action: action,
             verifiedBy: widget.verifiedBy,

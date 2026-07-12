@@ -170,7 +170,7 @@ class OfflinePaymentNotifier extends StateNotifier<OfflinePaymentState> {
   }
 
   /// Verify (approve or reject) a pending payment (treasurer only)
-  Future<void> verifyPayment({
+  Future<void> verifyPendingPayment({
     required String paymentId,
     required String action,
     required String verifiedBy,
@@ -184,7 +184,7 @@ class OfflinePaymentNotifier extends StateNotifier<OfflinePaymentState> {
     );
 
     try {
-      final result = await _paymentService.verifyPayment(
+      final result = await _paymentService.verifyPendingPayment(
         paymentId: paymentId,
         action: action,
         verifiedBy: verifiedBy,
