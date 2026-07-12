@@ -313,7 +313,7 @@ class _RegistrationStatusCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isRegistered ? 'Registered \u2713' : 'Incomplete',
+                      isRegistered ? 'Completed' : 'Incomplete',
                       style: TextStyle(
                         fontSize: 14,
                         color: isRegistered

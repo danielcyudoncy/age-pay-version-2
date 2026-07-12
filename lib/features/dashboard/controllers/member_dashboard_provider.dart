@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/payments/models/payment_model.dart';
 import 'package:cls/features/payments/repositories/payment_repository.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
@@ -51,10 +50,6 @@ final memberRegistrationFeeStatusProvider = Provider.autoDispose
     .family<AsyncValue<bool>, String>((ref, memberId) {
       final asyncObligations = ref.watch(memberObligationsProvider(memberId));
       return asyncObligations.whenData(
-        (list) => list.any(
-          (o) =>
-              o.type == ObligationType.registrationFee &&
-              o.status == ObligationStatus.paid,
-        ),
+        (list) => !list.any((o) => o.outstandingBalance > 0.0),
       );
     });
