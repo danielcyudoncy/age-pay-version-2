@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'core/services/env_service.dart';
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
@@ -34,30 +35,30 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCH7SfFkZ1Ci-b0Bpl_glLRtoN7HWV1xwc',
-    appId: '1:241674796862:web:f66306083255e4fb90f66f',
+  static FirebaseOptions get web => FirebaseOptions(
+    apiKey: EnvService.firebaseApiKey,
+    appId: EnvService.firebaseWebAppId,
     messagingSenderId: '241674796862',
     projectId: 'agepay-9a80d',
     authDomain: 'agepay-9a80d.firebaseapp.com',
     storageBucket: 'agepay-9a80d.firebasestorage.app',
   );
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCH7SfFkZ1Ci-b0Bpl_glLRtoN7HWV1xwc',
-    appId: 'YOUR_ANDROID_APP_ID',
+  static FirebaseOptions get android => FirebaseOptions(
+    apiKey: EnvService.firebaseApiKey,
+    appId: EnvService.firebaseAndroidAppId,
     messagingSenderId: '241674796862',
     projectId: 'agepay-9a80d',
     storageBucket: 'agepay-9a80d.firebasestorage.app',
   );
 
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCH7SfFkZ1Ci-b0Bpl_glLRtoN7HWV1xwc',
-    appId: 'YOUR_IOS_APP_ID',
+  static FirebaseOptions get ios => FirebaseOptions(
+    apiKey: EnvService.firebaseApiKey,
+    appId: EnvService.firebaseIosAppId,
     messagingSenderId: '241674796862',
     projectId: 'agepay-9a80d',
     storageBucket: 'agepay-9a80d.firebasestorage.app',
-    iosClientId: 'YOUR_IOS_CLIENT_ID',
+    iosClientId: EnvService.firebaseIosClientId,
     iosBundleId: 'com.agegrade.cls',
   );
 }

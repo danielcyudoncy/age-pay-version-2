@@ -7,6 +7,7 @@ import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'features/notifications/services/notification_service.dart';
+import 'core/services/env_service.dart';
 
 /// Top-level background message handler required by Firebase Cloud Messaging.
 @pragma('vm:entry-point')
@@ -21,6 +22,8 @@ Future<void> _initFirebase() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await EnvService.init();
 
   await _initFirebase();
 
