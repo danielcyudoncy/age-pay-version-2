@@ -374,37 +374,136 @@ void main() {
     });
 
     testWidgets(
-      'shows registration status as registered when obligations exist',
+      'shows registration status as Completed when all past dues are fully paid',
       (tester) async {
-        await tester.pumpWidget(
-          buildDashboard(
-            obligations: testObligations
-                .where((o) => o.memberId == 'm1')
-                .toList(),
+        final paidObligations = [
+          ObligationModel(
+            id: 'o1',
+            memberId: 'm1',
+            levyId: 'l1',
+            type: ObligationType.monthlyDue,
+            title: 'June Monthly Due',
+            description: 'Monthly contribution',
+            amount: 5000,
+            paidAmount: 5000,
+            outstandingBalance: 0,
+            status: ObligationStatus.paid,
+            dueDate: testDate,
+            createdAt: DateTime.now(),
           ),
-        );
+          ObligationModel(
+            id: 'o5',
+            memberId: 'm1',
+            levyId: 'l4',
+            type: ObligationType.registrationFee,
+            title: 'Registration Fee',
+            description: 'Annual membership registration',
+            amount: 2000,
+            paidAmount: 2000,
+            outstandingBalance: 0,
+            status: ObligationStatus.paid,
+            dueDate: testDate,
+            createdAt: DateTime.now(),
+          ),
+        ];
+        await tester.pumpWidget(buildDashboard(obligations: paidObligations));
         await tester.pumpAndSettle();
 
         expect(find.text('Registration Status'), findsOneWidget);
-        expect(find.textContaining('Registered'), findsOneWidget);
+        expect(find.text('Completed'), findsOneWidget);
       },
     );
 
     testWidgets(
-      'shows registration status as incomplete when no registration fee paid',
+      'shows registration status as Incomplete when past dues (levies) are still outstanding',
       (tester) async {
-        final otherObligations = testObligations
-            .where(
-              (o) =>
-                  o.memberId == 'm1' &&
-                  o.type != ObligationType.registrationFee,
-            )
-            .toList();
-        await tester.pumpWidget(buildDashboard(obligations: otherObligations));
+        final obligations = [
+          ObligationModel(
+            id: 'o5',
+            memberId: 'm1',
+            levyId: 'l4',
+            type: ObligationType.registrationFee,
+            title: 'Registration Fee',
+            description: 'Annual membership registration',
+            amount: 2000,
+            paidAmount: 2000,
+            outstandingBalance: 0,
+            status: ObligationStatus.paid,
+            dueDate: testDate,
+            createdAt: DateTime.now(),
+          ),
+          ObligationModel(
+            id: 'o2',
+            memberId: 'm1',
+            levyId: 'l2',
+            type: ObligationType.specialLevy,
+            title: 'Project Fund',
+            description: 'Community hall',
+            amount: 10000,
+            paidAmount: 5000,
+            outstandingBalance: 5000,
+            status: ObligationStatus.partial,
+            dueDate: testDate.add(const Duration(days: 15)),
+            createdAt: DateTime.now(),
+          ),
+        ];
+        await tester.pumpWidget(buildDashboard(obligations: obligations));
         await tester.pumpAndSettle();
 
         expect(find.text('Registration Status'), findsOneWidget);
         expect(find.text('Incomplete'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'shows registration status as incomplete when registration dues are unpaid',
+      (tester) async {
+        final unpaidRegistration = ObligationModel(
+          id: 'o_reg_unpaid',
+          memberId: 'm1',
+          levyId: 'l_reg',
+          type: ObligationType.registrationFee,
+          title: 'Registration Fee',
+          description: 'Annual membership registration',
+          amount: 2000,
+          paidAmount: 0,
+          outstandingBalance: 2000,
+          status: ObligationStatus.unpaid,
+          dueDate: testDate,
+          createdAt: DateTime.now(),
+        );
+        await tester.pumpWidget(
+          buildDashboard(obligations: [unpaidRegistration]),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Registration Status'), findsOneWidget);
+        expect(find.text('Incomplete'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'shows registration status as Completed when member owes nothing',
+      (tester) async {
+        final paidLevy = ObligationModel(
+          id: 'o_levy_paid',
+          memberId: 'm1',
+          levyId: 'l1',
+          type: ObligationType.monthlyDue,
+          title: 'Monthly Due',
+          description: 'Monthly contribution',
+          amount: 5000,
+          paidAmount: 5000,
+          outstandingBalance: 0,
+          status: ObligationStatus.paid,
+          dueDate: testDate,
+          createdAt: DateTime.now(),
+        );
+        await tester.pumpWidget(buildDashboard(obligations: [paidLevy]));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Registration Status'), findsOneWidget);
+        expect(find.text('Completed'), findsOneWidget);
       },
     );
 

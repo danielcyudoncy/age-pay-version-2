@@ -521,8 +521,8 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                 ),
                 const SizedBox(height: 12),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 6,
+                  runSpacing: 6,
                   children: [
                     _paymentModeChip(
                       label: 'Specific',
@@ -553,17 +553,11 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                         items,
                       ),
                     ),
-                  ],
-                ),
-                if (_paymentMode != PaymentOptionMode.bankTransfer) ...[
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
+                    if (_paymentMode != PaymentOptionMode.bankTransfer) ...[
                       _paymentModeChip(
                         label: 'Paystack',
-                        selected: paymentState.selectedProvider ==
+                        selected:
+                            paymentState.selectedProvider ==
                             PaymentProvider.paystack,
                         onTap: () {
                           ref
@@ -574,7 +568,8 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                       ),
                       _paymentModeChip(
                         label: 'Flutterwave',
-                        selected: paymentState.selectedProvider ==
+                        selected:
+                            paymentState.selectedProvider ==
                             PaymentProvider.flutterwave,
                         onTap: () {
                           ref
@@ -584,8 +579,8 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                         },
                       ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
                 const SizedBox(height: 16),
                 if (_paymentMode == PaymentOptionMode.custom) ...[
                   _buildPaymentModeCard(
