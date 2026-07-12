@@ -1,28 +1,29 @@
 // data/services/payment_service.dart
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:cls/core/constants/enums.dart';
 
-/// Result from Paystack initialization
-class PaystackInitResult {
+/// Result from payment initialization
+class PaymentInitResult {
   final String authorizationUrl;
   final String accessCode;
   final String reference;
 
-  PaystackInitResult({
+  PaymentInitResult({
     required this.authorizationUrl,
     required this.accessCode,
     required this.reference,
   });
 }
 
-/// Result from Paystack verification
-class PaystackVerifyResult {
+/// Result from payment verification
+class PaymentVerifyResult {
   final String paymentId;
   final String receiptId;
   final String receiptNumber;
   final double verifiedAmount;
   final String status;
 
-  PaystackVerifyResult({
+  PaymentVerifyResult({
     required this.paymentId,
     required this.receiptId,
     required this.receiptNumber,
@@ -32,18 +33,20 @@ class PaystackVerifyResult {
 }
 
 abstract class PaymentService {
-  /// Initialize a Paystack transaction via Cloud Function.
+  /// Initialize an online payment via Cloud Function.
   /// Returns the authorization URL to open in a webview/browser.
-  Future<PaystackInitResult> initializePaystackPayment({
+  Future<PaymentInitResult> initializePayment({
+    required PaymentProvider provider,
     required String email,
     required double amountNaira,
     required String reference,
     Map<String, dynamic>? metadata,
   });
 
-  /// Verify a Paystack transaction via Cloud Function.
+  /// Verify an online payment via Cloud Function.
   /// Records payment, updates obligations, generates receipt.
-  Future<PaystackVerifyResult> verifyPaystackTransaction({
+  Future<PaymentVerifyResult> verifyPayment({
+    required PaymentProvider provider,
     required String reference,
     required String memberId,
     required List<String> obligationIds,
@@ -73,7 +76,7 @@ abstract class PaymentService {
   });
 
   /// Verify (approve or reject) a pending payment via Cloud Function.
-  Future<VerifyPaymentResult> verifyPayment({
+  Future<VerifyPaymentResult> verifyPendingPayment({
     required String paymentId,
     required String action,
     required String verifiedBy,
@@ -88,14 +91,16 @@ class CloudFunctionPaymentService implements PaymentService {
     : _functions = functions ?? FirebaseFunctions.instance;
 
   @override
-  Future<PaystackInitResult> initializePaystackPayment({
+  Future<PaymentInitResult> initializePayment({
+    required PaymentProvider provider,
     required String email,
     required double amountNaira,
     required String reference,
     Map<String, dynamic>? metadata,
   }) async {
     try {
-      final callable = _functions.httpsCallable('initializePaystackPayment');
+      final callableName = _getInitializeCallableName(provider);
+      final callable = _functions.httpsCallable(callableName);
       final response = await callable.call({
         'email': email,
         'amountNaira': amountNaira,
@@ -104,7 +109,7 @@ class CloudFunctionPaymentService implements PaymentService {
       });
 
       final data = response.data as Map<String, dynamic>;
-      return PaystackInitResult(
+      return PaymentInitResult(
         authorizationUrl: data['authorizationUrl'] ?? '',
         accessCode: data['accessCode'] ?? '',
         reference: data['reference'] ?? reference,
@@ -117,14 +122,16 @@ class CloudFunctionPaymentService implements PaymentService {
   }
 
   @override
-  Future<PaystackVerifyResult> verifyPaystackTransaction({
+  Future<PaymentVerifyResult> verifyPayment({
+    required PaymentProvider provider,
     required String reference,
     required String memberId,
     required List<String> obligationIds,
     required double amountPaid,
   }) async {
     try {
-      final callable = _functions.httpsCallable('verifyPaystackTransaction');
+      final callableName = _getVerifyCallableName(provider);
+      final callable = _functions.httpsCallable(callableName);
       final response = await callable.call({
         'reference': reference,
         'memberId': memberId,
@@ -133,7 +140,7 @@ class CloudFunctionPaymentService implements PaymentService {
       });
 
       final data = response.data as Map<String, dynamic>;
-      return PaystackVerifyResult(
+      return PaymentVerifyResult(
         paymentId: data['paymentId'] ?? '',
         receiptId: data['receiptId'] ?? '',
         receiptNumber: data['receiptNumber'] ?? '',
@@ -144,6 +151,24 @@ class CloudFunctionPaymentService implements PaymentService {
       throw PaymentException(e.message ?? 'Payment verification failed');
     } catch (e) {
       throw PaymentException(e.toString());
+    }
+  }
+
+  String _getInitializeCallableName(PaymentProvider provider) {
+    switch (provider) {
+      case PaymentProvider.paystack:
+        return 'initializePaystackPayment';
+      case PaymentProvider.flutterwave:
+        return 'initializeFlutterwavePayment';
+    }
+  }
+
+  String _getVerifyCallableName(PaymentProvider provider) {
+    switch (provider) {
+      case PaymentProvider.paystack:
+        return 'verifyPaystackTransaction';
+      case PaymentProvider.flutterwave:
+        return 'verifyFlutterwaveTransaction';
     }
   }
 
@@ -210,7 +235,7 @@ class CloudFunctionPaymentService implements PaymentService {
   }
 
   @override
-  Future<VerifyPaymentResult> verifyPayment({
+  Future<VerifyPaymentResult> verifyPendingPayment({
     required String paymentId,
     required String action,
     required String verifiedBy,

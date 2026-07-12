@@ -555,6 +555,37 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                     ),
                   ],
                 ),
+                if (_paymentMode != PaymentOptionMode.bankTransfer) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _paymentModeChip(
+                        label: 'Paystack',
+                        selected: paymentState.selectedProvider ==
+                            PaymentProvider.paystack,
+                        onTap: () {
+                          ref
+                              .read(paymentFlowProvider.notifier)
+                              .selectProvider(PaymentProvider.paystack);
+                          setState(() {});
+                        },
+                      ),
+                      _paymentModeChip(
+                        label: 'Flutterwave',
+                        selected: paymentState.selectedProvider ==
+                            PaymentProvider.flutterwave,
+                        onTap: () {
+                          ref
+                              .read(paymentFlowProvider.notifier)
+                              .selectProvider(PaymentProvider.flutterwave);
+                          setState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 16),
                 if (_paymentMode == PaymentOptionMode.custom) ...[
                   _buildPaymentModeCard(
@@ -807,9 +838,16 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
     if (_paymentMode == PaymentOptionMode.bankTransfer) {
       return offlineState.isLoading ? 'Submitting...' : 'Submit Transfer';
     }
-    return paymentState.isInitializing
-        ? 'Initializing...'
-        : 'Pay with Paystack';
+    if (paymentState.isInitializing) {
+      return 'Initializing...';
+    }
+    final provider = paymentState.selectedProvider;
+    switch (provider) {
+      case PaymentProvider.paystack:
+        return 'Pay with Paystack';
+      case PaymentProvider.flutterwave:
+        return 'Pay with Flutterwave';
+    }
   }
 
   Future<void> _initiatePayment(List<ObligationModel> allItems) async {

@@ -15,18 +15,19 @@ import 'package:cls/features/receipts/repositories/receipt_repository.dart';
 import 'package:cls/features/receipts/models/receipt_model.dart';
 
 class _MockPaymentService implements PaymentService {
-  PaystackInitResult? _initResult;
-  PaystackVerifyResult? _verifyResult;
+  PaymentInitResult? _initResult;
+  PaymentVerifyResult? _verifyResult;
   Exception? _initError;
   Exception? _verifyError;
 
-  void setInitResult(PaystackInitResult result) => _initResult = result;
-  void setVerifyResult(PaystackVerifyResult result) => _verifyResult = result;
+  void setInitResult(PaymentInitResult result) => _initResult = result;
+  void setVerifyResult(PaymentVerifyResult result) => _verifyResult = result;
   void setInitError(Exception e) => _initError = e;
   void setVerifyError(Exception e) => _verifyError = e;
 
   @override
-  Future<PaystackInitResult> initializePaystackPayment({
+  Future<PaymentInitResult> initializePayment({
+    required PaymentProvider provider,
     required String email,
     required double amountNaira,
     required String reference,
@@ -34,7 +35,7 @@ class _MockPaymentService implements PaymentService {
   }) async {
     if (_initError != null) throw _initError!;
     return _initResult ??
-        PaystackInitResult(
+        PaymentInitResult(
           authorizationUrl: 'https://paystack.com/pay/test',
           accessCode: 'acc_test',
           reference: reference,
@@ -42,7 +43,8 @@ class _MockPaymentService implements PaymentService {
   }
 
   @override
-  Future<PaystackVerifyResult> verifyPaystackTransaction({
+  Future<PaymentVerifyResult> verifyPayment({
+    required PaymentProvider provider,
     required String reference,
     required String memberId,
     required List<String> obligationIds,
@@ -50,7 +52,7 @@ class _MockPaymentService implements PaymentService {
   }) async {
     if (_verifyError != null) throw _verifyError!;
     return _verifyResult ??
-        PaystackVerifyResult(
+        PaymentVerifyResult(
           paymentId: 'pay_test',
           receiptId: 'rcp_test',
           receiptNumber: 'RCP-001',
@@ -88,7 +90,7 @@ class _MockPaymentService implements PaymentService {
   }
 
   @override
-  Future<VerifyPaymentResult> verifyPayment({
+  Future<VerifyPaymentResult> verifyPendingPayment({
     required String paymentId,
     required String action,
     required String verifiedBy,
@@ -212,7 +214,7 @@ void main() {
     test('initializes payment successfully', () async {
       final mockService = _MockPaymentService();
       mockService.setInitResult(
-        PaystackInitResult(
+        PaymentInitResult(
           authorizationUrl: 'https://paystack.test/pay',
           accessCode: 'acc123',
           reference: 'ref123',
@@ -253,7 +255,7 @@ void main() {
     test('verifies payment successfully', () async {
       final mockService = _MockPaymentService();
       mockService.setVerifyResult(
-        PaystackVerifyResult(
+        PaymentVerifyResult(
           paymentId: 'pay123',
           receiptId: 'rcp123',
           receiptNumber: 'RCP-001',

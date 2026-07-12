@@ -387,14 +387,15 @@ class DemoPaymentService implements PaymentService {
   final List<String> _recordedPayments = [];
 
   @override
-  Future<PaystackInitResult> initializePaystackPayment({
+  Future<PaymentInitResult> initializePayment({
+    required PaymentProvider provider,
     required String email,
     required double amountNaira,
     required String reference,
     Map<String, dynamic>? metadata,
   }) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    return PaystackInitResult(
+    return PaymentInitResult(
       authorizationUrl: 'https://paystack.com/pay/demo',
       accessCode: 'demo_$reference',
       reference: reference,
@@ -402,7 +403,8 @@ class DemoPaymentService implements PaymentService {
   }
 
   @override
-  Future<PaystackVerifyResult> verifyPaystackTransaction({
+  Future<PaymentVerifyResult> verifyPayment({
+    required PaymentProvider provider,
     required String reference,
     required String memberId,
     required List<String> obligationIds,
@@ -411,7 +413,7 @@ class DemoPaymentService implements PaymentService {
     await Future.delayed(const Duration(milliseconds: 500));
     final paymentId = 'pay_$reference';
     _recordedPayments.add(paymentId);
-    return PaystackVerifyResult(
+    return PaymentVerifyResult(
       paymentId: paymentId,
       receiptId: 'rec_$reference',
       receiptNumber: 'REC-$reference',
@@ -453,7 +455,7 @@ class DemoPaymentService implements PaymentService {
   }
 
   @override
-  Future<VerifyPaymentResult> verifyPayment({
+  Future<VerifyPaymentResult> verifyPendingPayment({
     required String paymentId,
     required String action,
     required String verifiedBy,
