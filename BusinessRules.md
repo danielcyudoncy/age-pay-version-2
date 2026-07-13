@@ -37,8 +37,6 @@ AgePay is built on the following principles:
 
 ---
 
-## Organization Rules
-
 ## Organization Creation
 
 An organization must contain:

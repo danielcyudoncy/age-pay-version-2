@@ -132,6 +132,14 @@ Before implementing a feature:
 4. Implement using the repository pattern.
 5. Add tests.
 6. Update documentation.
+7. Understand the user's request.
+8. Read this guide before coding.
+9. Keep implementations simple.
+10. Avoid overengineering.
+11. Prefer readability over cleverness.
+12. Build the smallest useful version first.
+13. Refactor only when repetition appears.
+14. Keep the project educational.
 
 Never implement duplicate functionality.
 
@@ -272,6 +280,28 @@ Critical financial logic should maintain high test coverage.
 * Use `const` where possible.
 * Avoid duplicated code.
 * Keep widgets small and reusable.
+
+---
+
+## UI Rules (VERY IMPORTANT)
+
+If a design is provided:
+
+Replicate it exactly.
+
+Match:
+
+* spacing
+* colors
+* typography
+* icons
+* shadows
+* border radius
+* sizing
+* alignment
+* proportions
+
+Do not simplify unless instructed.
 
 ---
 
