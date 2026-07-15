@@ -31,6 +31,12 @@ service cloud.firestore {
       return isTreasurer() || isPresident() || isSuperAdmin();
     }
 
+    function isSecretary() {
+      return isAuthenticated() &&
+        (getUserRole(request.auth.uid) == 'secretary' ||
+         getUserRole(request.auth.uid) == 'viceSecretary');
+    }
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
@@ -39,7 +45,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdminOrTreasurer();
       allow create: if isSuperAdmin() ||
-        (isOwner(userId) && request.resource.data.role == 'member');
+        (isOwner(userId) && request.resource.data.role != 'superAdmin');
       allow update: if isSuperAdmin() ||
         (isOwner(userId) && request.resource.data.role == resource.data.role);
       allow delete: if isSuperAdmin();
@@ -58,7 +64,10 @@ service cloud.firestore {
     // ── Obligations collection ──────────────────────────
     match /obligations/{obligationId} {
       allow read: if isAuthenticated();
-      allow create: if isAdminOrTreasurer();
+      allow create: if isAdminOrTreasurer() ||
+        (isAuthenticated() &&
+         get(/databases/$(database)/documents/members/$(request.resource.data.memberId))
+           .data.userId == request.auth.uid);
       allow update: if isAdminOrTreasurer() ||
         (resource.data.memberId == request.auth.uid);
       allow delete: if isSuperAdmin();
@@ -94,6 +103,13 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAdminOrTreasurer();
       allow update: if isAdminOrTreasurer();
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Meetings collection ─────────────────────────────
+    match /meetings/{meetingId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSecretary() || isSuperAdmin();
       allow delete: if isSuperAdmin();
     }
   }

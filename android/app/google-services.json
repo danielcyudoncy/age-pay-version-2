@@ -12,7 +12,16 @@
           "package_name": "com.agegrade.cls"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "YOUR_ANDROID_CLIENT_ID",
+          "client_type": 1
+        },
+        {
+          "client_id": "YOUR_WEB_CLIENT_ID",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCH7SfFkZ1Ci-b0Bpl_glLRtoN7HWV1xwc"
@@ -20,7 +29,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "YOUR_WEB_CLIENT_ID",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

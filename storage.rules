@@ -5,5 +5,10 @@ service firebase.storage {
     match /receipts/{allPaths=**} {
       allow read, write: if request.auth != null;
     }
+
+    // Meetings - authenticated users can read/write uploaded minutes
+    match /meetings/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
   }
 }
