@@ -276,7 +276,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         labelText: 'Role',
                         prefixIcon: Icon(Icons.badge_outlined),
                       ),
-                      items: UserRole.values.map((role) {
+                      items: UserRole.values
+                          .where((role) => role != UserRole.superAdmin)
+                          .map((role) {
                         return DropdownMenuItem(
                           value: role,
                           child: Text(_roleLabel(role)),
@@ -386,14 +388,30 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   String _roleLabel(UserRole role) {
     switch (role) {
-      case UserRole.member:
-        return 'Member';
-      case UserRole.treasurer:
-        return 'Treasurer';
-      case UserRole.president:
-        return 'President';
       case UserRole.superAdmin:
         return 'Super Admin';
+      case UserRole.president:
+        return 'President';
+      case UserRole.vicePresident:
+        return 'Vice President';
+      case UserRole.secretary:
+        return 'Secretary';
+      case UserRole.viceSecretary:
+        return 'Vice Secretary';
+      case UserRole.treasurer:
+        return 'Treasurer';
+      case UserRole.viceTreasurer:
+        return 'Vice Treasurer';
+      case UserRole.financialSecretary:
+        return 'Financial Secretary';
+      case UserRole.auditor:
+        return 'Auditor';
+      case UserRole.executiveMember:
+        return 'Executive Member';
+      case UserRole.committeeChair:
+        return 'Committee Chair';
+      case UserRole.member:
+        return 'Member';
     }
   }
 }

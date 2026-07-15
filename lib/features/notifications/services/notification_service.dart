@@ -91,6 +91,15 @@ class NotificationService {
         await subscribeToTopic('all_events');
         await subscribeToTopic('member_activity');
         break;
+      case UserRole.vicePresident:
+      case UserRole.secretary:
+      case UserRole.viceSecretary:
+      case UserRole.viceTreasurer:
+      case UserRole.financialSecretary:
+      case UserRole.auditor:
+      case UserRole.executiveMember:
+      case UserRole.committeeChair:
+        break;
     }
   }
 

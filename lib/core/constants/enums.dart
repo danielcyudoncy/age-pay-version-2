@@ -1,4 +1,17 @@
-enum UserRole { member, treasurer, president, superAdmin }
+enum UserRole {
+  superAdmin,
+  president,
+  vicePresident,
+  secretary,
+  viceSecretary,
+  treasurer,
+  viceTreasurer,
+  financialSecretary,
+  auditor,
+  executiveMember,
+  committeeChair,
+  member,
+}
 
 enum ObligationType {
   registrationFee,

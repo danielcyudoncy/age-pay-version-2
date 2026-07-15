@@ -6,8 +6,10 @@ import 'features/splash/views/splash_screen.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'features/notifications/services/notification_service.dart';
 import 'core/services/env_service.dart';
+import 'package:flutter/foundation.dart';
 
 /// Top-level background message handler required by Firebase Cloud Messaging.
 @pragma('vm:entry-point')
@@ -17,6 +19,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> _initFirebase() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  
+  if (kReleaseMode) {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.playIntegrity,
+    );
+    await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+  }
+  
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 }
 

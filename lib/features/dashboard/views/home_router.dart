@@ -7,6 +7,7 @@ import '../views/member_dashboard.dart';
 import '../views/treasurer_dashboard.dart';
 import '../views/president_dashboard.dart';
 import 'package:cls/features/admin/views/admin_dashboard.dart';
+import 'package:cls/features/meetings/views/secretary_dashboard.dart';
 import '../../auth/views/login_screen.dart';
 
 class HomeRouter extends ConsumerWidget {
@@ -25,11 +26,21 @@ class HomeRouter extends ConsumerWidget {
           case UserRole.member:
             return const MemberDashboard();
           case UserRole.treasurer:
+          case UserRole.viceTreasurer:
             return const TreasurerDashboard();
           case UserRole.president:
+          case UserRole.vicePresident:
             return const PresidentDashboard();
+          case UserRole.secretary:
+          case UserRole.viceSecretary:
+            return const SecretaryDashboard();
           case UserRole.superAdmin:
             return const AdminDashboard();
+          case UserRole.financialSecretary:
+          case UserRole.auditor:
+          case UserRole.executiveMember:
+          case UserRole.committeeChair:
+            return const MemberDashboard();
         }
       },
       loading: () =>
