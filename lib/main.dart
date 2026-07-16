@@ -9,6 +9,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'features/notifications/services/notification_service.dart';
 import 'core/services/env_service.dart';
+import 'features/settings/controllers/settings_provider.dart';
 import 'package:flutter/foundation.dart';
 
 /// Top-level background message handler required by Firebase Cloud Messaging.
@@ -40,17 +41,18 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp(
       title: 'AgePay',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
+      themeMode: themeMode,
       home: const SplashScreen(),
     );
   }

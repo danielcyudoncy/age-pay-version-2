@@ -112,5 +112,32 @@ service cloud.firestore {
       allow create, update: if isSecretary() || isSuperAdmin();
       allow delete: if isSuperAdmin();
     }
+
+    // ── Announcements collection ────────────────────────
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSecretary() || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Documents collection ────────────────────────────
+    match /documents/{documentId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSecretary() || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Calendar Events collection ──────────────────────
+    match /calendar_events/{eventId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isSecretary() || isSuperAdmin();
+    }
+
+    // ── Attendance collection ───────────────────────────
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSecretary() || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
   }
 }
