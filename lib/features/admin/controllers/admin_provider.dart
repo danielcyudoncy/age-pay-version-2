@@ -11,6 +11,14 @@ final organizationsStreamProvider = StreamProvider<List<OrganizationModel>>((ref
   return ref.watch(organizationRepositoryProvider).getOrganizations();
 });
 
+final organizationsFutureProvider =
+    FutureProvider<List<OrganizationModel>>((ref) {
+      return ref
+          .watch(organizationRepositoryProvider)
+          .getPublicOrganizations()
+          .first;
+    });
+
 final totalOrganizationsProvider = Provider<AsyncValue<int>>((ref) {
   final asyncOrgs = ref.watch(organizationsStreamProvider);
   return asyncOrgs.whenData((list) => list.length);

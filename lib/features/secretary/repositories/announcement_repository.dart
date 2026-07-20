@@ -24,6 +24,27 @@ class AnnouncementRepository {
         );
   }
 
+  Stream<List<AnnouncementModel>> getAnnouncementsForDate(
+    String organizationId,
+    DateTime date,
+  ) {
+    final start = DateTime(date.year, date.month, date.day);
+    final end = start.add(const Duration(days: 1));
+    return _collection
+        .where('organizationId', isEqualTo: organizationId)
+        .where('announcementDate', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .where('announcementDate', isLessThan: Timestamp.fromDate(end))
+        .orderBy('announcementDate')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => AnnouncementModel.fromFirestore(doc))
+                  .toList(),
+        );
+  }
+
   Future<String> createAnnouncement(AnnouncementModel announcement) async {
     final docRef = _collection.doc();
     await docRef.set(announcement.toFirestore());

@@ -17,6 +17,7 @@ export "../controllers/search_provider.dart";
 export "../views/secretary_dashboard.dart";
 export "../views/members_management_screen.dart";
 export "../views/announcements_screen.dart";
+export "../views/member_announcements_screen.dart";
 export "../views/attendance_screen.dart";
 export "../views/documents_screen.dart";
 export "../views/calendar_screen.dart";

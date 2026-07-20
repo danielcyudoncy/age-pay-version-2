@@ -63,6 +63,7 @@ class DemoAuthService implements AuthService {
     required String displayName,
     required String phoneNumber,
     required UserRole role,
+    required String organizationId,
     DateTime? dateOfBirth,
   }) async {
     await Future.delayed(const Duration(milliseconds: 300));
@@ -71,6 +72,7 @@ class DemoAuthService implements AuthService {
     }
     final user = UserModel(
       uid: email,
+      organizationId: organizationId,
       email: email,
       displayName: displayName,
       phoneNumber: phoneNumber,
@@ -480,6 +482,7 @@ Future<void> seedDemoData() async {
   // Seed a member account
   final member = UserModel(
     uid: 'demo-member',
+    organizationId: 'demo-member',
     email: 'member@demo.com',
     displayName: 'Demo Member',
     phoneNumber: '08011111111',
@@ -491,6 +494,7 @@ Future<void> seedDemoData() async {
   // Seed a treasurer account
   final treasurer = UserModel(
     uid: 'demo-treasurer',
+    organizationId: 'demo-treasurer',
     email: 'treasurer@demo.com',
     displayName: 'Demo Treasurer',
     phoneNumber: '08022222222',
@@ -502,6 +506,7 @@ Future<void> seedDemoData() async {
   // Seed a president account
   final president = UserModel(
     uid: 'demo-president',
+    organizationId: 'demo-president',
     email: 'president@demo.com',
     displayName: 'Demo President',
     phoneNumber: '08033333333',

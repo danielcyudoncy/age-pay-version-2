@@ -3,6 +3,7 @@ import '../../../core/constants/enums.dart';
 
 class UserModel {
   final String uid;
+  final String organizationId;
   final String email;
   final String displayName;
   final String phoneNumber;
@@ -12,6 +13,7 @@ class UserModel {
 
   const UserModel({
     required this.uid,
+    required this.organizationId,
     required this.email,
     required this.displayName,
     required this.phoneNumber,
@@ -22,8 +24,10 @@ class UserModel {
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    final uid = doc.id;
     return UserModel(
-      uid: doc.id,
+      uid: uid,
+      organizationId: data['organizationId'] ?? uid,
       email: data['email'] ?? '',
       displayName: data['displayName'] ?? '',
       phoneNumber: data['phoneNumber'] ?? '',
@@ -38,6 +42,7 @@ class UserModel {
 
   Map<String, dynamic> toFirestore() {
     return {
+      'organizationId': organizationId,
       'email': email,
       'displayName': displayName,
       'phoneNumber': phoneNumber,
@@ -49,6 +54,7 @@ class UserModel {
 
   UserModel copyWith({
     String? uid,
+    String? organizationId,
     String? email,
     String? displayName,
     String? phoneNumber,
@@ -58,6 +64,7 @@ class UserModel {
   }) {
     return UserModel(
       uid: uid ?? this.uid,
+      organizationId: organizationId ?? this.organizationId,
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
       phoneNumber: phoneNumber ?? this.phoneNumber,

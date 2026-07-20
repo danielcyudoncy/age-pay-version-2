@@ -9,6 +9,7 @@ class OrganizationModel {
   final String contactPhone;
   final String address;
   final bool isActive;
+  final bool openForJoin;
   final int memberCount;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -22,6 +23,7 @@ class OrganizationModel {
     this.contactPhone = '',
     this.address = '',
     this.isActive = true,
+    this.openForJoin = true,
     this.memberCount = 0,
     required this.createdAt,
     required this.updatedAt,
@@ -38,6 +40,7 @@ class OrganizationModel {
       contactPhone: data['contactPhone'] ?? '',
       address: data['address'] ?? '',
       isActive: data['isActive'] ?? true,
+      openForJoin: data['openForJoin'] ?? true,
       memberCount: (data['memberCount'] is int) ? data['memberCount'] : 0,
       createdAt: _parseDate(data['createdAt']),
       updatedAt: _parseDate(data['updatedAt']),
@@ -53,6 +56,7 @@ class OrganizationModel {
       'contactPhone': contactPhone,
       'address': address,
       'isActive': isActive,
+      'openForJoin': openForJoin,
       'memberCount': memberCount,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -74,6 +78,7 @@ class OrganizationModel {
     String? contactPhone,
     String? address,
     bool? isActive,
+    bool? openForJoin,
     int? memberCount,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -87,6 +92,7 @@ class OrganizationModel {
       contactPhone: contactPhone ?? this.contactPhone,
       address: address ?? this.address,
       isActive: isActive ?? this.isActive,
+      openForJoin: openForJoin ?? this.openForJoin,
       memberCount: memberCount ?? this.memberCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

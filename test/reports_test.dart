@@ -90,6 +90,7 @@ void main() {
 
   final presidentUser = UserModel(
     uid: 'president1',
+    organizationId: 'president1',
     email: 'president@test.com',
     displayName: 'President User',
     phoneNumber: '+2348000000001',

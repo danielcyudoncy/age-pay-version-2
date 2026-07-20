@@ -5,6 +5,7 @@ import 'package:cls/features/admin/controllers/admin_provider.dart';
 import 'package:cls/features/admin/views/organization_management_screen.dart';
 import 'package:cls/features/admin/widgets/admin_metric_card.dart';
 import 'package:cls/features/admin/widgets/quick_action_card.dart';
+import 'package:cls/features/auth/views/login_screen.dart';
 
 class AdminDashboard extends ConsumerWidget {
   const AdminDashboard({super.key});
@@ -26,7 +27,15 @@ class AdminDashboard extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authProvider.notifier).signOut(),
+            onPressed: () async {
+              await ref.read(authProvider.notifier).signOut();
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
+            },
           ),
         ],
       ),

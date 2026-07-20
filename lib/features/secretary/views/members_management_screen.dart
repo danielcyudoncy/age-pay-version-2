@@ -35,16 +35,19 @@ class _MembersManagementScreenState extends ConsumerState<MembersManagementScree
   }
 
   Future<void> _loadMembers() async {
+    if (!mounted) return;
     setState(() { _isLoading = true; _error = null; });
     try {
       final repo = ref.read(memberManagementRepositoryProvider);
       final members = await repo.getMembers().first;
+      if (!mounted) return;
       setState(() {
         _allMembers = members;
         _filtered = members;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() { _error = e.toString(); _isLoading = false; });
     }
   }
@@ -66,7 +69,7 @@ class _MembersManagementScreenState extends ConsumerState<MembersManagementScree
       } else {
         await controller.activateMember(member.id);
       }
-      _loadMembers();
+      if (mounted) _loadMembers();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(member.isActive ? 'Member suspended' : 'Member activated')));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));

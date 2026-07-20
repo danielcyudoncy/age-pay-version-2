@@ -5,6 +5,7 @@ class QuickActionButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
   final bool isPrimary;
+  final int badgeCount;
 
   const QuickActionButton({
     super.key,
@@ -12,11 +13,14 @@ class QuickActionButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.isPrimary = false,
+    this.badgeCount = 0,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final iconColor =
+        isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant;
 
     return Card(
       elevation: isPrimary ? 1 : 0,
@@ -35,21 +39,17 @@ class QuickActionButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isPrimary
-                    ? colorScheme.onPrimary
-                    : colorScheme.onSurfaceVariant,
+              Badge(
+                isLabelVisible: badgeCount > 0,
+                label: Text(badgeCount.toString()),
+                child: Icon(icon, size: 20, color: iconColor),
               ),
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
                   label,
                   style: TextStyle(
-                    color: isPrimary
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
+                    color: iconColor,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),

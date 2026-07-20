@@ -13,6 +13,7 @@ import 'package:cls/features/levies/views/create_levy_screen.dart';
 import 'package:cls/features/members/views/treasurer_members_list_screen.dart';
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
 import 'package:cls/features/dashboard/views/member_dashboard.dart';
+import 'package:cls/features/auth/views/login_screen.dart';
 
 class TreasurerDashboard extends ConsumerWidget {
   const TreasurerDashboard({super.key});
@@ -37,7 +38,15 @@ class TreasurerDashboard extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authProvider.notifier).signOut(),
+            onPressed: () async {
+              await ref.read(authProvider.notifier).signOut();
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
+            },
           ),
         ],
       ),

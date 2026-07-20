@@ -11,6 +11,7 @@ import 'package:cls/features/levies/controllers/levy_provider.dart'
     hide obligationRepositoryProvider;
 import 'package:cls/features/dashboard/views/member_dashboard.dart';
 import 'package:cls/features/reports/views/reports_screen.dart';
+import 'package:cls/features/auth/views/login_screen.dart';
 
 class PresidentDashboard extends ConsumerWidget {
   const PresidentDashboard({super.key});
@@ -35,7 +36,15 @@ class PresidentDashboard extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authProvider.notifier).signOut(),
+            onPressed: () async {
+              await ref.read(authProvider.notifier).signOut();
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
+            },
           ),
         ],
       ),
