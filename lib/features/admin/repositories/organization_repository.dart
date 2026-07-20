@@ -22,6 +22,23 @@ class OrganizationRepository {
         );
   }
 
+  /// Public org list used by the register / org-picker screens, which run
+  /// before the user is authenticated. The query is filtered to active,
+  /// joinable orgs so it matches the Firestore read rule for anonymous users.
+  Stream<List<OrganizationModel>> getPublicOrganizations() {
+    return _collection
+        .where('isActive', isEqualTo: true)
+        .where('openForJoin', isEqualTo: true)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => OrganizationModel.fromFirestore(doc))
+                  .toList(),
+        );
+  }
+
   Future<OrganizationModel?> getOrganizationById(String id) async {
     final doc = await _collection.doc(id).get();
     if (doc.exists) {
@@ -55,6 +72,13 @@ class OrganizationRepository {
   Future<void> deactivateOrganization(String id) async {
     await _collection.doc(id).update({
       'isActive': false,
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
+  Future<void> setOpenForJoin(String id, bool openForJoin) async {
+    await _collection.doc(id).update({
+      'openForJoin': openForJoin,
       'updatedAt': Timestamp.fromDate(DateTime.now()),
     });
   }

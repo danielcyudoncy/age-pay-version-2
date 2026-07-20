@@ -12,6 +12,9 @@ import 'package:cls/features/payments/views/make_payment_screen.dart';
 import 'package:cls/features/payments/views/payment_history_screen.dart';
 import 'package:cls/features/obligations/views/member_obligations_screen.dart';
 import 'package:cls/features/members/views/member_profile_screen.dart';
+import 'package:cls/features/secretary/controllers/secretary_dashboard_provider.dart';
+import 'package:cls/features/secretary/views/member_announcements_screen.dart';
+import 'package:cls/features/auth/views/login_screen.dart';
 
 class MemberDashboard extends ConsumerWidget {
   const MemberDashboard({super.key});
@@ -36,6 +39,8 @@ class MemberDashboard extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final user = authState.valueOrNull;
     final memberId = user?.uid;
+    final orgIdAsync = ref.watch(organizationIdProvider);
+    final orgId = orgIdAsync.valueOrNull ?? user?.organizationId ?? '';
 
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
     final dateFormat = DateFormat('MMM dd, yyyy');
@@ -56,7 +61,15 @@ class MemberDashboard extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authProvider.notifier).signOut(),
+            onPressed: () async {
+              await ref.read(authProvider.notifier).signOut();
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
+            },
           ),
         ],
       ),
@@ -69,6 +82,7 @@ class MemberDashboard extends ConsumerWidget {
             context,
             ref,
             memberId,
+            orgId,
             user?.displayName,
             currency,
             dateFormat,
@@ -99,6 +113,7 @@ class MemberDashboard extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     String memberId,
+    String orgId,
     String? displayName,
     NumberFormat currency,
     DateFormat dateFormat,
@@ -118,6 +133,14 @@ class MemberDashboard extends ConsumerWidget {
     final activeObligationsAsync = ref.watch(
       memberActiveObligationsProvider(memberId),
     );
+
+    final announcementsCount = ref
+        .watch(announcementsStreamProvider(orgId))
+        .when(
+          data: (items) => items.length,
+          loading: () => 0,
+          error: (_, _) => 0,
+        );
 
     final theme = Theme.of(context);
 
@@ -160,7 +183,11 @@ class MemberDashboard extends ConsumerWidget {
             memberId: memberId,
           ),
           const SizedBox(height: 20),
-          _QuickActionsRow(memberId: memberId, memberEmail: userEmail(ref)),
+          _QuickActionsRow(
+            memberId: memberId,
+            memberEmail: userEmail(ref),
+            announcementsCount: announcementsCount,
+          ),
           const SizedBox(height: 24),
         ],
       ),
@@ -732,8 +759,13 @@ class _ActiveLeviesSection extends StatelessWidget {
 class _QuickActionsRow extends StatelessWidget {
   final String memberId;
   final String memberEmail;
+  final int announcementsCount;
 
-  const _QuickActionsRow({required this.memberId, required this.memberEmail});
+  const _QuickActionsRow({
+    required this.memberId,
+    required this.memberEmail,
+    required this.announcementsCount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -787,6 +819,19 @@ class _QuickActionsRow extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => MemberObligationsScreen(memberId: memberId),
+                  ),
+                );
+              },
+            ),
+            QuickActionButton(
+              icon: Icons.campaign,
+              label: 'Announcements',
+              badgeCount: announcementsCount,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MemberAnnouncementsScreen(),
                   ),
                 );
               },

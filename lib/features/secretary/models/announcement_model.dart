@@ -19,6 +19,7 @@ class AnnouncementModel {
   final bool isPinned;
   final bool isScheduled;
   final DateTime? scheduledAt;
+  final DateTime? announcementDate;
   final List<String> attachments;
   final String createdBy;
   final DateTime createdAt;
@@ -33,6 +34,7 @@ class AnnouncementModel {
     this.isPinned = false,
     this.isScheduled = false,
     this.scheduledAt,
+    this.announcementDate,
     this.attachments = const [],
     required this.createdBy,
     required this.createdAt,
@@ -55,6 +57,9 @@ class AnnouncementModel {
       scheduledAt: data['scheduledAt'] != null
           ? (data['scheduledAt'] as Timestamp).toDate()
           : null,
+      announcementDate: data['announcementDate'] != null
+          ? (data['announcementDate'] as Timestamp).toDate()
+          : null,
       attachments: List<String>.from(data['attachments'] ?? []),
       createdBy: data['createdBy'] ?? '',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -71,6 +76,9 @@ class AnnouncementModel {
       'isPinned': isPinned,
       'isScheduled': isScheduled,
       'scheduledAt': scheduledAt != null ? Timestamp.fromDate(scheduledAt!) : null,
+      'announcementDate': announcementDate != null
+          ? Timestamp.fromDate(announcementDate!)
+          : null,
       'attachments': attachments,
       'createdBy': createdBy,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -87,6 +95,7 @@ class AnnouncementModel {
     bool? isPinned,
     bool? isScheduled,
     DateTime? scheduledAt,
+    DateTime? announcementDate,
     List<String>? attachments,
     String? createdBy,
     DateTime? createdAt,
@@ -101,6 +110,7 @@ class AnnouncementModel {
       isPinned: isPinned ?? this.isPinned,
       isScheduled: isScheduled ?? this.isScheduled,
       scheduledAt: scheduledAt ?? this.scheduledAt,
+      announcementDate: announcementDate ?? this.announcementDate,
       attachments: attachments ?? this.attachments,
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,

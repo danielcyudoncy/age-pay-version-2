@@ -9,6 +9,7 @@ import '../views/president_dashboard.dart';
 import 'package:cls/features/admin/views/admin_dashboard.dart';
 import 'package:cls/features/secretary/views/secretary_dashboard.dart';
 import '../../auth/views/login_screen.dart';
+import '../../auth/views/organization_picker_screen.dart';
 
 class HomeRouter extends ConsumerWidget {
   const HomeRouter({super.key});
@@ -21,6 +22,9 @@ class HomeRouter extends ConsumerWidget {
       data: (user) {
         if (user == null) {
           return const LoginScreen();
+        }
+        if (user.organizationId.isEmpty) {
+          return const OrganizationPickerScreen();
         }
         switch (user.role) {
           case UserRole.member:

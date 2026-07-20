@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/secretary/controllers/calendar_event_provider.dart';
@@ -19,6 +20,15 @@ class CalendarScreen extends ConsumerStatefulWidget {
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _selectedDate = DateTime.now();
 
+  bool _canManageEvents(UserModel? user) {
+    if (user == null) return false;
+    return user.role == UserRole.superAdmin ||
+        user.role == UserRole.president ||
+        user.role == UserRole.vicePresident ||
+        user.role == UserRole.secretary ||
+        user.role == UserRole.viceSecretary;
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -26,6 +36,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final orgId = user?.uid ?? '';
     final eventsAsync = ref.watch(calendarEventsStreamProvider(orgId));
     final dateFormat = DateFormat('MMM dd, yyyy \u2022 HH:mm');
+    final canManage = _canManageEvents(user);
 
     return Scaffold(
       appBar: AppBar(
@@ -61,6 +72,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   onDaySelected: (date) {
                     setState(() => _selectedDate = date);
                   },
+                  onDayLongPressed: (date) {
+                    setState(() => _selectedDate = date);
+                    _showCreateDialog(context, user, initialDate: date);
+                  },
                 ),
                 const SizedBox(height: 20),
                 Text('Selected Day', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
@@ -73,7 +88,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     ),
                   )
                 else
-                  ...selectedDayEvents.map((e) => _EventCard(event: e, dateFormat: dateFormat)),
+                  ...selectedDayEvents.map((e) => _EventCard(
+                    event: e,
+                    dateFormat: dateFormat,
+                    onEdit: canManage ? () => _showEditDialog(context, user, e) : null,
+                    onDelete: canManage ? () => _confirmDelete(context, e) : null,
+                  )),
                 const SizedBox(height: 20),
                 Text('Upcoming', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
@@ -85,7 +105,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     ),
                   )
                 else
-                  ...upcoming.map((e) => _EventCard(event: e, dateFormat: dateFormat)),
+                  ...upcoming.map((e) => _EventCard(
+                    event: e,
+                    dateFormat: dateFormat,
+                    onEdit: canManage ? () => _showEditDialog(context, user, e) : null,
+                    onDelete: canManage ? () => _confirmDelete(context, e) : null,
+                  )),
                 const SizedBox(height: 20),
                 Text('Past', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
@@ -97,7 +122,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     ),
                   )
                 else
-                  ...past.map((e) => _EventCard(event: e, dateFormat: dateFormat)),
+                  ...past.map((e) => _EventCard(
+                    event: e,
+                    dateFormat: dateFormat,
+                    onEdit: canManage ? () => _showEditDialog(context, user, e) : null,
+                    onDelete: canManage ? () => _confirmDelete(context, e) : null,
+                  )),
               ],
             ),
           );
@@ -118,14 +148,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  void _showCreateDialog(BuildContext context, UserModel? user) {
+  void _showCreateDialog(BuildContext context, UserModel? user, {DateTime? initialDate}) {
     if (user == null) return;
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
     final locationController = TextEditingController();
     CalendarEventType selectedType = CalendarEventType.communityEvent;
-    DateTime startDate = DateTime.now();
-    DateTime endDate = DateTime.now().add(const Duration(hours: 2));
+    DateTime startDate = initialDate ?? DateTime.now();
+    DateTime endDate = (initialDate ?? DateTime.now()).add(const Duration(hours: 2));
 
     showDialog(
       context: context,
@@ -229,14 +259,144 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       ),
     );
   }
+
+  void _showEditDialog(BuildContext context, UserModel? user, CalendarEventModel event) {
+    if (user == null) return;
+    final titleController = TextEditingController(text: event.title);
+    final descriptionController = TextEditingController(text: event.description);
+    final locationController = TextEditingController(text: event.location ?? '');
+    CalendarEventType selectedType = event.type;
+    DateTime startDate = event.startDate;
+    DateTime endDate = event.endDate;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Edit Event'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Title')),
+                const SizedBox(height: 12),
+                TextField(controller: descriptionController, decoration: const InputDecoration(labelText: 'Description'), maxLines: 2),
+                const SizedBox(height: 12),
+                TextField(controller: locationController, decoration: const InputDecoration(labelText: 'Location')),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<CalendarEventType>(
+                  value: selectedType,
+                  decoration: const InputDecoration(labelText: 'Type'),
+                  items: CalendarEventType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.name.replaceAll('_', ' ').toUpperCase()))).toList(),
+                  onChanged: (v) { if (v != null) setDialogState(() => selectedType = v); },
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: startDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                    );
+                    if (date == null || !mounted) return;
+                    final time = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(startDate),
+                    );
+                    if (time == null || !mounted) return;
+                    setDialogState(() => startDate = DateTime(date.year, date.month, date.day, time.hour, time.minute));
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(labelText: 'Start', border: OutlineInputBorder()),
+                    child: Text(DateFormat('MMM dd, yyyy HH:mm').format(startDate)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: endDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                    );
+                    if (date == null || !mounted) return;
+                    final time = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(endDate),
+                    );
+                    if (time == null || !mounted) return;
+                    setDialogState(() => endDate = DateTime(date.year, date.month, date.day, time.hour, time.minute));
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(labelText: 'End', border: OutlineInputBorder()),
+                    child: Text(DateFormat('MMM dd, yyyy HH:mm').format(endDate)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                if (titleController.text.trim().isEmpty) return;
+                if (endDate.isBefore(startDate)) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('End date must be after start date')));
+                  return;
+                }
+                final controller = ref.read(calendarEventControllerProvider);
+                final updatedEvent = event.copyWith(
+                  title: titleController.text.trim(),
+                  description: descriptionController.text.trim(),
+                  type: selectedType,
+                  startDate: startDate,
+                  endDate: endDate,
+                  location: locationController.text.trim().isEmpty ? null : locationController.text.trim(),
+                  updatedAt: DateTime.now(),
+                );
+                await controller.updateEvent(updatedEvent);
+                if (ctx.mounted) Navigator.pop(ctx);
+                ref.invalidate(calendarEventsStreamProvider(user.uid));
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, CalendarEventModel event) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Event'),
+        content: Text('Are you sure you want to delete "${event.title}"? This action cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final controller = ref.read(calendarEventControllerProvider);
+    await controller.deleteEvent(event.id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('"${event.title}" deleted')));
+      ref.invalidate(calendarEventsStreamProvider(event.organizationId));
+    }
+  }
 }
 
 class _MonthCalendar extends StatelessWidget {
   final DateTime selectedDate;
   final List<CalendarEventModel> events;
   final ValueChanged<DateTime> onDaySelected;
+  final ValueChanged<DateTime>? onDayLongPressed;
 
-  const _MonthCalendar({required this.selectedDate, required this.events, required this.onDaySelected});
+  const _MonthCalendar({required this.selectedDate, required this.events, required this.onDaySelected, this.onDayLongPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -293,6 +453,7 @@ class _MonthCalendar extends StatelessWidget {
                     isToday: now.year == selectedDate.year && now.month == selectedDate.month && now.day == day,
                     hasEvent: eventDates.contains(DateFormat('yyyy-MM-dd').format(DateTime(selectedDate.year, selectedDate.month, day))),
                     onTap: () => onDaySelected(DateTime(selectedDate.year, selectedDate.month, day)),
+                    onLongPress: onDayLongPressed != null ? () => onDayLongPressed!(DateTime(selectedDate.year, selectedDate.month, day)) : null,
                   ),
               ],
             ),
@@ -309,14 +470,16 @@ class _DayCell extends StatelessWidget {
   final bool isToday;
   final bool hasEvent;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
-  const _DayCell({required this.date, required this.isSelected, required this.isToday, required this.hasEvent, required this.onTap});
+  const _DayCell({required this.date, required this.isSelected, required this.isToday, required this.hasEvent, required this.onTap, this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
         margin: const EdgeInsets.all(2),
         decoration: BoxDecoration(
@@ -361,11 +524,14 @@ class _DayCell extends StatelessWidget {
 class _EventCard extends StatelessWidget {
   final CalendarEventModel event;
   final DateFormat dateFormat;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
-  const _EventCard({required this.event, required this.dateFormat});
+  const _EventCard({required this.event, required this.dateFormat, this.onEdit, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
+    final canManage = onEdit != null || onDelete != null;
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
@@ -375,7 +541,21 @@ class _EventCard extends StatelessWidget {
         ),
         title: Text(event.title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text('${event.type.name.toUpperCase()} \u2022 ${dateFormat.format(event.startDate)}'),
-        trailing: event.location != null ? Icon(Icons.location_on, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant) : null,
+        trailing: canManage
+            ? PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, size: 20),
+                onSelected: (value) {
+                  if (value == 'edit') onEdit?.call();
+                  if (value == 'delete') onDelete?.call();
+                },
+                itemBuilder: (context) => [
+                  if (onEdit != null)
+                    const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  if (onDelete != null)
+                    const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                ],
+              )
+            : (event.location != null ? Icon(Icons.location_on, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant) : null),
       ),
     );
   }

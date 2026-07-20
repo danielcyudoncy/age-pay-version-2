@@ -45,6 +45,15 @@ class _SecretaryDashboardState extends ConsumerState<SecretaryDashboard> {
       return const Scaffold(body: Center(child: Text('Please sign in')));
     }
 
+    final orgId = user.organizationId;
+    final announcementsCount = ref
+        .watch(announcementsStreamProvider(orgId))
+        .when(
+          data: (items) => items.length,
+          loading: () => 0,
+          error: (_, _) => 0,
+        );
+
     final pages = <Widget>[
       _HomeTab(user: user, onNavigate: _onNavigate),
       const MembersManagementScreen(),
@@ -60,33 +69,41 @@ class _SecretaryDashboardState extends ConsumerState<SecretaryDashboard> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.people_outline),
             activeIcon: Icon(Icons.people),
             label: 'Members',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.event_outlined),
             activeIcon: Icon(Icons.event),
             label: 'Meetings',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.campaign_outlined),
-            activeIcon: Icon(Icons.campaign),
+            icon: Badge(
+              isLabelVisible: announcementsCount > 0,
+              label: Text(announcementsCount.toString()),
+              child: const Icon(Icons.campaign_outlined),
+            ),
+            activeIcon: Badge(
+              isLabelVisible: announcementsCount > 0,
+              label: Text(announcementsCount.toString()),
+              child: const Icon(Icons.campaign),
+            ),
             label: 'Announcements',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.account_balance_wallet_outlined),
             activeIcon: Icon(Icons.account_balance_wallet),
             label: 'My Account',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: 'More'),
+          const BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: 'More'),
         ],
       ),
     );
@@ -118,7 +135,7 @@ class _HomeTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
-    final orgId = user.uid;
+    final orgId = user.organizationId;
 
     final membersAsync = ref.watch(membersStreamProvider);
     final meetingsAsync = ref.watch(meetingsStreamProvider);

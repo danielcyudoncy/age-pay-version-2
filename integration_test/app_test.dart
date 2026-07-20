@@ -52,6 +52,7 @@ void main() {
 
   final memberUser = UserModel(
     uid: 'user-1',
+    organizationId: 'user-1',
     email: 'member@test.com',
     displayName: 'Test Member',
     phoneNumber: '08012345678',
@@ -61,6 +62,7 @@ void main() {
 
   final treasurerUser = UserModel(
     uid: 'user-2',
+    organizationId: 'user-2',
     email: 'treas@test.com',
     displayName: 'Test Treasurer',
     phoneNumber: '08012345678',
@@ -70,6 +72,7 @@ void main() {
 
   final presidentUser = UserModel(
     uid: 'user-3',
+    organizationId: 'user-3',
     email: 'pres@test.com',
     displayName: 'Test President',
     phoneNumber: '08012345678',

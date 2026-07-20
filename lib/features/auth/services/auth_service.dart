@@ -89,6 +89,7 @@ class AuthService {
 
     final fallback = UserModel(
       uid: firebaseUser.uid,
+      organizationId: firebaseUser.uid,
       email: firebaseUser.email ?? '',
       displayName: firebaseUser.displayName ?? '',
       phoneNumber: '',
@@ -121,6 +122,7 @@ class AuthService {
     required String displayName,
     required String phoneNumber,
     required UserRole role,
+    required String organizationId,
     DateTime? dateOfBirth,
   }) async {
     try {
@@ -139,6 +141,7 @@ class AuthService {
 
       final user = UserModel(
         uid: firebaseUser.uid,
+        organizationId: organizationId,
         email: email,
         displayName: displayName,
         phoneNumber: phoneNumber,
@@ -184,6 +187,42 @@ class AuthService {
     } catch (e) {
       throw AuthException('Registration failed. Please try again.');
     }
+  }
+
+  /// Returns the organizationId for a new member by reusing the existing
+  /// organization in this single-organization teaching app. It looks up the
+  /// first secretary or admin and uses their organizationId so the member
+  /// shares the same tenant as the announcements they should receive.
+  Future<String> getActiveOrganizationId() async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) return '';
+
+    final currentDoc = await _firestore.collection('users').doc(currentUser.uid).get();
+    if (currentDoc.exists) {
+      final data = currentDoc.data()!;
+      final orgId = data['organizationId'];
+      if (orgId is String && orgId.isNotEmpty) return orgId;
+    }
+
+    final snapshot = await _firestore
+        .collection('users')
+        .where('role', whereIn: [
+          'secretary',
+          'viceSecretary',
+          'superAdmin',
+          'president',
+          'vicePresident',
+        ])
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      final data = snapshot.docs.first.data();
+      final orgId = data['organizationId'];
+      if (orgId is String && orgId.isNotEmpty) return orgId;
+      return snapshot.docs.first.id;
+    }
+    return currentUser.uid;
   }
 
   /// Runs a Firestore write and retries once after force-refreshing the ID

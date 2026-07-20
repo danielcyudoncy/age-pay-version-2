@@ -101,6 +101,11 @@ class _OrganizationManagementScreenState
                               .activateOrganization(org.id);
                         }
                       },
+                      onToggleJoin: () {
+                        ref
+                            .read(organizationRepositoryProvider)
+                            .setOpenForJoin(org.id, !org.openForJoin);
+                      },
                       onEdit: () => _showEditDialog(context, org),
                     );
                   },
@@ -126,46 +131,57 @@ class _OrganizationManagementScreenState
     final emailController = TextEditingController();
     final phoneController = TextEditingController();
     final addressController = TextEditingController();
+    bool openForJoin = true;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create Organization'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
-              TextField(controller: slugController, decoration: const InputDecoration(labelText: 'Slug')),
-              TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Contact Email')),
-              TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Contact Phone')),
-              TextField(controller: addressController, decoration: const InputDecoration(labelText: 'Address')),
-            ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Create Organization'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
+                TextField(controller: slugController, decoration: const InputDecoration(labelText: 'Slug')),
+                TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Contact Email')),
+                TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Contact Phone')),
+                TextField(controller: addressController, decoration: const InputDecoration(labelText: 'Address')),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  title: const Text('Open for join'),
+                  subtitle: const Text('Allow members to join this branch'),
+                  value: openForJoin,
+                  onChanged: (v) => setDialogState(() => openForJoin = v),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.isEmpty || slugController.text.isEmpty) {
+                  return;
+                }
+                final org = OrganizationModel(
+                  id: '',
+                  name: nameController.text.trim(),
+                  slug: slugController.text.trim(),
+                  contactEmail: emailController.text.trim(),
+                  contactPhone: phoneController.text.trim(),
+                  address: addressController.text.trim(),
+                  openForJoin: openForJoin,
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                );
+                await ref.read(organizationRepositoryProvider).createOrganization(org);
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: const Text('Create'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameController.text.isEmpty || slugController.text.isEmpty) {
-                return;
-              }
-              final org = OrganizationModel(
-                id: '',
-                name: nameController.text.trim(),
-                slug: slugController.text.trim(),
-                contactEmail: emailController.text.trim(),
-                contactPhone: phoneController.text.trim(),
-                address: addressController.text.trim(),
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-              );
-              await ref.read(organizationRepositoryProvider).createOrganization(org);
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text('Create'),
-          ),
-        ],
       ),
     );
   }
@@ -176,44 +192,55 @@ class _OrganizationManagementScreenState
     final emailController = TextEditingController(text: org.contactEmail);
     final phoneController = TextEditingController(text: org.contactPhone);
     final addressController = TextEditingController(text: org.address);
+    bool openForJoin = org.openForJoin;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Organization'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
-              TextField(controller: slugController, decoration: const InputDecoration(labelText: 'Slug')),
-              TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Contact Email')),
-              TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Contact Phone')),
-              TextField(controller: addressController, decoration: const InputDecoration(labelText: 'Address')),
-            ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit Organization'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
+                TextField(controller: slugController, decoration: const InputDecoration(labelText: 'Slug')),
+                TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Contact Email')),
+                TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Contact Phone')),
+                TextField(controller: addressController, decoration: const InputDecoration(labelText: 'Address')),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  title: const Text('Open for join'),
+                  subtitle: const Text('Allow members to join this branch'),
+                  value: openForJoin,
+                  onChanged: (v) => setDialogState(() => openForJoin = v),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.isEmpty || slugController.text.isEmpty) {
+                  return;
+                }
+                final updated = org.copyWith(
+                  name: nameController.text.trim(),
+                  slug: slugController.text.trim(),
+                  contactEmail: emailController.text.trim(),
+                  contactPhone: phoneController.text.trim(),
+                  address: addressController.text.trim(),
+                  openForJoin: openForJoin,
+                  updatedAt: DateTime.now(),
+                );
+                await ref.read(organizationRepositoryProvider).updateOrganization(updated);
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: const Text('Save'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameController.text.isEmpty || slugController.text.isEmpty) {
-                return;
-              }
-              final updated = org.copyWith(
-                name: nameController.text.trim(),
-                slug: slugController.text.trim(),
-                contactEmail: emailController.text.trim(),
-                contactPhone: phoneController.text.trim(),
-                address: addressController.text.trim(),
-                updatedAt: DateTime.now(),
-              );
-              await ref.read(organizationRepositoryProvider).updateOrganization(updated);
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }

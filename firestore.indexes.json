@@ -80,6 +80,15 @@
         { "fieldPath": "isActive", "order": "ASCENDING" },
         { "fieldPath": "fullName", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "organizations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "openForJoin", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

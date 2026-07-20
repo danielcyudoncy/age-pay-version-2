@@ -34,6 +34,15 @@ final announcementsStreamProvider =
       return ref.watch(announcementRepositoryProvider).getAnnouncements(orgId);
     });
 
+typedef AnnouncementsByDateParams = ({String orgId, DateTime date});
+
+final announcementsByDateStreamProvider = StreamProvider.autoDispose
+    .family<List<AnnouncementModel>, AnnouncementsByDateParams>((ref, params) {
+      return ref
+          .watch(announcementRepositoryProvider)
+          .getAnnouncementsForDate(params.orgId, params.date);
+    });
+
 final documentsStreamProvider =
     StreamProvider.autoDispose.family<List<DocumentModel>, String>((ref, orgId) {
       return ref.watch(documentRepositoryProvider).getDocuments(orgId);

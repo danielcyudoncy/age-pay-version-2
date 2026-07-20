@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/enums.dart';
 import '../controllers/auth_provider.dart';
+import '../../admin/controllers/admin_provider.dart';
 import '../../dashboard/views/home_router.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -21,6 +22,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _dobController = TextEditingController();
   UserRole _selectedRole = UserRole.member;
+  String? _selectedOrganizationId;
   bool _isLoading = false;
   String? _error;
   DateTime? _selectedDob;
@@ -44,6 +46,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       setState(() => _error = 'Please select your date of birth');
       return;
     }
+    if (_selectedOrganizationId == null || _selectedOrganizationId!.isEmpty) {
+      setState(() => _error = 'Please select your organization');
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _isLoading = true;
@@ -58,6 +64,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             displayName: _nameController.text.trim(),
             phoneNumber: _phoneController.text.trim(),
             role: _selectedRole,
+            organizationId: _selectedOrganizationId!,
             dateOfBirth: _selectedDob!,
           );
     } catch (e) {
@@ -270,6 +277,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    _OrganizationPicker(
+                      selectedId: _selectedOrganizationId,
+                      onChanged: (id) => setState(() => _selectedOrganizationId = id),
+                    ),
+                    const SizedBox(height: 16),
                     DropdownButtonFormField<UserRole>(
                       initialValue: _selectedRole,
                       decoration: const InputDecoration(
@@ -413,5 +425,66 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       case UserRole.member:
         return 'Member';
     }
+  }
+}
+
+class _OrganizationPicker extends ConsumerWidget {
+  final String? selectedId;
+  final ValueChanged<String?> onChanged;
+
+  const _OrganizationPicker({
+    required this.selectedId,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final orgsAsync = ref.watch(organizationsFutureProvider);
+
+    return orgsAsync.when(
+      data: (orgs) {
+        if (orgs.isEmpty) {
+          return const InputDecorator(
+            decoration: InputDecoration(
+              labelText: 'Organization',
+              prefixIcon: Icon(Icons.business_outlined),
+            ),
+            child: Text('No organizations available'),
+          );
+        }
+        return DropdownButtonFormField<String>(
+          initialValue: selectedId,
+          decoration: const InputDecoration(
+            labelText: 'Organization',
+            prefixIcon: Icon(Icons.business_outlined),
+          ),
+          items: orgs
+              .map(
+                (org) => DropdownMenuItem(
+                  value: org.id,
+                  child: Text(org.name),
+                ),
+              )
+              .toList(),
+          onChanged: onChanged,
+          validator: (value) =>
+              value == null || value.isEmpty ? 'Select your organization' : null,
+        );
+      },
+      loading: () => const InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Organization',
+          prefixIcon: Icon(Icons.business_outlined),
+        ),
+        child: Text('Loading...'),
+      ),
+      error: (_, _) => const InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Organization',
+          prefixIcon: Icon(Icons.business_outlined),
+        ),
+        child: Text('Unable to load organizations'),
+      ),
+    );
   }
 }

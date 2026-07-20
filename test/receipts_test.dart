@@ -78,6 +78,7 @@ void main() {
 
   final testUser = UserModel(
     uid: 'm1',
+    organizationId: 'm1',
     email: 'test@test.com',
     displayName: 'Test Member',
     phoneNumber: '08012345678',
