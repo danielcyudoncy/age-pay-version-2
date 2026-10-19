@@ -29,13 +29,17 @@ class MeetingRepository {
 
   Future<String> createMeeting({
     required String title,
+    String? venue,
+    String? organizationId,
     required DateTime meetingDate,
     required String createdBy,
   }) async {
     final docRef = _collection.doc();
     final meeting = MeetingModel(
       id: docRef.id,
+      organizationId: organizationId ?? '',
       title: title,
+      venue: venue ?? '',
       meetingDate: meetingDate,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),

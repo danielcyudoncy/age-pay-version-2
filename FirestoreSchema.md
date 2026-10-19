@@ -358,6 +358,32 @@ Example
 
 ---
 
+## Meeting RSVPs & Excuses Collection
+
+```text
+meeting_rsvps/
+    {meetingId}_{memberId}
+```
+
+Example
+
+```json
+{
+  "id": "meeting123_member456",
+  "organizationId": "org_abc",
+  "meetingId": "meeting123",
+  "memberId": "member456",
+  "memberName": "Emeka Okafor",
+  "status": "excused", // "attending" | "late" | "excused"
+  "reason": "Out of town for business trip",
+  "createdAt": "Timestamp",
+  "updatedAt": "Timestamp",
+  "createdBy": "member456"
+}
+```
+
+---
+
 ## Attendance Collection
 
 ```text

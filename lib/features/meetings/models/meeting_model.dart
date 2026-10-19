@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MeetingModel {
   final String id;
+  final String organizationId;
   final String title;
+  final String venue;
   final DateTime meetingDate;
   final String? minutesText;
   final String? minutesFileUrl;
@@ -13,7 +15,9 @@ class MeetingModel {
 
   const MeetingModel({
     required this.id,
+    this.organizationId = '',
     required this.title,
+    this.venue = '',
     required this.meetingDate,
     this.minutesText,
     this.minutesFileUrl,
@@ -24,10 +28,12 @@ class MeetingModel {
   });
 
   factory MeetingModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>? ?? {};
     return MeetingModel(
       id: doc.id,
+      organizationId: data['organizationId'] ?? '',
       title: data['title'] ?? '',
+      venue: data['venue'] ?? '',
       meetingDate:
           (data['meetingDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       minutesText: data['minutesText'],
@@ -41,7 +47,9 @@ class MeetingModel {
 
   Map<String, dynamic> toFirestore() {
     return {
+      'organizationId': organizationId,
       'title': title,
+      'venue': venue,
       'meetingDate': Timestamp.fromDate(meetingDate),
       'minutesText': minutesText,
       'minutesFileUrl': minutesFileUrl,
@@ -53,23 +61,30 @@ class MeetingModel {
   }
 
   MeetingModel copyWith({
+    String? id,
+    String? organizationId,
     String? title,
+    String? venue,
     DateTime? meetingDate,
     String? minutesText,
     String? minutesFileUrl,
     String? minutesFileName,
+    DateTime? createdAt,
     DateTime? updatedAt,
+    String? createdBy,
   }) {
     return MeetingModel(
-      id: id,
+      id: id ?? this.id,
+      organizationId: organizationId ?? this.organizationId,
       title: title ?? this.title,
+      venue: venue ?? this.venue,
       meetingDate: meetingDate ?? this.meetingDate,
       minutesText: minutesText ?? this.minutesText,
       minutesFileUrl: minutesFileUrl ?? this.minutesFileUrl,
       minutesFileName: minutesFileName ?? this.minutesFileName,
-      createdAt: createdAt,
+      createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      createdBy: createdBy,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
 

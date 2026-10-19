@@ -12,6 +12,8 @@ import 'package:cls/features/levies/controllers/levy_provider.dart'
 import 'package:cls/features/dashboard/views/member_dashboard.dart';
 import 'package:cls/features/reports/views/reports_screen.dart';
 import 'package:cls/features/auth/views/login_screen.dart';
+import 'package:cls/features/members/views/president_members_list_screen.dart';
+import 'package:cls/features/secretary/views/attendance_screen.dart';
 
 class PresidentDashboard extends ConsumerWidget {
   const PresidentDashboard({super.key});
@@ -117,6 +119,8 @@ class PresidentDashboard extends ConsumerWidget {
               dateFormat: dateFormat,
             ),
             const SizedBox(height: 20),
+            _AttendanceAccessSection(),
+            const SizedBox(height: 20),
             _ReportsAccessSection(),
             const SizedBox(height: 24),
           ],
@@ -160,6 +164,14 @@ class _OverviewCards extends StatelessWidget {
             value: data.totalMembers.toString(),
             icon: Icons.people,
             color: theme.colorScheme.primary,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PresidentMembersListScreen(),
+                ),
+              );
+            },
           ),
           const SizedBox(width: 12),
           _OverviewCard(
@@ -182,6 +194,21 @@ class _OverviewCards extends StatelessWidget {
             icon: Icons.account_balance,
             color: theme.colorScheme.tertiary,
           ),
+          const SizedBox(width: 12),
+          _OverviewCard(
+            label: 'Attendance Register',
+            value: 'Annual Review',
+            icon: Icons.fact_check,
+            color: Colors.teal,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AttendanceScreen(),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -193,17 +220,19 @@ class _OverviewCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   const _OverviewCard({
     required this.label,
     required this.value,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    final card = SizedBox(
       width: 160,
       child: Card(
         elevation: 2,
@@ -231,6 +260,9 @@ class _OverviewCard extends StatelessWidget {
         ),
       ),
     );
+
+    if (onTap == null) return card;
+    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(12), child: card);
   }
 }
 
@@ -697,6 +729,44 @@ class _ReportsAccessSection extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const ReportsScreen(),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AttendanceAccessSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Attendance & Quorum',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Card(
+          elevation: 2,
+          child: ListTile(
+            leading: Icon(
+              Icons.fact_check_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Annual Attendance Register'),
+            subtitle: const Text('Review member meeting participation & attendance rates'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const AttendanceScreen(),
                 ),
               );
             },

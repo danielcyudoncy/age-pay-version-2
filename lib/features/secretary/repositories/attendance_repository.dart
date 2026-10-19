@@ -36,10 +36,29 @@ class AttendanceRepository {
         );
   }
 
+  Stream<List<AttendanceModel>> getAttendanceForOrganization(String organizationId) {
+    Query query = _collection;
+    if (organizationId.isNotEmpty) {
+      query = query.where('organizationId', isEqualTo: organizationId);
+    }
+    return query.snapshots().map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => AttendanceModel.fromFirestore(doc))
+                  .toList(),
+        );
+  }
+
   Future<String> recordAttendance(AttendanceModel attendance) async {
-    final docRef = _collection.doc();
-    await docRef.set(attendance.toFirestore());
-    return docRef.id;
+    // Deterministic doc ID ensures a member only has one record per meeting
+    final docId = '${attendance.meetingId}_${attendance.memberId}';
+    final docRef = _collection.doc(docId);
+    final toSave = attendance.copyWith(
+      id: docId,
+      updatedAt: DateTime.now(),
+    );
+    await docRef.set(toSave.toFirestore(), SetOptions(merge: true));
+    return docId;
   }
 
   Future<void> updateAttendance(AttendanceModel attendance) async {

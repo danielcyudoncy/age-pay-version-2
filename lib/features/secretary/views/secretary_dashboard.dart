@@ -630,7 +630,37 @@ class _MeetingsTab extends ConsumerWidget {
                             fontSize: 15,
                           ),
                         ),
-                        subtitle: Text(dateFormat.format(meeting.meetingDate)),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 2),
+                            Text(dateFormat.format(meeting.meetingDate)),
+                            if (meeting.venue.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on_outlined,
+                                    size: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      meeting.venue,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
                         trailing: canEdit
                             ? const Icon(Icons.arrow_forward_ios, size: 16)
                             : null,

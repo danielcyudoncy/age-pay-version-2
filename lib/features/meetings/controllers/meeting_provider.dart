@@ -24,11 +24,15 @@ class MeetingController {
 
   Future<String> createMeeting({
     required String title,
+    String? venue,
+    String? organizationId,
     required DateTime meetingDate,
     required String createdBy,
   }) {
     return _repository.createMeeting(
       title: title,
+      venue: venue,
+      organizationId: organizationId,
       meetingDate: meetingDate,
       createdBy: createdBy,
     );

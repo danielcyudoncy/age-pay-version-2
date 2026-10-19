@@ -14,6 +14,10 @@ import 'package:cls/features/obligations/views/member_obligations_screen.dart';
 import 'package:cls/features/members/views/member_profile_screen.dart';
 import 'package:cls/features/secretary/controllers/secretary_dashboard_provider.dart';
 import 'package:cls/features/secretary/views/member_announcements_screen.dart';
+import 'package:cls/features/meetings/controllers/meeting_provider.dart';
+import 'package:cls/features/meetings/models/meeting_rsvp_model.dart';
+import 'package:cls/features/meetings/controllers/meeting_rsvp_provider.dart';
+import 'package:cls/features/meetings/views/meeting_detail_screen.dart';
 import 'package:cls/features/auth/views/login_screen.dart';
 
 class MemberDashboard extends ConsumerWidget {
@@ -167,6 +171,7 @@ class MemberDashboard extends ConsumerWidget {
             currency: currency,
           ),
           const SizedBox(height: 20),
+          const _UpcomingMeetingCard(),
           _RegistrationStatusCard(statusAsync: registrationStatusAsync),
           const SizedBox(height: 20),
           _RecentPaymentsSection(
@@ -842,3 +847,257 @@ class _QuickActionsRow extends StatelessWidget {
     );
   }
 }
+
+class _UpcomingMeetingCard extends ConsumerWidget {
+  const _UpcomingMeetingCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final meetingsAsync = ref.watch(meetingsStreamProvider);
+
+    return meetingsAsync.when(
+      data: (meetings) {
+        final now = DateTime.now();
+        final threshold = now.subtract(const Duration(hours: 4));
+        final upcomingMeetings =
+            meetings.where((m) => m.meetingDate.isAfter(threshold)).toList()
+              ..sort((a, b) => a.meetingDate.compareTo(b.meetingDate));
+
+        if (upcomingMeetings.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final meeting = upcomingMeetings.first;
+        final theme = Theme.of(context);
+        final dateTimeFormat = DateFormat('EEE, MMM dd, yyyy \u2022 hh:mm a');
+
+        final user = ref.watch(authProvider).valueOrNull;
+        final myRsvp = user != null
+            ? ref.watch(
+                memberMeetingRsvpProvider((
+                  meetingId: meeting.id,
+                  memberId: user.uid,
+                )),
+              )
+            : null;
+
+        return Card(
+          elevation: 2,
+          margin: const EdgeInsets.only(bottom: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: theme.colorScheme.primary.withValues(alpha: 0.25),
+            ),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (_) => MeetingDetailScreen(
+                        meeting: meeting,
+                        readOnly: true,
+                      ),
+                ),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    theme.colorScheme.primary.withValues(alpha: 0.08),
+                    theme.colorScheme.surface,
+                  ],
+                ),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.event_available,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'UPCOMING MEETING',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Details & RSVPs',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 16,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    meeting.title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time_filled,
+                        size: 16,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          dateTimeFormat.format(meeting.meetingDate),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (meeting.venue.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: Colors.redAccent,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            meeting.venue,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 10),
+                  // RSVP status or prompt
+                  if (myRsvp != null)
+                    Row(
+                      children: [
+                        Icon(
+                          myRsvp.status == MeetingRsvpStatus.attending
+                              ? Icons.check_circle
+                              : (myRsvp.status == MeetingRsvpStatus.late
+                                  ? Icons.schedule
+                                  : Icons.cancel),
+                          size: 16,
+                          color: myRsvp.status == MeetingRsvpStatus.attending
+                              ? Colors.green
+                              : (myRsvp.status == MeetingRsvpStatus.late
+                                  ? Colors.orange.shade800
+                                  : Colors.redAccent),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Your RSVP: ${myRsvp.status.displayName}${myRsvp.reason.isNotEmpty ? " • \"${myRsvp.reason}\"" : ""}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: myRsvp.status == MeetingRsvpStatus.attending
+                                  ? Colors.green.shade800
+                                  : (myRsvp.status == MeetingRsvpStatus.late
+                                      ? Colors.orange.shade900
+                                      : Colors.redAccent.shade700),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          'Change',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.touch_app_outlined,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Tap here to indicate if you are Coming or Send Excuse',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+

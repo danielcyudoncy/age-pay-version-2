@@ -154,5 +154,16 @@ service cloud.firestore {
       allow create, update: if isSecretary() || isSuperAdmin();
       allow delete: if isSuperAdmin();
     }
+
+    // ── Meeting RSVPs & Excuses collection ───────────────
+    match /meeting_rsvps/{rsvpId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+        (request.resource.data.memberId == request.auth.uid || isSecretary() || isSuperAdmin());
+      allow update: if isAuthenticated() &&
+        (resource.data.memberId == request.auth.uid || isSecretary() || isSuperAdmin());
+      allow delete: if isAuthenticated() &&
+        (resource.data.memberId == request.auth.uid || isSecretary() || isSuperAdmin());
+    }
   }
 }
