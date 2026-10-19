@@ -408,7 +408,13 @@ Attendance statuses:
 * Excused
 * Late
 
-Attendance history contributes to reporting.
+Rules:
+
+* Attendance is recorded per meeting by the Secretary or authorized executive.
+* Attendance is aggregated on an **Annual Basis** for calendar year audits and AGMs.
+* Annual attendance metrics include: total meetings held, present count, late count, absent count, and attendance percentage.
+* Both the **Secretary** and the **President** have access to the Annual Attendance Register for administrative tracking, good standing verification, and executive review.
+* Attendance history contributes to reporting and annual general meeting (AGM) secretarial records.
 
 ---
 
