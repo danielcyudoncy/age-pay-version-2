@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/enums.dart';
 import '../models/user_model.dart';
 import '../controllers/auth_provider.dart';
@@ -183,23 +184,45 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.blue.shade200),
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: Colors.blue.shade700,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Tell ${widget.user.coFounderName ?? 'your Secretary'} to download AgePay and log in or register with phone number ${widget.user.coFounderPhone}. They will see an instant prompt to co-sign and activate your Age Grade.',
-                              style: TextStyle(
-                                color: Colors.blue.shade900,
-                                fontSize: 13,
-                                height: 1.4,
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: Colors.blue.shade700,
+                                size: 22,
                               ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Tell ${widget.user.coFounderName ?? 'your Secretary'} to open AgePay and sign in or register with phone number ${widget.user.coFounderPhone}. They will see an instant prompt to co-sign and activate your Age Grade.',
+                                  style: TextStyle(
+                                    color: Colors.blue.shade900,
+                                    fontSize: 13,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              final phone = widget.user.coFounderPhone ?? '';
+                              final name = widget.user.coFounderName ?? 'General Secretary';
+                              final message =
+                                  'Hello $name, I have registered our Age Grade on AgePay and listed you as General Secretary. Please download/open the AgePay app and sign in with your phone number ($phone) to co-sign and activate our Age Grade!';
+                              Share.share(message);
+                            },
+                            icon: const Icon(Icons.share, size: 18),
+                            label: const Text('Send Invite via WhatsApp / SMS'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.shade700,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
                           ),
                         ],
