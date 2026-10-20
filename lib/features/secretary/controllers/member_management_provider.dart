@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../members/models/member_model.dart';
 import '../../members/repositories/member_repository.dart';
 
+import '../../obligations/repositories/obligation_repository.dart';
+
 final memberManagementRepositoryProvider = Provider<MemberRepository>((ref) {
   return MemberRepository();
 });
@@ -12,10 +14,16 @@ final memberManagementControllerProvider = Provider<MemberManagementController>(
 
 class MemberManagementController {
   final MemberRepository _repository;
+  final ObligationRepository _obligationRepository = ObligationRepository();
   MemberManagementController(this._repository);
 
-  Future<String> addMember(MemberModel member) {
-    return _repository.createMember(member);
+  Future<String> addMember(MemberModel member) async {
+    final memberId = await _repository.createMember(member);
+    await _obligationRepository.reconcileMemberObligations(
+      memberId,
+      userId: member.userId.isNotEmpty ? member.userId : null,
+    );
+    return memberId;
   }
 
   Future<void> updateMember(MemberModel member) {

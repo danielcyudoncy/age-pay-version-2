@@ -53,3 +53,15 @@ final memberRegistrationFeeStatusProvider = Provider.autoDispose
         (list) => !list.any((o) => o.outstandingBalance > 0.0),
       );
     });
+
+/// Automatically reconciles all active/open dues and levies for a member
+/// whenever they open or refresh their dashboard.
+final memberObligationReconciliationProvider =
+    FutureProvider.autoDispose.family<int, String>((ref, memberId) async {
+      final repo = ref.watch(obligationRepositoryProvider);
+      final count = await repo.reconcileMemberObligations(memberId);
+      if (count > 0) {
+        ref.invalidate(allObligationsProvider);
+      }
+      return count;
+    });

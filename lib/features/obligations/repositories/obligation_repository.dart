@@ -131,34 +131,158 @@ class ObligationRepository {
   }
 
   Future<void> backfillObligationsForNewMember(String memberId) async {
-    final leviesSnapshot = await _firestore
-        .collection('levies')
-        .where('isActive', isEqualTo: true)
-        .get();
+    await reconcileMemberObligations(memberId);
+  }
 
-    final levies = leviesSnapshot.docs
-        .map((doc) => LevyModel.fromFirestore(doc))
+  /// Option C (All Active): Reconciles and synchronizes all currently active/open
+  /// dues and levies for a member. If the member downloaded the app today while
+  /// there are already running obligations, this creates missing obligations
+  /// idempotently without duplicating any records.
+  Future<int> reconcileMemberObligations(
+    String memberOrUserId, {
+    String? userId,
+  }) async {
+    String targetMemberId = memberOrUserId;
+    String? targetUserId = userId;
+
+    try {
+      if (userId == null) {
+        final memberByUid = await _firestore
+            .collection('members')
+            .where('userId', isEqualTo: memberOrUserId)
+            .limit(1)
+            .get();
+        if (memberByUid.docs.isNotEmpty) {
+          targetMemberId = memberByUid.docs.first.id;
+          targetUserId = memberOrUserId;
+        } else {
+          final memberDoc =
+              await _firestore.collection('members').doc(memberOrUserId).get();
+          if (memberDoc.exists) {
+            targetMemberId = memberDoc.id;
+            targetUserId = memberDoc.data()?['userId'] as String?;
+          }
+        }
+      }
+    } catch (_) {
+      // Best-effort ID resolution fallback
+    }
+
+    final allMemberIds = <String>{
+      targetMemberId,
+      if (targetUserId != null && targetUserId.isNotEmpty) targetUserId,
+      if (memberOrUserId.isNotEmpty) memberOrUserId,
+    };
+
+    // 1. Fetch existing obligations for this member across all known IDs
+    final existingObligationsSnap = await _collection.get();
+    final allObligations = existingObligationsSnap.docs
+        .map((doc) => ObligationModel.fromFirestore(doc))
         .toList();
 
-    if (levies.isEmpty) return;
+    final memberExisting = allObligations
+        .where((o) => allMemberIds.contains(o.memberId))
+        .toList();
 
+    final existingLevyIds = <String>{
+      for (final o in memberExisting)
+        if (o.levyId.isNotEmpty) o.levyId,
+    };
+    final existingTitles = <String>{
+      for (final o in memberExisting)
+        if (o.title.trim().isNotEmpty) o.title.trim().toLowerCase(),
+    };
+
+    final newObligations = <Map<String, dynamic>>[];
     final now = DateTime.now();
-    final obligations = levies.map((levy) {
-      return {
-        'memberId': memberId,
-        'levyId': levy.id,
-        'type': levy.type.name,
-        'title': levy.title,
-        'description': levy.description,
-        'amount': levy.amountPerMember,
-        'paidAmount': 0.0,
-        'outstandingBalance': levy.amountPerMember,
-        'status': 'unpaid',
-        'dueDate': Timestamp.fromDate(levy.dueDate),
-        'createdAt': Timestamp.fromDate(now),
-      };
-    }).toList();
 
-    await batchCreateFromMaps(obligations);
+    // 2. Source A: Active Levies from 'levies' collection
+    try {
+      final leviesSnap = await _firestore.collection('levies').get();
+      final allLevies = leviesSnap.docs
+          .map((doc) => LevyModel.fromFirestore(doc))
+          .toList();
+      final activeLevies = allLevies.where((l) => l.isActive).toList();
+
+      for (final levy in activeLevies) {
+        final normTitle = levy.title.trim().toLowerCase();
+        if (existingLevyIds.contains(levy.id) || existingTitles.contains(normTitle)) {
+          continue;
+        }
+
+        existingLevyIds.add(levy.id);
+        existingTitles.add(normTitle);
+
+        newObligations.add({
+          'memberId': targetMemberId,
+          'userId': targetUserId ?? targetMemberId,
+          'levyId': levy.id,
+          'type': levy.type.name,
+          'title': levy.title,
+          'description': levy.description,
+          'amount': levy.amountPerMember,
+          'paidAmount': 0.0,
+          'outstandingBalance': levy.amountPerMember,
+          'status': 'unpaid',
+          'dueDate': Timestamp.fromDate(levy.dueDate),
+          'createdAt': Timestamp.fromDate(now),
+          'updatedAt': Timestamp.fromDate(now),
+        });
+      }
+    } catch (_) {
+      // Continue to Source B
+    }
+
+    // 3. Source B: Active open dues categories from general obligations
+    final groupedOther = <String, List<ObligationModel>>{};
+    for (final o in allObligations) {
+      final t = o.title.trim();
+      if (t.isEmpty) continue;
+      final normTitle = t.toLowerCase();
+      if (existingTitles.contains(normTitle)) continue;
+      groupedOther.putIfAbsent(normTitle, () => []).add(o);
+    }
+
+    for (final entry in groupedOther.entries) {
+      final normTitle = entry.key;
+      final group = entry.value;
+      if (existingTitles.contains(normTitle)) continue;
+
+      // Check if this category has active/ongoing dues
+      final hasActiveDues = group.any(
+        (o) => o.status != ObligationStatus.paid || o.outstandingBalance > 0,
+      );
+      if (!hasActiveDues && group.isNotEmpty) {
+        final futureDue = group.any((o) => o.dueDate.isAfter(now));
+        if (!futureDue) continue; // Closed/completed past obligation
+      }
+
+      final template = group.first;
+      existingTitles.add(normTitle);
+      if (template.levyId.isNotEmpty) existingLevyIds.add(template.levyId);
+
+      newObligations.add({
+        'memberId': targetMemberId,
+        'userId': targetUserId ?? targetMemberId,
+        'levyId': template.levyId,
+        'type': template.type.name,
+        'title': template.title,
+        'description': template.description,
+        'amount': template.amount,
+        'paidAmount': 0.0,
+        'outstandingBalance': template.amount,
+        'status': 'unpaid',
+        'dueDate': Timestamp.fromDate(template.dueDate),
+        'createdAt': Timestamp.fromDate(now),
+        'updatedAt': Timestamp.fromDate(now),
+      });
+    }
+
+    // 4. Batch commit missing obligations
+    if (newObligations.isNotEmpty) {
+      await batchCreateFromMaps(newObligations);
+    }
+
+    return newObligations.length;
   }
 }

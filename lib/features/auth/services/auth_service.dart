@@ -171,7 +171,10 @@ class AuthService {
       final memberId = await memberRepo.createMember(member);
 
       final obligationRepo = ObligationRepository(firestore: _firestore);
-      await obligationRepo.backfillObligationsForNewMember(memberId);
+      await obligationRepo.reconcileMemberObligations(
+        memberId,
+        userId: user.uid,
+      );
 
       return user;
     } on FirebaseAuthException catch (e) {
