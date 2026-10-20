@@ -412,12 +412,9 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                 const SizedBox(height: 16),
                 SizedBox(
                   height: 48,
-                  child: ElevatedButton.icon(
+                  child: ElevatedButton(
                     onPressed: _isSaving ? null : _save,
-                    icon: _isSaving
-                        ? const SizedBox.shrink()
-                        : Icon(_isNew ? Icons.send : Icons.save),
-                    label: _isSaving
+                    child: _isSaving
                         ? const SizedBox(
                             height: 20,
                             width: 20,
@@ -426,11 +423,24 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : Text(
-                            _isNew
-                                ? 'Schedule & Notify Members'
-                                : 'Save Minutes',
-                            style: const TextStyle(fontSize: 16),
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(_isNew ? Icons.send : Icons.save),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    _isNew
+                                        ? 'Schedule & Notify Members'
+                                        : 'Save Minutes',
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                   ),
                 ),

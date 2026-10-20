@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
+import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/members/views/treasurer_member_detail_screen.dart';
 import 'package:cls/features/members/views/member_profile_screen.dart';
 import 'package:cls/features/secretary/views/search_screen.dart';
@@ -88,6 +89,7 @@ class _MembersListTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final membersAsync = ref.watch(membersStreamProvider);
     final dateFormat = DateFormat('MMM d, yyyy');
+    final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
 
     return Column(
       children: [
@@ -152,7 +154,17 @@ class _MembersListTab extends ConsumerWidget {
                       subtitle: Text(
                         'Joined ${dateFormat.format(member.joinedDate)}',
                       ),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _MemberOwingBadge(
+                            memberId: member.userId,
+                            currency: currency,
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -327,4 +339,60 @@ class _MoreItem {
     required this.color,
     this.onTap,
   });
+}
+
+class _MemberOwingBadge extends ConsumerWidget {
+  final String memberId;
+  final NumberFormat currency;
+
+  const _MemberOwingBadge({required this.memberId, required this.currency});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final obligationsAsync = ref.watch(
+      memberActiveObligationsProvider(memberId),
+    );
+    return obligationsAsync.when(
+      data: (obligations) {
+        final totalOwed = obligations.fold<double>(
+          0.0,
+          (sum, o) => sum + o.outstandingBalance,
+        );
+        if (totalOwed <= 0) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Text(
+              'No Dues',
+              style: TextStyle(
+                color: Colors.green,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          );
+        }
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.red.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            'Owes ${currency.format(totalOwed)}',
+            style: const TextStyle(
+              color: Colors.red,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
 }

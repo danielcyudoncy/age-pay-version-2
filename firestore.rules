@@ -16,11 +16,16 @@ service cloud.firestore {
     }
 
     function isTreasurer() {
-      return isAuthenticated() && getUserRole(request.auth.uid) == 'treasurer';
+      return isAuthenticated() &&
+        (getUserRole(request.auth.uid) == 'treasurer' ||
+         getUserRole(request.auth.uid) == 'viceTreasurer' ||
+         getUserRole(request.auth.uid) == 'financialSecretary');
     }
 
     function isPresident() {
-      return isAuthenticated() && getUserRole(request.auth.uid) == 'president';
+      return isAuthenticated() &&
+        (getUserRole(request.auth.uid) == 'president' ||
+         getUserRole(request.auth.uid) == 'vicePresident');
     }
 
     function isSuperAdmin() {
@@ -85,13 +90,13 @@ service cloud.firestore {
            .data.userId == request.auth.uid);
       allow update: if isAdminOrTreasurer() ||
         (resource.data.memberId == request.auth.uid);
-      allow delete: if isSuperAdmin();
+      allow delete: if isAdminOrTreasurer();
     }
 
     // ── Payments collection ─────────────────────────────
     match /payments/{paymentId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.memberId == request.auth.uid;
+      allow create: if (isAuthenticated() && request.resource.data.memberId == request.auth.uid) || isAdminOrTreasurer();
       allow update: if isAdminOrTreasurer() ||
         (resource.data.memberId == request.auth.uid);
       allow delete: if isSuperAdmin();
