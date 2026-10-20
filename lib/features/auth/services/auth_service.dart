@@ -79,8 +79,8 @@ class AuthService {
   /// created from the Firebase Auth user so the sign-in can still complete.
   Future<UserModel?> _loadOrCreateProfile(User firebaseUser) async {
     try {
-      final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
-      if (doc.exists) return UserModel.fromFirestore(doc);
+      final existing = await _getUserData(firebaseUser.uid);
+      if (existing != null) return existing;
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
         throw AuthException(
@@ -331,11 +331,17 @@ class AuthService {
     return _firestore
         .collection('users')
         .where('organizationId', isEqualTo: organizationId)
-        .where('status', isEqualTo: AccountStatus.pendingApproval.name)
         .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => UserModel.fromFirestore(d)).toList())
-        .handleError((_) => <UserModel>[]);
+        .map((snap) => snap.docs
+            .map((d) => UserModel.fromFirestore(d))
+            .where((u) =>
+                u.status == AccountStatus.pendingApproval ||
+                (!u.isActive && u.status != AccountStatus.rejected))
+            .toList())
+        .handleError((e) {
+          log('Error fetching pending registrations: $e');
+          return <UserModel>[];
+        });
   }
 
   Future<void> approveUserRegistration({
@@ -512,7 +518,54 @@ class AuthService {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
       if (doc.exists) {
-        return UserModel.fromFirestore(doc);
+        var user = UserModel.fromFirestore(doc);
+        if (user.organizationId.isEmpty || user.organizationId == uid) {
+          String? foundOrgId;
+
+          // 1. Try branch where this user is president
+          final branchSnap = await _firestore
+              .collection('branches')
+              .where('presidentId', isEqualTo: uid)
+              .limit(1)
+              .get();
+          if (branchSnap.docs.isNotEmpty) {
+            foundOrgId = branchSnap.docs.first.data()['organizationId'] as String?;
+          }
+
+          // 2. Try co-founder invitation where this user is presidentUid
+          if (foundOrgId == null || foundOrgId.isEmpty) {
+            final invSnap = await _firestore
+                .collection('co_founder_invitations')
+                .where('presidentUid', isEqualTo: uid)
+                .limit(1)
+                .get();
+            if (invSnap.docs.isNotEmpty) {
+              foundOrgId = invSnap.docs.first.data()['organizationId'] as String?;
+            }
+          }
+
+          // 3. Try organizations collection by contactEmail
+          if ((foundOrgId == null || foundOrgId.isEmpty) && user.email.isNotEmpty) {
+            final orgSnap = await _firestore
+                .collection('organizations')
+                .where('contactEmail', isEqualTo: user.email)
+                .limit(1)
+                .get();
+            if (orgSnap.docs.isNotEmpty) {
+              foundOrgId = orgSnap.docs.first.id;
+            }
+          }
+
+          if (foundOrgId != null && foundOrgId.isNotEmpty) {
+            user = user.copyWith(organizationId: foundOrgId);
+            _firestore
+                .collection('users')
+                .doc(uid)
+                .update({'organizationId': foundOrgId})
+                .ignore();
+          }
+        }
+        return user;
       }
       return null;
     } on FirebaseException catch (e) {

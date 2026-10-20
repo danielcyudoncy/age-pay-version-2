@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -21,6 +20,8 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
   StreamSubscription<List<NotificationModel>>? _firestoreSubscription;
   final NotificationRepository? _repository;
   final String? _organizationId;
+  final String? _userId;
+  final dynamic _role;
 
   NotificationListNotifier(
     NotificationService service, {
@@ -30,6 +31,8 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
     dynamic role,
   })  : _repository = repository,
         _organizationId = organizationId,
+        _userId = userId,
+        _role = role,
         super([]) {
     // 1. Foreground push message listener
     _subscription = service.onForegroundMessage.listen((message) {
@@ -48,29 +51,22 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
       addNotification(notification);
     });
 
-    // 2. Real-time Firestore notification stream
-    if (_repository != null &&
-        organizationId != null &&
-        organizationId.isNotEmpty) {
-      _firestoreSubscription = _repository
-          .streamNotifications(
-            organizationId: organizationId,
-            userId: userId,
-            role: role,
-          )
-          .listen((firestoreNotifications) {
-            final Map<String, NotificationModel> map = {};
-            for (final n in state) {
-              map[n.id] = n;
-            }
-            for (final n in firestoreNotifications) {
-              map[n.id] = n;
-            }
-            final list = map.values.toList()
-              ..sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
-            state = list;
-          });
-    }
+    _subscribeToFirestore();
+  }
+
+  void _subscribeToFirestore() {
+    _firestoreSubscription?.cancel();
+    if (_repository == null) return;
+
+    _firestoreSubscription = _repository
+        .streamNotifications(
+          organizationId: _organizationId ?? '',
+          userId: _userId,
+          role: _role,
+        )
+        .listen((firestoreNotifications) {
+          state = firestoreNotifications;
+        });
   }
 
   void addNotification(NotificationModel notification) {
@@ -100,7 +96,7 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
   }
 
   void refresh() {
-    log('Notification list refreshed');
+    _subscribeToFirestore();
   }
 
   @override
