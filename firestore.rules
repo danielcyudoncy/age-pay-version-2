@@ -105,16 +105,16 @@ service cloud.firestore {
     // ── Expenses collection ─────────────────────────────
     match /expenses/{expenseId} {
       allow read: if isAuthenticated();
-      allow create: if isTreasurer() || isSuperAdmin();
-      allow update: if isTreasurer() || isSuperAdmin();
+      allow create: if isAdminOrTreasurer();
+      allow update: if isAdminOrTreasurer();
       allow delete: if isSuperAdmin();
     }
 
     // ── Levies collection ───────────────────────────────
     match /levies/{levyId} {
       allow read: if isAuthenticated();
-      allow create: if isTreasurer() || isSuperAdmin();
-      allow update: if isTreasurer() || isSuperAdmin();
+      allow create: if isAdminOrTreasurer();
+      allow update: if isAdminOrTreasurer();
       allow delete: if isSuperAdmin();
     }
 
@@ -129,15 +129,15 @@ service cloud.firestore {
     // ── Meetings collection ─────────────────────────────
     match /meetings/{meetingId} {
       allow read: if isAuthenticated();
-      allow create, update: if isSecretary() || isSuperAdmin();
+      allow create, update: if isSecretary() || isPresident() || isSuperAdmin();
       allow delete: if isSuperAdmin();
     }
 
     // ── Announcements collection ────────────────────────
     match /announcements/{announcementId} {
       allow read: if isAuthenticated();
-      allow create, update: if isSecretary() || isSuperAdmin();
-      allow delete: if isSecretary() || isSuperAdmin();
+      allow create, update: if isSecretary() || isPresident() || isSuperAdmin();
+      allow delete: if isSecretary() || isPresident() || isSuperAdmin();
     }
 
     // ── Documents collection ────────────────────────────

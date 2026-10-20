@@ -7,6 +7,10 @@ class QuickActionButton extends StatelessWidget {
   final bool isPrimary;
   final int badgeCount;
 
+  final double? iconSize;
+  final double? fontSize;
+  final EdgeInsetsGeometry? padding;
+
   const QuickActionButton({
     super.key,
     required this.icon,
@@ -14,6 +18,9 @@ class QuickActionButton extends StatelessWidget {
     required this.onPressed,
     this.isPrimary = false,
     this.badgeCount = 0,
+    this.iconSize,
+    this.fontSize,
+    this.padding,
   });
 
   @override
@@ -21,6 +28,11 @@ class QuickActionButton extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final iconColor =
         isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant;
+
+    final effectiveIconSize = iconSize ?? 18.0;
+    final effectiveFontSize = fontSize ?? 12.0;
+    final effectivePadding =
+        padding ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 14);
 
     return Card(
       elevation: isPrimary ? 1 : 0,
@@ -34,7 +46,7 @@ class QuickActionButton extends StatelessWidget {
         onTap: onPressed,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          padding: effectivePadding,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
@@ -42,18 +54,22 @@ class QuickActionButton extends StatelessWidget {
               Badge(
                 isLabelVisible: badgeCount > 0,
                 label: Text(badgeCount.toString()),
-                child: Icon(icon, size: 20, color: iconColor),
+                child: Icon(icon, size: effectiveIconSize, color: iconColor),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Flexible(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: iconColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: iconColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: effectiveFontSize,
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

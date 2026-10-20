@@ -144,9 +144,17 @@ final financialSecretaryDashboardProvider =
         );
 
         // Levies progress summary
-        final levySummaries = levies.map((levy) {
+        final levySummaries = <LevyCollectionSummary>[];
+        final accountedTitles = <String>{};
+
+        for (final levy in levies) {
+          accountedTitles.add(levy.title.trim().toLowerCase());
           final levyObligations = obligations
-              .where((o) => o.levyId == levy.id)
+              .where((o) =>
+                  o.levyId == levy.id ||
+                  (o.levyId.isEmpty &&
+                      o.title.trim().toLowerCase() ==
+                          levy.title.trim().toLowerCase()))
               .toList();
           final target = levyObligations.fold<double>(
             0.0,
@@ -157,15 +165,43 @@ final financialSecretaryDashboardProvider =
             (sum, o) => sum + o.paidAmount,
           );
           final percentage = target > 0 ? (collected / target) : 0.0;
-          return LevyCollectionSummary(
+          levySummaries.add(LevyCollectionSummary(
             levyId: levy.id,
             title: levy.title,
             collected: collected,
             target: target,
             percentage: percentage,
             memberCount: levyObligations.length,
-          );
-        }).toList();
+          ));
+        }
+
+        final remainingObligations = obligations.where(
+          (o) => !accountedTitles.contains(o.title.trim().toLowerCase()),
+        );
+
+        final groupedObligations = <String, List<ObligationModel>>{};
+        for (final o in remainingObligations) {
+          final t = o.title.trim();
+          if (t.isEmpty) continue;
+          groupedObligations.putIfAbsent(t, () => []).add(o);
+        }
+
+        for (final entry in groupedObligations.entries) {
+          final title = entry.key;
+          final list = entry.value;
+          final target = list.fold<double>(0.0, (sum, o) => sum + o.amount);
+          final collected = list.fold<double>(0.0, (sum, o) => sum + o.paidAmount);
+          final percentage = target > 0 ? (collected / target) : 0.0;
+
+          levySummaries.add(LevyCollectionSummary(
+            levyId: 'derived_$title',
+            title: title,
+            collected: collected,
+            target: target,
+            percentage: percentage,
+            memberCount: list.length,
+          ));
+        }
 
         // Recent payments
         final sortedPayments = List<PaymentModel>.from(payments)

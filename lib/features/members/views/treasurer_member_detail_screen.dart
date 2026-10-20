@@ -13,8 +13,13 @@ import '../widgets/member_widgets.dart';
 
 class TreasurerMemberDetailScreen extends ConsumerWidget {
   final String memberId;
+  final bool isReadOnly;
 
-  const TreasurerMemberDetailScreen({super.key, required this.memberId});
+  const TreasurerMemberDetailScreen({
+    super.key,
+    required this.memberId,
+    this.isReadOnly = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,11 +30,11 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
     final dateFormat = DateFormat('MMM d, yyyy');
 
     final currentUserRole = authState.valueOrNull?.role;
-    final canEdit =
-        currentUserRole == UserRole.treasurer ||
-        currentUserRole == UserRole.financialSecretary ||
-        currentUserRole == UserRole.president ||
-        currentUserRole == UserRole.superAdmin;
+    final canEdit = !isReadOnly &&
+        (currentUserRole == UserRole.treasurer ||
+            currentUserRole == UserRole.financialSecretary ||
+            currentUserRole == UserRole.viceTreasurer ||
+            currentUserRole == UserRole.superAdmin);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Member Details'), centerTitle: true),

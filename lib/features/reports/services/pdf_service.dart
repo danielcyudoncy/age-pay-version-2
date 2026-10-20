@@ -172,9 +172,18 @@ class PdfService {
 
     final pdf = pw.Document();
 
-    final totalPaid = payments
+    final totalObligations = obligations.fold<double>(
+      0,
+      (sum, o) => sum + o.amount,
+    );
+    final paymentsSum = payments
         .where((p) => p.status == PaymentStatus.approved)
         .fold<double>(0, (sum, p) => sum + p.amount);
+    final obligationsPaidSum = obligations.fold<double>(
+      0,
+      (sum, o) => sum + o.paidAmount,
+    );
+    final totalPaid = paymentsSum >= obligationsPaidSum ? paymentsSum : obligationsPaidSum;
     final totalOutstanding = obligations.fold<double>(
       0,
       (sum, o) => sum + o.outstandingBalance,
@@ -230,14 +239,23 @@ class PdfService {
           pw.SizedBox(height: 4),
           _buildTable(
             headers: ['Date', 'Amount', 'Method', 'Status'],
-            rows: payments.map((p) {
-              return [
-                _fmtDate(p.createdAt),
-                _fmt(p.amount),
-                p.method.name,
-                p.status.name,
-              ];
-            }).toList(),
+            rows: payments.isNotEmpty
+                ? payments.map((p) {
+                    return [
+                      _fmtDate(p.createdAt),
+                      _fmt(p.amount),
+                      p.method.name,
+                      p.status.name,
+                    ];
+                  }).toList()
+                : obligations.where((o) => o.paidAmount > 0).map((o) {
+                    return [
+                      _fmtDate(o.settledAt ?? o.createdAt),
+                      _fmt(o.paidAmount),
+                      'Direct / Dues',
+                      o.status.name,
+                    ];
+                  }).toList(),
           ),
           pw.SizedBox(height: 16),
           pw.Container(
@@ -257,12 +275,9 @@ class PdfService {
                   ),
                 ),
                 pw.SizedBox(height: 4),
+                _buildSummaryRow('Total Obligations:', _fmt(totalObligations)),
                 _buildSummaryRow('Total Paid:', _fmt(totalPaid)),
                 _buildSummaryRow('Total Outstanding:', _fmt(totalOutstanding)),
-                _buildSummaryRow(
-                  'Net Balance:',
-                  _fmt(totalOutstanding - totalPaid),
-                ),
               ],
             ),
           ),
@@ -283,11 +298,24 @@ class PdfService {
 
     final pdf = pw.Document();
 
-    final totalTarget = levy.amountPerMember * totalMembers;
-    final totalCollected = obligations.fold<double>(
+    final computedTarget = levy.amountPerMember * totalMembers;
+    final obligationsTarget = obligations.fold<double>(
+      0,
+      (sum, o) => sum + o.amount,
+    );
+    final totalTarget = computedTarget > 0 ? computedTarget : obligationsTarget;
+
+    final totalCollectedFromObligations = obligations.fold<double>(
       0,
       (sum, o) => sum + o.paidAmount,
     );
+    final totalCollectedFromPayments = payments
+        .where((p) => p.status == PaymentStatus.approved)
+        .fold<double>(0, (sum, p) => sum + p.amount);
+    final totalCollected = totalCollectedFromPayments >= totalCollectedFromObligations
+        ? totalCollectedFromPayments
+        : totalCollectedFromObligations;
+
     final totalOutstanding = obligations.fold<double>(
       0,
       (sum, o) => sum + o.outstandingBalance,
@@ -305,7 +333,7 @@ class PdfService {
             'Levy Report',
             subtitles: [
               'Levy: ${levy.title}',
-              'Amount per Member: ${_fmt(levy.amountPerMember)}',
+              'Amount per Member: ${_fmt(levy.amountPerMember > 0 ? levy.amountPerMember : (obligations.isNotEmpty ? obligations.first.amount : 0))}',
               'Member Count: $totalMembers',
               'Total Target: ${_fmt(totalTarget)}',
               'Report Date: ${_fmtDate(DateTime.now())}',
@@ -361,14 +389,23 @@ class PdfService {
           pw.SizedBox(height: 4),
           _buildTable(
             headers: ['Date', 'Amount', 'Method', 'Status'],
-            rows: payments.map((p) {
-              return [
-                _fmtDate(p.createdAt),
-                _fmt(p.amount),
-                p.method.name,
-                p.status.name,
-              ];
-            }).toList(),
+            rows: payments.isNotEmpty
+                ? payments.map((p) {
+                    return [
+                      _fmtDate(p.createdAt),
+                      _fmt(p.amount),
+                      p.method.name,
+                      p.status.name,
+                    ];
+                  }).toList()
+                : obligations.where((o) => o.paidAmount > 0).map((o) {
+                    return [
+                      _fmtDate(o.settledAt ?? o.createdAt),
+                      _fmt(o.paidAmount),
+                      'Direct / Dues',
+                      o.status.name,
+                    ];
+                  }).toList(),
           ),
         ],
       ),
@@ -395,6 +432,30 @@ class PdfService {
       final m = p.createdAt.month;
       if (p.createdAt.year == year) {
         monthlyIncome[m] = (monthlyIncome[m] ?? 0.0) + p.amount;
+      }
+    }
+
+    final monthlyObligationsPaid = <int, double>{};
+    for (var i = 1; i <= 12; i++) {
+      monthlyObligationsPaid[i] = 0.0;
+    }
+    for (final o in obligations.where((o) => o.paidAmount > 0)) {
+      final date = o.settledAt ?? o.createdAt;
+      if (date.year == year) {
+        final m = date.month;
+        monthlyObligationsPaid[m] =
+            (monthlyObligationsPaid[m] ?? 0.0) + o.paidAmount;
+      }
+    }
+
+    final paymentsYearSum =
+        monthlyIncome.values.fold<double>(0, (s, v) => s + v);
+    final obligationsYearSum =
+        monthlyObligationsPaid.values.fold<double>(0, (s, v) => s + v);
+
+    if (obligationsYearSum > paymentsYearSum) {
+      for (var i = 1; i <= 12; i++) {
+        monthlyIncome[i] = monthlyObligationsPaid[i] ?? 0.0;
       }
     }
 
@@ -701,19 +762,47 @@ class PdfService {
       return true;
     });
 
-    final totalCollections = filteredPayments.fold<double>(
+    final filteredObligations = obligations.where((o) {
+      final date = o.settledAt ?? o.createdAt;
+      if (startDate != null && date.isBefore(startDate)) return false;
+      if (endDate != null) {
+        final end = DateTime(
+          endDate.year,
+          endDate.month,
+          endDate.day,
+          23,
+          59,
+          59,
+        );
+        if (date.isAfter(end)) return false;
+      }
+      return true;
+    });
+
+    final paymentsCollections = filteredPayments.fold<double>(
       0,
       (sum, p) => sum + p.amount,
     );
-    final onlineTotal = filteredPayments
+    final obligationsCollections = filteredObligations.fold<double>(
+      0,
+      (sum, o) => sum + o.paidAmount,
+    );
+
+    double onlineTotal = filteredPayments
         .where((p) => p.method == PaymentMethod.online)
         .fold<double>(0, (sum, p) => sum + p.amount);
-    final cashTotal = filteredPayments
+    double cashTotal = filteredPayments
         .where((p) => p.method == PaymentMethod.cash)
         .fold<double>(0, (sum, p) => sum + p.amount);
-    final bankTotal = filteredPayments
+    double bankTotal = filteredPayments
         .where((p) => p.method == PaymentMethod.bankTransfer)
         .fold<double>(0, (sum, p) => sum + p.amount);
+
+    double totalCollections = paymentsCollections;
+    if (obligationsCollections > paymentsCollections) {
+      totalCollections = obligationsCollections;
+      cashTotal += (obligationsCollections - paymentsCollections);
+    }
 
     final totalExpenses = filteredExpenses.fold<double>(
       0,
