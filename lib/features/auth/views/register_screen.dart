@@ -461,6 +461,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             _isCreatingNewBranch = false;
                           });
                         },
+                        onRegisterNewTapped: () {
+                          setState(() {
+                            _isCreatingNewOrg = true;
+                          });
+                        },
                       ),
                       const SizedBox(height: 16),
 
@@ -634,10 +639,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 class _OrganizationPicker extends ConsumerWidget {
   final String? selectedId;
   final ValueChanged<String?> onChanged;
+  final VoidCallback onRegisterNewTapped;
 
   const _OrganizationPicker({
     required this.selectedId,
     required this.onChanged,
+    required this.onRegisterNewTapped,
   });
 
   @override
@@ -647,29 +654,91 @@ class _OrganizationPicker extends ConsumerWidget {
     return orgsAsync.when(
       data: (orgs) {
         if (orgs.isEmpty) {
-          return const InputDecorator(
-            decoration: InputDecoration(
-              labelText: 'Age Grade',
-              prefixIcon: Icon(Icons.business_outlined),
+          return Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.blue.shade200),
             ),
-            child: Text('No Age Grades registered yet'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 18, color: Colors.blue.shade800),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'No Age Grades registered yet',
+                        style: TextStyle(
+                          color: Colors.blue.shade900,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Be the pioneer to register your Age Grade and primary branch.',
+                  style: TextStyle(fontSize: 12, color: Colors.blue.shade800),
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton.icon(
+                  onPressed: onRegisterNewTapped,
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Register New Age Grade'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  ),
+                ),
+              ],
+            ),
           );
         }
+
+        final items = <DropdownMenuItem<String>>[
+          ...orgs.map(
+            (org) => DropdownMenuItem(
+              value: org.id,
+              child: Text(org.name),
+            ),
+          ),
+          const DropdownMenuItem(
+            value: '__NEW__',
+            child: Row(
+              children: [
+                Icon(Icons.add, size: 18, color: Colors.blue),
+                SizedBox(width: 8),
+                Text(
+                  '+ Register New Age Grade',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ];
+
         return DropdownButtonFormField<String>(
-          initialValue: selectedId,
+          initialValue: items.any((i) => i.value == selectedId) ? selectedId : null,
           decoration: const InputDecoration(
             labelText: 'Select Age Grade',
             prefixIcon: Icon(Icons.business_outlined),
           ),
-          items: orgs
-              .map(
-                (org) => DropdownMenuItem(
-                  value: org.id,
-                  child: Text(org.name),
-                ),
-              )
-              .toList(),
-          onChanged: onChanged,
+          items: items,
+          onChanged: (val) {
+            if (val == '__NEW__') {
+              onRegisterNewTapped();
+            } else {
+              onChanged(val);
+            }
+          },
           validator: (value) =>
               value == null || value.isEmpty ? 'Select your Age Grade' : null,
         );
@@ -681,12 +750,22 @@ class _OrganizationPicker extends ConsumerWidget {
         ),
         child: Text('Loading Age Grades...'),
       ),
-      error: (_, _) => const InputDecorator(
-        decoration: InputDecoration(
-          labelText: 'Age Grade',
-          prefixIcon: Icon(Icons.business_outlined),
+      error: (_, _) => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
         ),
-        child: Text('Unable to load Age Grades'),
+        child: Row(
+          children: [
+            const Expanded(child: Text('Unable to load Age Grades')),
+            TextButton.icon(
+              onPressed: onRegisterNewTapped,
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Add New'),
+            ),
+          ],
+        ),
       ),
     );
   }
