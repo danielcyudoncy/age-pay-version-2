@@ -154,202 +154,229 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
       memberActiveObligationsProvider(_selectedMember!.id),
     );
 
-    return Column(
-      children: [
+    return CustomScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      slivers: [
         if (state.error != null)
-          Container(
-            color: Colors.red.shade50,
-            padding: const EdgeInsets.all(12),
+          SliverToBoxAdapter(
+            child: Container(
+              color: Colors.red.shade50,
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  const Icon(Icons.error, color: Colors.red),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      state.error!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () =>
+                        ref.read(offlinePaymentProvider.notifier).clearError(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        SliverToBoxAdapter(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            color: Theme.of(context).colorScheme.primaryContainer,
             child: Row(
               children: [
-                const Icon(Icons.error, color: Colors.red),
-                const SizedBox(width: 8),
+                const Icon(Icons.person),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    state.error!,
-                    style: const TextStyle(color: Colors.red),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _selectedMember!.fullName,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(_selectedMember!.email),
+                    ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: () =>
-                      ref.read(offlinePaymentProvider.notifier).clearError(),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedMember = null;
+                      _amountController.clear();
+                      _notesController.clear();
+                    });
+                    ref.read(selectedObligationsProvider.notifier).clear();
+                  },
+                  child: const Text('Change'),
                 ),
               ],
             ),
           ),
-        Container(
-          padding: const EdgeInsets.all(16),
-          color: Theme.of(context).colorScheme.primaryContainer,
-          child: Row(
-            children: [
-              const Icon(Icons.person),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _selectedMember!.fullName,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(_selectedMember!.email),
-                  ],
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Select obligations to settle',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+        ),
+        obligationsAsync.when(
+          data: (obligations) {
+            if (obligations.isEmpty) {
+              return const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                  child: Center(
+                    child: Text('No outstanding obligations for this member'),
+                  ),
                 ),
-              ),
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _selectedMember = null;
-                    _amountController.clear();
-                    _notesController.clear();
-                  });
-                  ref.read(selectedObligationsProvider.notifier).clear();
-                },
-                child: const Text('Change'),
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            'Select obligations to settle',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-        ),
-        Expanded(
-          child: obligationsAsync.when(
-            data: (obligations) {
-              if (obligations.isEmpty) {
-                return const Center(
-                  child: Text('No outstanding obligations for this member'),
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: obligations.length,
-                itemBuilder: (context, index) {
-                  final obligation = obligations[index];
-                  final isSelected = selectedObligations.any(
-                    (o) => o.id == obligation.id,
-                  );
-
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: CheckboxListTile(
-                      title: Text(obligation.title),
-                      subtitle: Text(
-                        'Outstanding: ${currency.format(obligation.outstandingBalance)}',
-                      ),
-                      secondary: Chip(
-                        label: Text(
-                          obligation.status == ObligationStatus.unpaid
-                              ? 'Unpaid'
-                              : 'Partial',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                        backgroundColor:
-                            obligation.status == ObligationStatus.unpaid
-                            ? Colors.red
-                            : Colors.orange,
-                      ),
-                      value: isSelected,
-                      onChanged: (value) {
-                        ref
-                            .read(selectedObligationsProvider.notifier)
-                            .toggle(obligation);
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          _updateAmountFromSelection();
-                        });
-                      },
-                    ),
-                  );
-                },
               );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Center(
-              child: Text(
-                'Error: $err',
-                style: const TextStyle(color: Colors.red),
+            }
+            return SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final obligation = obligations[index];
+                    final isSelected = selectedObligations.any(
+                      (o) => o.id == obligation.id,
+                    );
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: CheckboxListTile(
+                        title: Text(obligation.title),
+                        subtitle: Text(
+                          'Outstanding: ${currency.format(obligation.outstandingBalance)}',
+                        ),
+                        secondary: Chip(
+                          label: Text(
+                            obligation.status == ObligationStatus.unpaid
+                                ? 'Unpaid'
+                                : 'Partial',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                          backgroundColor:
+                              obligation.status == ObligationStatus.unpaid
+                              ? Colors.red
+                              : Colors.orange,
+                        ),
+                        value: isSelected,
+                        onChanged: (value) {
+                          ref
+                              .read(selectedObligationsProvider.notifier)
+                              .toggle(obligation);
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _updateAmountFromSelection();
+                          });
+                        },
+                      ),
+                    );
+                  },
+                  childCount: obligations.length,
+                ),
+              ),
+            );
+          },
+          loading: () => const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+          error: (err, _) => SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(
+                child: Text(
+                  'Error: $err',
+                  style: const TextStyle(color: Colors.red),
+                ),
               ),
             ),
           ),
         ),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            border: Border(top: BorderSide(color: Colors.grey.shade300)),
-          ),
-          child: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: _amountController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Amount (₦)',
-                    hintText: 'Enter payment amount',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    prefixText: '₦ ',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _notesController,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: 'Notes (optional)',
-                    hintText: 'Add any notes about this payment',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Total:', style: TextStyle(fontSize: 16)),
-                    Text(
-                      currency.format(
-                        double.tryParse(_amountController.text) ?? 0.0,
+        SliverToBoxAdapter(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(top: BorderSide(color: Colors.grey.shade300)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: _amountController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Amount (₦)',
+                      hintText: 'Enter payment amount',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                      prefixText: '₦ ',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _notesController,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      labelText: 'Notes (optional)',
+                      hintText: 'Add any notes about this payment',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: state.isLoading || selectedObligations.isEmpty
-                      ? null
-                      : _recordPayment,
-                  icon: state.isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.payments),
-                  label: Text(
-                    state.isLoading ? 'Recording...' : 'Record Payment',
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Total:', style: TextStyle(fontSize: 16)),
+                      Text(
+                        currency.format(
+                          double.tryParse(_amountController.text) ?? 0.0,
+                        ),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: state.isLoading || selectedObligations.isEmpty
+                        ? null
+                        : _recordPayment,
+                    icon: state.isLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.payments),
+                    label: Text(
+                      state.isLoading ? 'Recording...' : 'Record Payment',
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

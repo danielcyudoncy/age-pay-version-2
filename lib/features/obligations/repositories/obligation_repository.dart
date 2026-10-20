@@ -93,6 +93,14 @@ class ObligationRepository {
     await _collection.doc(id).update(updates);
   }
 
+  Future<void> updateObligation(ObligationModel obligation) async {
+    await _collection.doc(obligation.id).update(obligation.toFirestore());
+  }
+
+  Future<void> deleteObligation(String id) async {
+    await _collection.doc(id).delete();
+  }
+
   Future<void> batchCreateObligations(List<ObligationModel> obligations) async {
     final batch = _firestore.batch();
     for (final obligation in obligations) {
