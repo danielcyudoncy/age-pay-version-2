@@ -123,6 +123,9 @@ class MemberDashboard extends ConsumerWidget {
     DateFormat dateFormat,
     DateFormat dateTimeFormat,
   ) {
+    // Automatically check and reconcile active dues/levies for this member
+    ref.watch(memberObligationReconciliationProvider(memberId));
+
     final totalPaidAsync = ref.watch(memberTotalPaidProvider(memberId));
     final totalOutstandingAsync = ref.watch(
       memberTotalOutstandingProvider(memberId),
@@ -150,6 +153,7 @@ class MemberDashboard extends ConsumerWidget {
 
     return RefreshIndicator(
       onRefresh: () async {
+        ref.invalidate(memberObligationReconciliationProvider(memberId));
         ref.invalidate(memberPaymentsStreamProvider(memberId));
         ref.invalidate(memberObligationsProvider(memberId));
         ref.invalidate(memberActiveObligationsProvider(memberId));
