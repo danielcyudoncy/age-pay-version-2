@@ -20,7 +20,12 @@ class PdfViewerScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        centerTitle: false,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(title),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.share),

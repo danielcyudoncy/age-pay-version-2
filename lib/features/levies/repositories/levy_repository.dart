@@ -11,24 +11,21 @@ class LevyRepository {
   CollectionReference get _collection => _firestore.collection(collection);
 
   Stream<List<LevyModel>> getActiveLevies() {
-    return _collection
-        .where('isActive', isEqualTo: true)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => LevyModel.fromFirestore(doc)).toList(),
-        );
+    return getAllLevies().map(
+      (levies) => levies.where((l) => l.isActive).toList(),
+    );
   }
 
   Stream<List<LevyModel>> getAllLevies() {
-    return _collection
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => LevyModel.fromFirestore(doc)).toList(),
-        );
+    return _collection.snapshots().map(
+      (snapshot) {
+        final list = snapshot.docs
+            .map((doc) => LevyModel.fromFirestore(doc))
+            .toList();
+        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        return list;
+      },
+    );
   }
 
   Future<LevyModel?> getLevyById(String id) async {

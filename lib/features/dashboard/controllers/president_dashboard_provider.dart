@@ -5,6 +5,7 @@ import 'package:cls/features/expenses/models/expense_model.dart';
 import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
+import 'package:cls/features/obligations/models/obligation_model.dart';
 import 'package:cls/features/levies/controllers/levy_provider.dart'
     hide obligationRepositoryProvider;
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
@@ -141,11 +142,23 @@ final totalCollectionsProvider = Provider.autoDispose<AsyncValue<double>>((
   ref,
 ) {
   final paymentsAsync = ref.watch(presidentAllPaymentsStreamProvider);
-  return paymentsAsync.whenData(
-    (list) => list
+  final obligationsAsync = ref.watch(allObligationsProvider);
+
+  return _combine<double>([paymentsAsync, obligationsAsync], () {
+    final payments = paymentsAsync.valueOrNull ?? [];
+    final obligations = obligationsAsync.valueOrNull ?? [];
+
+    final paymentsSum = payments
         .where((p) => p.status == PaymentStatus.approved)
-        .fold<double>(0.0, (sum, p) => sum + p.amount),
-  );
+        .fold<double>(0.0, (sum, p) => sum + p.amount);
+
+    final obligationsSum = obligations.fold<double>(
+      0.0,
+      (sum, o) => sum + o.paidAmount,
+    );
+
+    return paymentsSum > obligationsSum ? paymentsSum : obligationsSum;
+  });
 });
 
 final totalOutstandingLeviesProvider = Provider.autoDispose<AsyncValue<double>>(
@@ -154,7 +167,7 @@ final totalOutstandingLeviesProvider = Provider.autoDispose<AsyncValue<double>>(
     return obligationsAsync.whenData(
       (list) => list
           .where(
-            (o) => o.status != ObligationStatus.paid && o.levyId.isNotEmpty,
+            (o) => o.status != ObligationStatus.paid,
           )
           .fold<double>(0.0, (sum, o) => sum + o.outstandingBalance),
     );
@@ -192,19 +205,43 @@ final monthlyCollectionsProvider =
 final collectionsByMethodProvider =
     Provider.autoDispose<AsyncValue<Map<PaymentMethod, double>>>((ref) {
       final paymentsAsync = ref.watch(presidentAllPaymentsStreamProvider);
-      return paymentsAsync.whenData((list) {
-        final result = <PaymentMethod, double>{};
-        for (final method in PaymentMethod.values) {
-          result[method] = 0.0;
-        }
-        for (final payment in list.where(
-          (p) => p.status == PaymentStatus.approved,
-        )) {
-          result[payment.method] =
-              (result[payment.method] ?? 0.0) + payment.amount;
-        }
-        return result;
-      });
+      final obligationsAsync = ref.watch(allObligationsProvider);
+
+      return _combine<Map<PaymentMethod, double>>(
+        [paymentsAsync, obligationsAsync],
+        () {
+          final payments = paymentsAsync.valueOrNull ?? [];
+          final obligations = obligationsAsync.valueOrNull ?? [];
+
+          final result = <PaymentMethod, double>{};
+          for (final method in PaymentMethod.values) {
+            result[method] = 0.0;
+          }
+          for (final payment in payments.where(
+            (p) => p.status == PaymentStatus.approved,
+          )) {
+            result[payment.method] =
+                (result[payment.method] ?? 0.0) + payment.amount;
+          }
+
+          final obligationsPaid = obligations.fold<double>(
+            0.0,
+            (sum, o) => sum + o.paidAmount,
+          );
+          final paymentsTotal = result.values.fold<double>(
+            0.0,
+            (sum, v) => sum + v,
+          );
+
+          if (obligationsPaid > paymentsTotal) {
+            result[PaymentMethod.cash] =
+                (result[PaymentMethod.cash] ?? 0.0) +
+                (obligationsPaid - paymentsTotal);
+          }
+
+          return result;
+        },
+      );
     });
 
 final memberCollectionSummaryProvider =
@@ -258,9 +295,18 @@ final activeLeviesSummaryProvider =
           final levies = leviesAsync.valueOrNull ?? [];
           final obligations = obligationsAsync.valueOrNull ?? [];
 
-          return levies.map((levy) {
+          final summaries = <ActiveLevySummary>[];
+          final accountedTitles = <String>{};
+
+          // 1. Process explicit levies from levies collection
+          for (final levy in levies) {
+            accountedTitles.add(levy.title.trim().toLowerCase());
             final levyObligations = obligations
-                .where((o) => o.levyId == levy.id)
+                .where((o) =>
+                    o.levyId == levy.id ||
+                    (o.levyId.isEmpty &&
+                        o.title.trim().toLowerCase() ==
+                            levy.title.trim().toLowerCase()))
                 .toList();
             final target = levyObligations.fold<double>(
               0.0,
@@ -273,14 +319,50 @@ final activeLeviesSummaryProvider =
             final percentage = target > 0
                 ? (collected / target).clamp(0.0, 1.0)
                 : 0.0;
-            return ActiveLevySummary(
-              title: levy.title,
-              totalCollected: collected,
-              totalTarget: target,
-              percentage: percentage,
-              memberCount: levyObligations.length,
+            summaries.add(
+              ActiveLevySummary(
+                title: levy.title,
+                totalCollected: collected,
+                totalTarget: target,
+                percentage: percentage,
+                memberCount: levyObligations.length,
+              ),
             );
-          }).toList();
+          }
+
+          // 2. Identify active levies / projects from obligations not tied to an explicit levy
+          final remainingObligations = obligations.where(
+            (o) => !accountedTitles.contains(o.title.trim().toLowerCase()),
+          );
+
+          final grouped = <String, List<ObligationModel>>{};
+          for (final o in remainingObligations) {
+            final t = o.title.trim();
+            if (t.isEmpty) continue;
+            grouped.putIfAbsent(t, () => []).add(o);
+          }
+
+          for (final entry in grouped.entries) {
+            final title = entry.key;
+            final list = entry.value;
+            final target = list.fold<double>(0.0, (sum, o) => sum + o.amount);
+            final collected = list.fold<double>(0.0, (sum, o) => sum + o.paidAmount);
+            final percentage = target > 0
+                ? (collected / target).clamp(0.0, 1.0)
+                : 0.0;
+
+            summaries.add(
+              ActiveLevySummary(
+                title: title,
+                totalCollected: collected,
+                totalTarget: target,
+                percentage: percentage,
+                memberCount: list.length,
+              ),
+            );
+          }
+
+          return summaries;
         },
       );
     });

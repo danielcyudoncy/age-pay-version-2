@@ -159,6 +159,7 @@ class _MembersListTab extends ConsumerWidget {
                           MaterialPageRoute(
                             builder: (_) => TreasurerMemberDetailScreen(
                               memberId: member.userId,
+                              isReadOnly: true,
                             ),
                           ),
                         );

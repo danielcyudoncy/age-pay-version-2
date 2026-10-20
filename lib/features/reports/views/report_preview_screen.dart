@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../members/models/member_model.dart';
 import '../../levies/models/levy_model.dart';
+import '../../../core/constants/enums.dart';
 import '../controllers/reports_provider.dart';
-import 'pdf_viewer_screen.dart';
+import 'report_detail_screen.dart';
 
 class ReportPreviewScreen extends ConsumerStatefulWidget {
   final ReportType reportType;
@@ -22,6 +23,8 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
 
   MemberModel? _selectedMember;
   LevyModel? _selectedLevy;
+  String? _selectedMemberId;
+  String? _selectedLevyId;
   int _selectedYear = DateTime.now().year;
   DateTime? _startDate;
   DateTime? _endDate;
@@ -88,7 +91,7 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
 
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => PdfViewerScreen(request: request),
+          builder: (_) => ReportDetailScreen(request: request),
         ),
       );
     } catch (e) {
@@ -107,7 +110,10 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
   Future<ReportRequest> _buildRequest() async {
     switch (widget.reportType) {
       case ReportType.memberStatement:
-        final member = _selectedMember;
+        final members = await ref.read(reportsMembersStreamProvider.future);
+        final member = (_selectedMemberId != null
+            ? members.where((m) => m.id == _selectedMemberId).firstOrNull
+            : null) ?? _selectedMember;
         if (member == null) {
           throw Exception('Please select a member');
         }
@@ -115,12 +121,15 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
             .read(reportsAllObligationsStreamProvider.future);
         final payments = await ref.read(reportsAllPaymentsStreamProvider.future);
 
-        final memberObligations = obligations
-            .where((o) => o.memberId == member.id)
-            .toList();
-        final memberPayments = payments
-            .where((p) => p.memberId == member.id)
-            .toList();
+        final memberObligations = obligations.where((o) {
+          return o.memberId == member.id ||
+              (member.userId.isNotEmpty && o.memberId == member.userId);
+        }).toList();
+
+        final memberPayments = payments.where((p) {
+          return p.memberId == member.id ||
+              (member.userId.isNotEmpty && p.memberId == member.userId);
+        }).toList();
 
         return ReportRequest(
           type: ReportType.memberStatement,
@@ -130,17 +139,50 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
           reportDate: DateTime.now(),
         );
       case ReportType.levyReport:
-        final levy = _selectedLevy;
-        if (levy == null) {
-          throw Exception('Please select a levy');
-        }
+        final levies = await ref.read(reportsAllLeviesStreamProvider.future);
         final obligations = await ref
             .read(reportsAllObligationsStreamProvider.future);
         final payments = await ref.read(reportsAllPaymentsStreamProvider.future);
 
-        final levyObligations = obligations
-            .where((o) => o.levyId == levy.id)
-            .toList();
+        LevyModel? resolvedLevy = (_selectedLevyId != null
+            ? levies.where((l) => l.id == _selectedLevyId).firstOrNull
+            : null) ?? _selectedLevy;
+
+        if (resolvedLevy == null && _selectedLevyId != null && _selectedLevyId!.startsWith('derived_')) {
+          final title = _selectedLevyId!.substring('derived_'.length);
+          final matching = obligations.where((o) => o.title.trim() == title.trim()).toList();
+          final avgAmount = matching.isNotEmpty ? matching.first.amount : 0.0;
+          resolvedLevy = LevyModel(
+            id: _selectedLevyId!,
+            title: title,
+            description: 'Dues category from obligations',
+            amountPerMember: avgAmount,
+            type: matching.isNotEmpty
+                ? matching.first.type
+                : ObligationType.specialLevy,
+            dueDate: matching.isNotEmpty
+                ? matching.first.dueDate
+                : DateTime.now(),
+            createdBy: '',
+            isActive: true,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+        }
+        if (resolvedLevy == null && levies.isNotEmpty) {
+          resolvedLevy = levies.first;
+        }
+        if (resolvedLevy == null) {
+          throw Exception('Please select a levy');
+        }
+
+        final targetLevy = resolvedLevy;
+
+        final levyObligations = obligations.where((o) {
+          return o.levyId == targetLevy.id ||
+              (targetLevy.id.startsWith('derived_') && o.title.trim() == targetLevy.title.trim());
+        }).toList();
+
         final levyPayments = payments.where((p) {
           return p.allocations.any((a) {
             return levyObligations.any((o) => o.id == a.obligationId);
@@ -149,7 +191,7 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
 
         return ReportRequest(
           type: ReportType.levyReport,
-          levy: levy,
+          levy: targetLevy,
           obligations: levyObligations,
           payments: levyPayments,
           totalMembers: _totalMembers > 0 ? _totalMembers : null,
@@ -164,7 +206,10 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
         final yearPayments = payments.where((p) => p.createdAt.year == year).toList();
         final yearExpenses = expenses.where((e) => e.expenseDate.year == year).toList();
         final yearObligations = obligations
-            .where((o) => o.createdAt.year == year)
+            .where((o) =>
+                o.createdAt.year == year ||
+                (o.settledAt != null && o.settledAt!.year == year) ||
+                o.dueDate.year == year)
             .toList();
 
         return ReportRequest(
@@ -241,13 +286,31 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
       case ReportType.memberStatement:
         return membersAsync.when(
           data: (members) {
-            return DropdownButtonFormField<MemberModel>(
-              initialValue: _selectedMember,
+            final currentSelectedId = (_selectedMemberId != null &&
+                    members.any((m) => m.id == _selectedMemberId))
+                ? _selectedMemberId
+                : (members.isNotEmpty ? members.first.id : null);
+            _selectedMemberId = currentSelectedId;
+
+            return DropdownButtonFormField<String>(
+              key: ValueKey('member_$currentSelectedId'),
+              initialValue: currentSelectedId,
               decoration: const InputDecoration(labelText: 'Select Member'),
               items: members.map((m) {
-                return DropdownMenuItem(value: m, child: Text(m.fullName));
+                return DropdownMenuItem<String>(
+                  value: m.id,
+                  child: Text(m.fullName),
+                );
               }).toList(),
-              onChanged: (v) => setState(() => _selectedMember = v),
+              onChanged: (v) {
+                if (v != null) {
+                  setState(() {
+                    _selectedMemberId = v;
+                    _selectedMember =
+                        members.where((m) => m.id == v).firstOrNull;
+                  });
+                }
+              },
             );
           },
           loading: () => const Center(
@@ -259,17 +322,90 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
           error: (e, _) => Text('Error loading members: $e'),
         );
       case ReportType.levyReport:
+        final obligationsAsync = ref.watch(reportsAllObligationsStreamProvider);
         return Column(
           children: [
             leviesAsync.when(
               data: (levies) {
-                return DropdownButtonFormField<LevyModel>(
-                  initialValue: _selectedLevy,
-                  decoration: const InputDecoration(labelText: 'Select Levy'),
-                  items: levies.map((l) {
-                    return DropdownMenuItem(value: l, child: Text(l.title));
+                final availableLevies = [...levies];
+                if (availableLevies.isEmpty) {
+                  final obligations = obligationsAsync.valueOrNull ?? [];
+                  final titles = obligations
+                      .map((o) => o.title.trim())
+                      .where((t) => t.isNotEmpty)
+                      .toSet();
+                  for (final t in titles) {
+                    final matching = obligations.where((o) => o.title.trim() == t).toList();
+                    final avgAmount = matching.isNotEmpty ? matching.first.amount : 0.0;
+                    availableLevies.add(
+                      LevyModel(
+                        id: 'derived_$t',
+                        title: t,
+                        description: 'Dues category from obligations',
+                        amountPerMember: avgAmount,
+                        type: matching.isNotEmpty
+                            ? matching.first.type
+                            : ObligationType.specialLevy,
+                        dueDate: matching.isNotEmpty
+                            ? matching.first.dueDate
+                            : DateTime.now(),
+                        createdBy: '',
+                        isActive: true,
+                        createdAt: DateTime.now(),
+                        updatedAt: DateTime.now(),
+                      ),
+                    );
+                  }
+                }
+
+                if (availableLevies.isEmpty) {
+                  return Card(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                    child: const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.orange),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'No levies or dues records found to generate a report.',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final currentSelectedId = (_selectedLevyId != null &&
+                        availableLevies.any((l) => l.id == _selectedLevyId))
+                    ? _selectedLevyId
+                    : (availableLevies.isNotEmpty ? availableLevies.first.id : null);
+                _selectedLevyId = currentSelectedId;
+
+                return DropdownButtonFormField<String>(
+                  key: ValueKey('levy_$currentSelectedId'),
+                  initialValue: currentSelectedId,
+                  decoration: const InputDecoration(
+                    labelText: 'Select Levy / Dues Category',
+                  ),
+                  items: availableLevies.map((l) {
+                    return DropdownMenuItem<String>(
+                      value: l.id,
+                      child: Text(l.title),
+                    );
                   }).toList(),
-                  onChanged: (v) => setState(() => _selectedLevy = v),
+                  onChanged: (v) {
+                    if (v != null) {
+                      setState(() {
+                        _selectedLevyId = v;
+                        _selectedLevy =
+                            availableLevies.where((l) => l.id == v).firstOrNull;
+                      });
+                    }
+                  },
                 );
               },
               loading: () => const Center(
@@ -283,7 +419,7 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
             const SizedBox(height: 12),
             TextFormField(
               initialValue: _totalMembers > 0 ? '$_totalMembers' : '10',
-              decoration: const InputDecoration(labelText: 'Total Members'),
+              decoration: const InputDecoration(labelText: 'Total Members (for target calculation)'),
               keyboardType: TextInputType.number,
               onChanged: (v) =>
                   setState(() => _totalMembers = int.tryParse(v) ?? 0),
@@ -349,7 +485,14 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
     final leviesAsync = ref.watch(reportsAllLeviesStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_reportTitle)),
+      appBar: AppBar(
+        centerTitle: false,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(_reportTitle),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -403,8 +546,8 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.picture_as_pdf),
-                label: Text(_isGenerating ? 'Generating...' : 'Generate PDF'),
+                    : const Icon(Icons.analytics_outlined),
+                label: Text(_isGenerating ? 'Loading Report...' : 'View Report'),
               ),
             ),
             if (_isGenerating)
