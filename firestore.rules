@@ -78,7 +78,7 @@ service cloud.firestore {
 
     // ── Users collection ────────────────────────────────
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdminOrTreasurer();
+      allow read: if isAuthenticated();
       allow create: if isSuperAdmin() ||
         (isOwner(userId) && request.resource.data.role != 'superAdmin');
       allow update: if isSuperAdmin() || isAdminOrTreasurer() || isOwner(userId);

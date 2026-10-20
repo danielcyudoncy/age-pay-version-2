@@ -70,7 +70,7 @@ class UserModel {
         (e) => e.name == (data['role'] ?? 'member'),
         orElse: () => UserRole.member,
       ),
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: _parseDate(data['createdAt']),
       isActive: data['isActive'] ?? true,
       status: parsedStatus,
       branchId: data['branchId'],
@@ -97,6 +97,12 @@ class UserModel {
       if (coFounderName != null) 'coFounderName': coFounderName,
       if (coFounderPhone != null) 'coFounderPhone': coFounderPhone,
     };
+  }
+
+  static DateTime _parseDate(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
+    return DateTime.now();
   }
 
   UserModel copyWith({

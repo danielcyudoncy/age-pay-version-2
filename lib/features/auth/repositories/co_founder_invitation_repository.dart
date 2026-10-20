@@ -63,7 +63,7 @@ class CoFounderInvitationRepository {
         return CoFounderInvitationModel.fromFirestore(snapshot.docs.first);
       }
       return null;
-    });
+    }).handleError((_) => null);
   }
 
   Future<CoFounderInvitationModel?> getInvitationByOrgId(

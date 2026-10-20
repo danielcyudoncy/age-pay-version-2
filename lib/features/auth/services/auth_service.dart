@@ -293,7 +293,8 @@ class AuthService {
         .where('status', isEqualTo: AccountStatus.pendingApproval.name)
         .snapshots()
         .map((snap) =>
-            snap.docs.map((d) => UserModel.fromFirestore(d)).toList());
+            snap.docs.map((d) => UserModel.fromFirestore(d)).toList())
+        .handleError((_) => <UserModel>[]);
   }
 
   Future<void> approveUserRegistration({
@@ -446,10 +447,17 @@ class AuthService {
   }
 
   Future<UserModel?> getCurrentUser() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      return await _getUserData(user.uid);
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        return await _getUserData(user.uid);
+      }
+      return null;
+    } catch (_) {
+      try {
+        await _auth.signOut();
+      } catch (_) {}
+      return null;
     }
-    return null;
   }
 }
