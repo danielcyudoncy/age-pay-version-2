@@ -44,9 +44,11 @@ class NotificationRepository {
       return Stream.value([]);
     }
 
-    final notifsQuery = organizationId.isNotEmpty
-        ? _collection.where('organizationId', isEqualTo: organizationId)
-        : _collection;
+    final notifsQuery = isExecutive
+        ? _collection
+        : (organizationId.isNotEmpty
+            ? _collection.where('organizationId', isEqualTo: organizationId)
+            : _collection);
 
     final notifsStream = notifsQuery.snapshots().map((snapshot) {
       final items = snapshot.docs
@@ -113,10 +115,9 @@ class NotificationRepository {
           final pendingList = <NotificationModel>[];
           for (final doc in snap.docs) {
             final data = doc.data();
-            final docOrgId = data['organizationId'] as String? ?? '';
-            final statusStr = data['status'] as String?;
+            final statusStr = (data['status'] as String? ?? '').toLowerCase();
             final isActive = data['isActive'] ?? true;
-            final isPending = statusStr == 'pendingApproval' ||
+            final isPending = statusStr == 'pendingapproval' ||
                 statusStr == 'pending_approval' ||
                 isActive == false;
 
@@ -124,14 +125,6 @@ class NotificationRepository {
 
             final applicantUid = doc.id;
             if (applicantUid == userId) continue;
-
-            // Multi-tenant check: match organizationId or allow unassigned/legacy
-            if (organizationId.isNotEmpty &&
-                docOrgId.isNotEmpty &&
-                docOrgId != organizationId &&
-                docOrgId != userId) {
-              continue;
-            }
 
             final displayName =
                 data['displayName'] as String? ?? 'New member';

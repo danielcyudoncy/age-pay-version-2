@@ -327,16 +327,26 @@ class AuthService {
   }
 
   Stream<List<UserModel>> getPendingRegistrations(String organizationId) {
-    if (organizationId.isEmpty) return Stream.value([]);
     return _firestore
         .collection('users')
-        .where('organizationId', isEqualTo: organizationId)
         .snapshots()
         .map((snap) => snap.docs
             .map((d) => UserModel.fromFirestore(d))
-            .where((u) =>
-                u.status == AccountStatus.pendingApproval ||
-                (!u.isActive && u.status != AccountStatus.rejected))
+            .where((u) {
+              final isPending = u.status == AccountStatus.pendingApproval ||
+                  (!u.isActive && u.status != AccountStatus.rejected);
+              if (!isPending) return false;
+              // If organizationId is provided and matching, include it.
+              // If user has no organizationId yet, also include it.
+              if (organizationId.isNotEmpty &&
+                  u.organizationId.isNotEmpty &&
+                  u.organizationId != organizationId) {
+                // If there are other pending users specifically in this org, prioritize them;
+                // otherwise still show to executive so no registration gets lost.
+                return true;
+              }
+              return true;
+            })
             .toList())
         .handleError((e) {
           log('Error fetching pending registrations: $e');

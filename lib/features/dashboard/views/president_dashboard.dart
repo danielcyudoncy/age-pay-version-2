@@ -1094,6 +1094,7 @@ class _PresidentMeetingsTab extends ConsumerWidget {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab_call_meeting',
         icon: const Icon(Icons.add),
         label: const Text('Call Meeting'),
         onPressed: () {

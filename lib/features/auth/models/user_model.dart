@@ -40,8 +40,9 @@ class UserModel {
     final statusStr = data['status'] as String?;
     final AccountStatus parsedStatus;
     if (statusStr != null) {
+      final normalized = statusStr.replaceAll('_', '').trim().toLowerCase();
       parsedStatus = AccountStatus.values.firstWhere(
-        (s) => s.name == statusStr,
+        (s) => s.name.toLowerCase() == normalized,
         orElse: () => (data['isActive'] == false)
             ? AccountStatus.pendingApproval
             : AccountStatus.approved,
@@ -55,10 +56,16 @@ class UserModel {
     final requestedRoleStr = data['requestedRole'] as String?;
     final UserRole? parsedReqRole = requestedRoleStr != null
         ? UserRole.values.firstWhere(
-            (r) => r.name == requestedRoleStr,
+            (r) => r.name.toLowerCase() == requestedRoleStr.trim().toLowerCase(),
             orElse: () => UserRole.member,
           )
         : null;
+
+    final rawRole = (data['role'] ?? 'member').toString().trim().toLowerCase();
+    final parsedRole = UserRole.values.firstWhere(
+      (e) => e.name.toLowerCase() == rawRole,
+      orElse: () => UserRole.member,
+    );
 
     return UserModel(
       uid: uid,
@@ -66,10 +73,7 @@ class UserModel {
       email: data['email'] ?? '',
       displayName: data['displayName'] ?? '',
       phoneNumber: data['phoneNumber'] ?? '',
-      role: UserRole.values.firstWhere(
-        (e) => e.name == (data['role'] ?? 'member'),
-        orElse: () => UserRole.member,
-      ),
+      role: parsedRole,
       createdAt: _parseDate(data['createdAt']),
       isActive: data['isActive'] ?? true,
       status: parsedStatus,
