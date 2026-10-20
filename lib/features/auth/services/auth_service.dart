@@ -300,11 +300,12 @@ class AuthService {
   Future<void> approveUserRegistration({
     required String uid,
     required String organizationId,
+    UserRole? assignedRole,
   }) async {
     final userDoc = await _firestore.collection('users').doc(uid).get();
     if (!userDoc.exists) return;
     final user = UserModel.fromFirestore(userDoc);
-    final approvedRole = user.requestedRole ?? user.role;
+    final approvedRole = assignedRole ?? user.requestedRole ?? user.role;
 
     final batch = _firestore.batch();
     batch.update(_firestore.collection('users').doc(uid), {

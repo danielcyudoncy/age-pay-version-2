@@ -134,5 +134,32 @@ void main() {
         '08031234567',
       );
     });
+
+    test('Executive approval allows overriding or assigning specific role', () {
+      final applicant = UserModel(
+        uid: 'user-2',
+        organizationId: 'org-1',
+        email: 'applicant@example.com',
+        displayName: 'Nnamdi Okoro',
+        phoneNumber: '08023456789',
+        role: UserRole.member,
+        status: AccountStatus.pendingApproval,
+        branchId: 'branch-1',
+        branchName: 'Lagos Branch',
+        createdAt: now,
+        isActive: false,
+      );
+
+      // Executive assigns Financial Secretary role
+      final approvedWithRole = applicant.copyWith(
+        status: AccountStatus.approved,
+        isActive: true,
+        role: UserRole.financialSecretary,
+      );
+
+      expect(approvedWithRole.status, AccountStatus.approved);
+      expect(approvedWithRole.isActive, isTrue);
+      expect(approvedWithRole.role, UserRole.financialSecretary);
+    });
   });
 }

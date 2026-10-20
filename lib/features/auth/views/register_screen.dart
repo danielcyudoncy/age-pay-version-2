@@ -33,8 +33,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String? _selectedBranchId;
   String? _selectedBranchName;
   bool _isCreatingNewBranch = false;
-
-  UserRole _selectedRole = UserRole.member;
   bool _isLoading = false;
   String? _error;
   DateTime? _selectedDob;
@@ -102,7 +100,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             password: _passwordController.text,
             displayName: _nameController.text.trim(),
             phoneNumber: _phoneController.text.trim(),
-            role: _isCreatingNewOrg ? UserRole.president : _selectedRole,
+            role: _isCreatingNewOrg ? UserRole.president : UserRole.member,
             organizationId: _isCreatingNewOrg ? '' : _selectedOrganizationId!,
             dateOfBirth: _selectedDob!,
             branchId: _isCreatingNewOrg || _isCreatingNewBranch
@@ -343,7 +341,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               if (selected) {
                                 setState(() {
                                   _isCreatingNewOrg = false;
-                                  _selectedRole = UserRole.member;
                                 });
                               }
                             },
@@ -358,7 +355,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               if (selected) {
                                 setState(() {
                                   _isCreatingNewOrg = true;
-                                  _selectedRole = UserRole.president;
                                 });
                               }
                             },
@@ -501,47 +497,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         const SizedBox(height: 16),
                       ],
 
-                      DropdownButtonFormField<UserRole>(
-                        initialValue: _selectedRole,
-                        decoration: const InputDecoration(
-                          labelText: 'Requested Role',
-                          prefixIcon: Icon(Icons.badge_outlined),
-                        ),
-                        items: UserRole.values
-                            .where((role) => role != UserRole.superAdmin)
-                            .map((role) {
-                          return DropdownMenuItem(
-                            value: role,
-                            child: Text(_roleLabel(role)),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _selectedRole = value);
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 10),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.amber.shade50,
+                          color: Colors.blue.shade50,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.amber.shade200),
+                          border: Border.all(color: Colors.blue.shade200),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.lock_clock_outlined,
-                                size: 18, color: Colors.amber.shade800),
-                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.verified_user_outlined,
+                              size: 20,
+                              color: Colors.blue.shade800,
+                            ),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                _selectedRole == UserRole.member
-                                    ? 'Your registration will be routed to your Branch President/VP for approval.'
-                                    : 'Executive roles require official presidential verification before ledger access is granted.',
+                                'Your registration will be submitted to the Branch Executive for review and role assignment.',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.amber.shade900,
+                                  color: Colors.blue.shade900,
+                                  height: 1.3,
                                 ),
                               ),
                             ),
@@ -651,35 +628,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
       ),
     );
-  }
-
-  String _roleLabel(UserRole role) {
-    switch (role) {
-      case UserRole.superAdmin:
-        return 'Super Admin';
-      case UserRole.president:
-        return 'President';
-      case UserRole.vicePresident:
-        return 'Vice President';
-      case UserRole.secretary:
-        return 'Secretary';
-      case UserRole.viceSecretary:
-        return 'Vice Secretary';
-      case UserRole.treasurer:
-        return 'Treasurer';
-      case UserRole.viceTreasurer:
-        return 'Vice Treasurer';
-      case UserRole.financialSecretary:
-        return 'Financial Secretary';
-      case UserRole.auditor:
-        return 'Auditor';
-      case UserRole.executiveMember:
-        return 'Executive Member';
-      case UserRole.committeeChair:
-        return 'Committee Chair';
-      case UserRole.member:
-        return 'Member';
-    }
   }
 }
 

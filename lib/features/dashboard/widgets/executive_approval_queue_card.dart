@@ -20,21 +20,26 @@ class ExecutiveApprovalQueueCard extends ConsumerStatefulWidget {
 class _ExecutiveApprovalQueueCardState
     extends ConsumerState<ExecutiveApprovalQueueCard> {
   final Set<String> _processingIds = {};
+  final Map<String, UserRole> _assignedRoles = {};
 
   Future<void> _approve(UserModel applicant) async {
     setState(() => _processingIds.add(applicant.uid));
     try {
       final authService = ref.read(authServiceProvider);
+      final assignedRole = _assignedRoles[applicant.uid] ??
+          applicant.requestedRole ??
+          UserRole.member;
       await authService.approveUserRegistration(
         uid: applicant.uid,
         organizationId: widget.organizationId,
+        assignedRole: assignedRole,
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green.shade700,
             content: Text(
-              '${applicant.displayName} approved successfully and active dues assigned.',
+              '${applicant.displayName} approved as ${_roleLabel(assignedRole)}.',
             ),
           ),
         );
@@ -250,20 +255,79 @@ class _ExecutiveApprovalQueueCardState
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Row(
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
                             children: [
                               _chip(
                                 icon: Icons.location_on_outlined,
                                 label: applicant.branchName ?? 'Headquarters',
                               ),
-                              const SizedBox(width: 8),
-                              _chip(
-                                icon: Icons.badge_outlined,
-                                label: _roleLabel(
-                                  applicant.requestedRole ?? applicant.role,
+                              if (applicant.requestedRole != null &&
+                                  applicant.requestedRole != UserRole.member)
+                                _chip(
+                                  icon: Icons.info_outline,
+                                  label:
+                                      'Requested: ${_roleLabel(applicant.requestedRole!)}',
                                 ),
-                              ),
                             ],
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.shade400),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<UserRole>(
+                                value: _assignedRoles[applicant.uid] ??
+                                    applicant.requestedRole ??
+                                    UserRole.member,
+                                isExpanded: true,
+                                icon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.amber.shade900,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade900,
+                                ),
+                                items: UserRole.values
+                                    .where((role) => role != UserRole.superAdmin)
+                                    .map((role) {
+                                  return DropdownMenuItem(
+                                    value: role,
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.badge_outlined,
+                                          size: 15,
+                                          color: Colors.amber.shade800,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Assign Role: ${_roleLabel(role)}',
+                                          style: const TextStyle(fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: isProcessing
+                                    ? null
+                                    : (newRole) {
+                                        if (newRole != null) {
+                                          setState(() =>
+                                              _assignedRoles[applicant.uid] =
+                                                  newRole);
+                                        }
+                                      },
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 10),
                           Row(
