@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/constants/enums.dart';
@@ -27,6 +28,9 @@ class NotificationRepository {
   }
 
   /// Streams notifications scoped by organization and filtered by target recipient.
+  /// For executives (President/VP/SuperAdmin), this automatically listens to BOTH
+  /// the notifications collection and the users collection in real time, so any
+  /// registration immediately triggers a visible notification without needing a manual refresh.
   Stream<List<NotificationModel>> streamNotifications({
     required String organizationId,
     String? userId,
@@ -40,130 +44,139 @@ class NotificationRepository {
       return Stream.value([]);
     }
 
-    final notifsStream = organizationId.isNotEmpty
-        ? _collection
-            .where('organizationId', isEqualTo: organizationId)
-            .snapshots()
-        : _collection.snapshots();
+    final notifsQuery = organizationId.isNotEmpty
+        ? _collection.where('organizationId', isEqualTo: organizationId)
+        : _collection;
 
-    if (!isExecutive) {
-      return notifsStream.map((snapshot) {
-        final items = snapshot.docs
-            .map((doc) => NotificationModel.fromMap(
-                  doc.data() as Map<String, dynamic>,
-                  doc.id,
-                ))
-            .where((n) => _isNotificationForUser(n, userId, role))
-            .toList();
-        items.sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
-        return items;
-      }).handleError((error) {
-        log('Error streaming notifications: $error');
-        return <NotificationModel>[];
-      });
-    }
-
-    // For executives, merge pending member registrations from the users collection
-    // so any member pending approval is ALWAYS visible as an actionable notification.
-    return notifsStream.asyncMap((snapshot) async {
-      final notifList = snapshot.docs
+    final notifsStream = notifsQuery.snapshots().map((snapshot) {
+      final items = snapshot.docs
           .map((doc) => NotificationModel.fromMap(
                 doc.data() as Map<String, dynamic>,
                 doc.id,
               ))
           .where((n) => _isNotificationForUser(n, userId, role))
           .toList();
-
-      try {
-        final pendingUsersSnap = organizationId.isNotEmpty
-            ? await _firestore
-                .collection('users')
-                .where('organizationId', isEqualTo: organizationId)
-                .get()
-            : await _firestore.collection('users').get();
-
-        final List<QueryDocumentSnapshot<Map<String, dynamic>>> allPendingDocs = [
-          ...pendingUsersSnap.docs,
-        ];
-
-        if (organizationId.isNotEmpty) {
-          final unassignedSnap = await _firestore
-              .collection('users')
-              .where('organizationId', isEqualTo: '')
-              .get();
-          for (final doc in unassignedSnap.docs) {
-            if (!allPendingDocs.any((d) => d.id == doc.id)) {
-              allPendingDocs.add(doc);
-            }
-          }
-          if (userId != null && userId.isNotEmpty && organizationId != userId) {
-            final uidScopedSnap = await _firestore
-                .collection('users')
-                .where('organizationId', isEqualTo: userId)
-                .get();
-            for (final doc in uidScopedSnap.docs) {
-              if (!allPendingDocs.any((d) => d.id == doc.id)) {
-                allPendingDocs.add(doc);
-              }
-            }
-          }
-        }
-
-        for (final doc in allPendingDocs) {
-          final data = doc.data();
-          final statusStr = data['status'] as String?;
-          final isActive = data['isActive'] ?? true;
-          final isPending = statusStr == 'pendingApproval' ||
-              statusStr == 'pending_approval' ||
-              isActive == false;
-
-          if (isPending && statusStr != 'rejected') {
-            final applicantUid = doc.id;
-            // Don't show the president themselves as a pending approval applicant
-            if (applicantUid == userId) continue;
-
-            final alreadyInList = notifList.any((n) =>
-                n.payload == applicantUid && n.type == 'pending_approval');
-            if (!alreadyInList) {
-              final displayName = data['displayName'] as String? ?? 'New member';
-              final branchName = data['branchName'] as String?;
-              final createdAtRaw = data['createdAt'];
-              final DateTime receivedAt;
-              if (createdAtRaw is Timestamp) {
-                receivedAt = createdAtRaw.toDate();
-              } else if (createdAtRaw is String) {
-                receivedAt = DateTime.tryParse(createdAtRaw) ?? DateTime.now();
-              } else {
-                receivedAt = DateTime.now();
-              }
-
-              notifList.add(
-                NotificationModel(
-                  id: 'pending_$applicantUid',
-                  title: 'New Member Registration',
-                  body:
-                      '$displayName has registered for ${branchName ?? "your organization"} and is awaiting approval and role assignment.',
-                  type: 'pending_approval',
-                  payload: applicantUid,
-                  targetRole: 'president',
-                  organizationId: organizationId,
-                  receivedAt: receivedAt,
-                  read: false,
-                ),
-              );
-            }
-          }
-        }
-      } catch (e) {
-        log('Error fetching pending users in notifications stream: $e');
-      }
-
-      notifList.sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
-      return notifList;
+      items.sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
+      return items;
     }).handleError((error) {
       log('Error streaming notifications: $error');
       return <NotificationModel>[];
     });
+
+    if (!isExecutive) {
+      return notifsStream;
+    }
+
+    // Combine notifications collection stream with users collection stream
+    final StreamController<List<NotificationModel>> controller =
+        StreamController<List<NotificationModel>>.broadcast();
+
+    List<NotificationModel> latestNotifs = [];
+    List<NotificationModel> latestPending = [];
+
+    void emitMerged() {
+      final Map<String, NotificationModel> map = {};
+      for (final n in latestNotifs) {
+        map[n.id] = n;
+      }
+      for (final n in latestPending) {
+        final alreadyInMap = map.values.any((item) =>
+            item.payload == n.payload && item.type == 'pending_approval');
+        if (!alreadyInMap) {
+          map[n.id] = n;
+        }
+      }
+      final list = map.values.toList()
+        ..sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
+      if (!controller.isClosed) {
+        controller.add(list);
+      }
+    }
+
+    StreamSubscription? notifSub;
+    StreamSubscription? usersSub;
+
+    controller.onListen = () {
+      notifSub = notifsStream.listen(
+        (items) {
+          latestNotifs = items;
+          emitMerged();
+        },
+        onError: (err) {
+          log('Error on notifsStream: $err');
+        },
+      );
+
+      final usersStream = _firestore.collection('users').snapshots();
+      usersSub = usersStream.listen(
+        (snap) {
+          final pendingList = <NotificationModel>[];
+          for (final doc in snap.docs) {
+            final data = doc.data();
+            final docOrgId = data['organizationId'] as String? ?? '';
+            final statusStr = data['status'] as String?;
+            final isActive = data['isActive'] ?? true;
+            final isPending = statusStr == 'pendingApproval' ||
+                statusStr == 'pending_approval' ||
+                isActive == false;
+
+            if (!isPending || statusStr == 'rejected') continue;
+
+            final applicantUid = doc.id;
+            if (applicantUid == userId) continue;
+
+            // Multi-tenant check: match organizationId or allow unassigned/legacy
+            if (organizationId.isNotEmpty &&
+                docOrgId.isNotEmpty &&
+                docOrgId != organizationId &&
+                docOrgId != userId) {
+              continue;
+            }
+
+            final displayName =
+                data['displayName'] as String? ?? 'New member';
+            final branchName = data['branchName'] as String?;
+            final createdAtRaw = data['createdAt'];
+            final DateTime receivedAt;
+            if (createdAtRaw is Timestamp) {
+              receivedAt = createdAtRaw.toDate();
+            } else if (createdAtRaw is String) {
+              receivedAt = DateTime.tryParse(createdAtRaw) ?? DateTime.now();
+            } else {
+              receivedAt = DateTime.now();
+            }
+
+            pendingList.add(
+              NotificationModel(
+                id: 'pending_$applicantUid',
+                title: 'New Member Registration',
+                body:
+                    '$displayName has registered for ${branchName ?? "your organization"} and is awaiting approval and role assignment.',
+                type: 'pending_approval',
+                payload: applicantUid,
+                targetRole: 'president',
+                organizationId: organizationId,
+                receivedAt: receivedAt,
+                read: false,
+              ),
+            );
+          }
+
+          latestPending = pendingList;
+          emitMerged();
+        },
+        onError: (err) {
+          log('Error on usersStream: $err');
+        },
+      );
+    };
+
+    controller.onCancel = () {
+      notifSub?.cancel();
+      usersSub?.cancel();
+    };
+
+    return controller.stream;
   }
 
   bool _isNotificationForUser(
