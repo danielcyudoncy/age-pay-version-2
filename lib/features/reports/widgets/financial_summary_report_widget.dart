@@ -106,12 +106,16 @@ class FinancialSummaryReportWidget extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Executive Financial Summary',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        'Executive Financial Summary',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
@@ -134,12 +138,16 @@ class FinancialSummaryReportWidget extends StatelessWidget {
                         children: [
                           Text('Net Position', style: theme.textTheme.bodySmall),
                           const SizedBox(height: 2),
-                          Text(
-                            _currency.format(netPosition),
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: netPosition >= 0 ? Colors.green.shade800 : Colors.red.shade800,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _currency.format(netPosition),
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: netPosition >= 0 ? Colors.green.shade800 : Colors.red.shade800,
+                              ),
                             ),
                           ),
                         ],
@@ -157,11 +165,15 @@ class FinancialSummaryReportWidget extends StatelessWidget {
                         children: [
                           Text('Membership', style: theme.textTheme.bodySmall),
                           const SizedBox(height: 2),
-                          Text(
-                            '$activeMembersCount Active / $totalMembersCount',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '$activeMembersCount Active / $totalMembersCount',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -292,17 +304,26 @@ class FinancialSummaryReportWidget extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 8),
-                Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              ],
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             Text(
               '${_currency.format(amount)} (${(pct * 100).toStringAsFixed(1)}%)',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),

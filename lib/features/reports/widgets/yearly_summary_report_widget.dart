@@ -130,12 +130,16 @@ class YearlySummaryReportWidget extends StatelessWidget {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    Text(
-                      _currency.format(netBalance),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: netBalance >= 0 ? Colors.green.shade800 : Colors.red.shade800,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        _currency.format(netBalance),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: netBalance >= 0 ? Colors.green.shade800 : Colors.red.shade800,
+                        ),
                       ),
                     ),
                   ],
