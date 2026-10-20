@@ -8,6 +8,10 @@ class NotificationModel {
   final bool read;
   final String? imageUrl;
 
+  final String organizationId;
+  final String? targetRole;
+  final String? targetUserId;
+
   const NotificationModel({
     required this.id,
     required this.title,
@@ -17,6 +21,9 @@ class NotificationModel {
     required this.receivedAt,
     this.read = false,
     this.imageUrl,
+    this.organizationId = '',
+    this.targetRole,
+    this.targetUserId,
   });
 
   NotificationModel copyWith({
@@ -28,6 +35,9 @@ class NotificationModel {
     DateTime? receivedAt,
     bool? read,
     String? imageUrl,
+    String? organizationId,
+    String? targetRole,
+    String? targetUserId,
   }) {
     return NotificationModel(
       id: id ?? this.id,
@@ -38,21 +48,37 @@ class NotificationModel {
       receivedAt: receivedAt ?? this.receivedAt,
       read: read ?? this.read,
       imageUrl: imageUrl ?? this.imageUrl,
+      organizationId: organizationId ?? this.organizationId,
+      targetRole: targetRole ?? this.targetRole,
+      targetUserId: targetUserId ?? this.targetUserId,
     );
   }
 
-  factory NotificationModel.fromMap(Map<String, dynamic> map) {
+  factory NotificationModel.fromMap(Map<String, dynamic> map, [String? id]) {
+    final rawDate = map['receivedAt'] ?? map['createdAt'];
+    final DateTime date;
+    if (rawDate is DateTime) {
+      date = rawDate;
+    } else if (rawDate != null && rawDate.runtimeType.toString().contains('Timestamp')) {
+      date = (rawDate as dynamic).toDate();
+    } else if (rawDate is String) {
+      date = DateTime.tryParse(rawDate) ?? DateTime.now();
+    } else {
+      date = DateTime.now();
+    }
+
     return NotificationModel(
-      id: map['id'] ?? '',
+      id: id ?? map['id'] ?? '',
       title: map['title'] ?? '',
       body: map['body'] ?? '',
       type: map['type'] ?? 'general',
       payload: map['payload'],
-      receivedAt: map['receivedAt'] is DateTime
-          ? map['receivedAt']
-          : DateTime.tryParse(map['receivedAt'] ?? '') ?? DateTime.now(),
-      read: map['read'] ?? false,
+      receivedAt: date,
+      read: map['read'] ?? map['isRead'] ?? false,
       imageUrl: map['imageUrl'],
+      organizationId: map['organizationId'] ?? '',
+      targetRole: map['targetRole'],
+      targetUserId: map['targetUserId'],
     );
   }
 
@@ -62,10 +88,13 @@ class NotificationModel {
       'title': title,
       'body': body,
       'type': type,
-      'payload': payload,
+      if (payload != null) 'payload': payload,
       'receivedAt': receivedAt.toIso8601String(),
       'read': read,
-      'imageUrl': imageUrl,
+      if (imageUrl != null) 'imageUrl': imageUrl,
+      'organizationId': organizationId,
+      if (targetRole != null) 'targetRole': targetRole,
+      if (targetUserId != null) 'targetUserId': targetUserId,
     };
   }
 }

@@ -252,5 +252,57 @@ void main() {
       expect(find.text('Notifications'), findsOneWidget);
       expect(find.text('No notifications yet'), findsOneWidget);
     });
+
+    testWidgets('renders pending approval notification with action details', (tester) async {
+      final pendingNotif = NotificationModel(
+        id: 'p1',
+        title: 'New Member Registration',
+        body: 'Emeka Anya has registered and is awaiting approval.',
+        type: 'pending_approval',
+        payload: 'user_emeka_123',
+        targetRole: 'president',
+        organizationId: 'org_test',
+        receivedAt: testDate,
+        read: false,
+      );
+
+      await tester.pumpWidget(buildScreen(notifications: [pendingNotif]));
+      await tester.pumpAndSettle();
+
+      expect(find.text('New Member Registration'), findsOneWidget);
+      expect(find.text('Emeka Anya has registered and is awaiting approval.'), findsOneWidget);
+      expect(find.byIcon(Icons.person_add_alt_1), findsOneWidget);
+    });
+  });
+
+  group('NotificationModel serialization', () {
+    test('serializes and deserializes correctly with multi-tenancy and targeting', () {
+      final model = NotificationModel(
+        id: 'notif_123',
+        title: 'Test Notification',
+        body: 'Test Body',
+        type: 'pending_approval',
+        payload: 'uid_456',
+        organizationId: 'org_123',
+        targetRole: 'president',
+        targetUserId: 'user_789',
+        receivedAt: DateTime(2026, 7, 1, 10, 30),
+        read: false,
+      );
+
+      final map = model.toMap();
+      expect(map['id'], 'notif_123');
+      expect(map['organizationId'], 'org_123');
+      expect(map['targetRole'], 'president');
+      expect(map['targetUserId'], 'user_789');
+
+      final fromMap = NotificationModel.fromMap(map, 'notif_123');
+      expect(fromMap.id, 'notif_123');
+      expect(fromMap.organizationId, 'org_123');
+      expect(fromMap.targetRole, 'president');
+      expect(fromMap.targetUserId, 'user_789');
+      expect(fromMap.type, 'pending_approval');
+      expect(fromMap.read, false);
+    });
   });
 }

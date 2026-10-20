@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
@@ -204,6 +205,25 @@ class AuthService {
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ));
+
+          try {
+            final notifDoc = _firestore.collection('notifications').doc();
+            await notifDoc.set({
+              'id': notifDoc.id,
+              'organizationId': finalOrgId,
+              'title': 'Dual-Executive Verification Required',
+              'body': '$displayName appointed you as General Secretary for $newOrganizationName. Please verify to activate the organization.',
+              'type': 'co_founder_invite',
+              'payload': coFounderPhone,
+              'targetRole': 'secretary',
+              'targetUserId': null,
+              'read': false,
+              'receivedAt': Timestamp.fromDate(DateTime.now()),
+              'createdAt': Timestamp.fromDate(DateTime.now()),
+            });
+          } catch (e) {
+            log('Failed to create secretary co-founder notification: $e');
+          }
         }
       } else if (newBranchName != null && newBranchName.isNotEmpty) {
         // Adding a new branch under an existing organization
@@ -268,6 +288,27 @@ class AuthService {
       );
       final memberRepo = MemberRepository(firestore: _firestore);
       await memberRepo.createMember(member);
+
+      if (!isNewOrganization) {
+        try {
+          final notifDoc = _firestore.collection('notifications').doc();
+          await notifDoc.set({
+            'id': notifDoc.id,
+            'organizationId': finalOrgId,
+            'title': 'New Member Registration',
+            'body': '$displayName has registered for ${finalBranchName ?? "your branch"} and is awaiting your approval and role assignment.',
+            'type': 'pending_approval',
+            'payload': user.uid,
+            'targetRole': 'president',
+            'targetUserId': null,
+            'read': false,
+            'receivedAt': Timestamp.fromDate(DateTime.now()),
+            'createdAt': Timestamp.fromDate(DateTime.now()),
+          });
+        } catch (e) {
+          log('Failed to create registration notification: $e');
+        }
+      }
 
       return user;
     } on FirebaseAuthException catch (e) {
@@ -340,6 +381,35 @@ class AuthService {
         userId: uid,
       );
     }
+
+    // Notify approved user and resolve pending notifications
+    try {
+      final notifDoc = _firestore.collection('notifications').doc();
+      await notifDoc.set({
+        'id': notifDoc.id,
+        'organizationId': organizationId,
+        'title': 'Registration Approved!',
+        'body': 'Your registration has been approved. You are now active with role: ${approvedRole.name}.',
+        'type': 'approval_success',
+        'payload': uid,
+        'targetUserId': uid,
+        'read': false,
+        'receivedAt': Timestamp.fromDate(DateTime.now()),
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      });
+
+      final pendingNotifs = await _firestore
+          .collection('notifications')
+          .where('organizationId', isEqualTo: organizationId)
+          .where('payload', isEqualTo: uid)
+          .where('type', isEqualTo: 'pending_approval')
+          .get();
+      for (final doc in pendingNotifs.docs) {
+        await doc.reference.update({'read': true});
+      }
+    } catch (e) {
+      log('Failed to update notifications on approval: $e');
+    }
   }
 
   Future<void> rejectUserRegistration({
@@ -366,6 +436,19 @@ class AuthService {
     }
 
     await batch.commit();
+
+    try {
+      final pendingNotifs = await _firestore
+          .collection('notifications')
+          .where('payload', isEqualTo: uid)
+          .where('type', isEqualTo: 'pending_approval')
+          .get();
+      for (final doc in pendingNotifs.docs) {
+        await doc.reference.update({'read': true});
+      }
+    } catch (e) {
+      log('Failed to update notifications on rejection: $e');
+    }
   }
 
   /// Returns the organizationId for a new member by reusing the existing
@@ -422,6 +505,8 @@ class AuthService {
       rethrow;
     }
   }
+
+  Future<UserModel?> getUserById(String uid) => _getUserData(uid);
 
   Future<UserModel?> _getUserData(String uid) async {
     try {

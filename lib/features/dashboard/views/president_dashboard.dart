@@ -26,6 +26,8 @@ import 'package:cls/features/secretary/views/calendar_screen.dart';
 import 'package:cls/features/secretary/views/documents_screen.dart';
 import 'package:cls/features/settings/views/settings_screen.dart';
 import 'package:cls/features/dashboard/widgets/executive_approval_queue_card.dart';
+import 'package:cls/features/notifications/controllers/notification_provider.dart';
+import 'package:cls/features/notifications/views/notifications_screen.dart';
 
 class PresidentDashboard extends ConsumerStatefulWidget {
   const PresidentDashboard({super.key});
@@ -62,6 +64,22 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
       appBar: AppBar(
         title: Text(_appBarTitle(_selectedIndex)),
         actions: [
+          IconButton(
+            icon: Badge(
+              isLabelVisible: ref.watch(unreadCountProvider) > 0,
+              label: Text('${ref.watch(unreadCountProvider)}'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            tooltip: 'Notifications',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NotificationsScreen(currentUser: user),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',

@@ -18,6 +18,12 @@ class NotificationCard extends StatelessWidget {
 
   (IconData, Color) _iconAndColor(BuildContext context) {
     switch (notification.type) {
+      case 'pending_approval':
+        return (Icons.person_add_alt_1, Colors.amber.shade800);
+      case 'approval_success':
+        return (Icons.verified_user, Colors.green);
+      case 'co_founder_invite':
+        return (Icons.shield, Colors.blue);
       case 'levy':
         return (Icons.campaign, Theme.of(context).colorScheme.primary);
       case 'payment':

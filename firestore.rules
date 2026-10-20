@@ -184,5 +184,13 @@ service cloud.firestore {
       allow delete: if isAuthenticated() &&
         (resource.data.memberId == request.auth.uid || isSecretary() || isSuperAdmin());
     }
+
+    // ── Notifications collection ────────────────────────
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdminOrTreasurer() || isSuperAdmin();
+    }
   }
 }
