@@ -1,9 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
+import '../repositories/co_founder_invitation_repository.dart';
+import '../models/co_founder_invitation_model.dart';
 import '../../../core/constants/enums.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
+
+final coFounderInvitationRepositoryProvider =
+    Provider<CoFounderInvitationRepository>((ref) {
+  return CoFounderInvitationRepository();
+});
+
+final pendingRegistrationsStreamProvider =
+    StreamProvider.family<List<UserModel>, String>((ref, organizationId) {
+  return ref.watch(authServiceProvider).getPendingRegistrations(organizationId);
+});
+
+final userCoFounderInviteStreamProvider =
+    StreamProvider.family<CoFounderInvitationModel?, String>((ref, phone) {
+  return ref
+      .watch(coFounderInvitationRepositoryProvider)
+      .streamPendingInvitationForPhone(phone);
+});
 
 /// Resolves the organizationId the current user belongs to. For org owners
 /// (secretary/admin/president) this is their own id, which matches the tenant
@@ -64,6 +83,13 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     required UserRole role,
     required String organizationId,
     DateTime? dateOfBirth,
+    String? branchId,
+    String? branchName,
+    bool isNewOrganization = false,
+    String? newOrganizationName,
+    String? newBranchName,
+    String? coFounderName,
+    String? coFounderPhone,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -75,6 +101,13 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         role: role,
         organizationId: organizationId,
         dateOfBirth: dateOfBirth,
+        branchId: branchId,
+        branchName: branchName,
+        isNewOrganization: isNewOrganization,
+        newOrganizationName: newOrganizationName,
+        newBranchName: newBranchName,
+        coFounderName: coFounderName,
+        coFounderPhone: coFounderPhone,
       );
       state = AsyncValue.data(user);
     } catch (e, st) {

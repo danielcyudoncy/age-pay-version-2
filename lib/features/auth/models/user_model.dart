@@ -10,6 +10,12 @@ class UserModel {
   final UserRole role;
   final DateTime createdAt;
   final bool isActive;
+  final AccountStatus status;
+  final String? branchId;
+  final String? branchName;
+  final UserRole? requestedRole;
+  final String? coFounderName;
+  final String? coFounderPhone;
 
   const UserModel({
     required this.uid,
@@ -20,11 +26,40 @@ class UserModel {
     required this.role,
     required this.createdAt,
     this.isActive = true,
+    this.status = AccountStatus.approved,
+    this.branchId,
+    this.branchName,
+    this.requestedRole,
+    this.coFounderName,
+    this.coFounderPhone,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     final uid = doc.id;
+    final statusStr = data['status'] as String?;
+    final AccountStatus parsedStatus;
+    if (statusStr != null) {
+      parsedStatus = AccountStatus.values.firstWhere(
+        (s) => s.name == statusStr,
+        orElse: () => (data['isActive'] == false)
+            ? AccountStatus.pendingApproval
+            : AccountStatus.approved,
+      );
+    } else {
+      parsedStatus = (data['isActive'] == false)
+          ? AccountStatus.pendingApproval
+          : AccountStatus.approved;
+    }
+
+    final requestedRoleStr = data['requestedRole'] as String?;
+    final UserRole? parsedReqRole = requestedRoleStr != null
+        ? UserRole.values.firstWhere(
+            (r) => r.name == requestedRoleStr,
+            orElse: () => UserRole.member,
+          )
+        : null;
+
     return UserModel(
       uid: uid,
       organizationId: data['organizationId'] ?? uid,
@@ -37,6 +72,12 @@ class UserModel {
       ),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isActive: data['isActive'] ?? true,
+      status: parsedStatus,
+      branchId: data['branchId'],
+      branchName: data['branchName'],
+      requestedRole: parsedReqRole,
+      coFounderName: data['coFounderName'],
+      coFounderPhone: data['coFounderPhone'],
     );
   }
 
@@ -49,6 +90,12 @@ class UserModel {
       'role': role.name,
       'createdAt': Timestamp.fromDate(createdAt),
       'isActive': isActive,
+      'status': status.name,
+      if (branchId != null) 'branchId': branchId,
+      if (branchName != null) 'branchName': branchName,
+      if (requestedRole != null) 'requestedRole': requestedRole!.name,
+      if (coFounderName != null) 'coFounderName': coFounderName,
+      if (coFounderPhone != null) 'coFounderPhone': coFounderPhone,
     };
   }
 
@@ -61,6 +108,12 @@ class UserModel {
     UserRole? role,
     DateTime? createdAt,
     bool? isActive,
+    AccountStatus? status,
+    String? branchId,
+    String? branchName,
+    UserRole? requestedRole,
+    String? coFounderName,
+    String? coFounderPhone,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -71,6 +124,12 @@ class UserModel {
       role: role ?? this.role,
       createdAt: createdAt ?? this.createdAt,
       isActive: isActive ?? this.isActive,
+      status: status ?? this.status,
+      branchId: branchId ?? this.branchId,
+      branchName: branchName ?? this.branchName,
+      requestedRole: requestedRole ?? this.requestedRole,
+      coFounderName: coFounderName ?? this.coFounderName,
+      coFounderPhone: coFounderPhone ?? this.coFounderPhone,
     );
   }
 }

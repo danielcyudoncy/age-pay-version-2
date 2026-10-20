@@ -58,7 +58,22 @@ service cloud.firestore {
 
     match /organizations/{organizationId} {
       allow read: if isAuthenticated() || isPublicJoinableOrg();
-      allow create, update, delete: if isSuperAdmin();
+      allow create: if isAuthenticated() || isSuperAdmin();
+      allow update: if isAuthenticated() || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Branches collection ─────────────────────────────
+    match /branches/{branchId} {
+      allow read: if true;
+      allow create: if isAuthenticated() || isSuperAdmin();
+      allow update, delete: if isAdminOrTreasurer() || isSuperAdmin();
+    }
+
+    // ── Co-Founder Invitations collection ───────────────
+    match /co_founder_invitations/{invitationId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isSuperAdmin();
     }
 
     // ── Users collection ────────────────────────────────
@@ -66,8 +81,7 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdminOrTreasurer();
       allow create: if isSuperAdmin() ||
         (isOwner(userId) && request.resource.data.role != 'superAdmin');
-      allow update: if isSuperAdmin() ||
-        (isOwner(userId) && request.resource.data.role == resource.data.role);
+      allow update: if isSuperAdmin() || isAdminOrTreasurer() || isOwner(userId);
       allow delete: if isSuperAdmin();
     }
 

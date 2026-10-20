@@ -25,6 +25,7 @@ import 'package:cls/features/secretary/views/attendance_screen.dart';
 import 'package:cls/features/secretary/views/calendar_screen.dart';
 import 'package:cls/features/secretary/views/documents_screen.dart';
 import 'package:cls/features/settings/views/settings_screen.dart';
+import 'package:cls/features/dashboard/widgets/executive_approval_queue_card.dart';
 
 class PresidentDashboard extends ConsumerStatefulWidget {
   const PresidentDashboard({super.key});
@@ -256,6 +257,9 @@ class _HomeTab extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
+
+            // Pending Member Registration Approvals
+            ExecutiveApprovalQueueCard(organizationId: user.organizationId),
 
             // Executive Quick Actions
             Text(

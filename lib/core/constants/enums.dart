@@ -21,6 +21,13 @@ enum ObligationType {
   projectContribution,
 }
 
+enum AccountStatus {
+  pendingApproval,
+  approved,
+  rejected,
+  suspended,
+}
+
 enum ObligationStatus { unpaid, partial, paid }
 
 enum PaymentMethod { cash, bankTransfer, online }

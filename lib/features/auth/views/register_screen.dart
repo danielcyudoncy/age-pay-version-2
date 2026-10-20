@@ -21,8 +21,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _dobController = TextEditingController();
-  UserRole _selectedRole = UserRole.member;
+
+  // Multi-Level Organization & Branch Controllers
+  bool _isCreatingNewOrg = false;
+  final _newOrgNameController = TextEditingController();
+  final _newBranchNameController = TextEditingController();
+  final _secretaryNameController = TextEditingController();
+  final _secretaryPhoneController = TextEditingController();
+
   String? _selectedOrganizationId;
+  String? _selectedBranchId;
+  String? _selectedBranchName;
+  bool _isCreatingNewBranch = false;
+
+  UserRole _selectedRole = UserRole.member;
   bool _isLoading = false;
   String? _error;
   DateTime? _selectedDob;
@@ -37,6 +49,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _dobController.dispose();
+    _newOrgNameController.dispose();
+    _newBranchNameController.dispose();
+    _secretaryNameController.dispose();
+    _secretaryPhoneController.dispose();
     super.dispose();
   }
 
@@ -46,26 +62,72 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       setState(() => _error = 'Please select your date of birth');
       return;
     }
-    if (_selectedOrganizationId == null || _selectedOrganizationId!.isEmpty) {
-      setState(() => _error = 'Please select your organization');
-      return;
+
+    if (_isCreatingNewOrg) {
+      if (_newOrgNameController.text.trim().isEmpty) {
+        setState(() => _error = 'Please enter the name of your Age Grade');
+        return;
+      }
+      if (_secretaryPhoneController.text.trim().isEmpty) {
+        setState(() => _error =
+            'Please provide your General Secretary\'s phone number for co-signing verification');
+        return;
+      }
+    } else {
+      if (_selectedOrganizationId == null || _selectedOrganizationId!.isEmpty) {
+        setState(() => _error = 'Please select your Age Grade');
+        return;
+      }
+      if (!_isCreatingNewBranch &&
+          (_selectedBranchId == null || _selectedBranchId!.isEmpty)) {
+        setState(() => _error = 'Please select or add your branch');
+        return;
+      }
+      if (_isCreatingNewBranch &&
+          _newBranchNameController.text.trim().isEmpty) {
+        setState(() => _error = 'Please enter the new branch name');
+        return;
+      }
     }
+
     if (!mounted) return;
     setState(() {
       _isLoading = true;
       _error = null;
     });
+
     try {
-      await ref
-          .read(authProvider.notifier)
-          .register(
+      await ref.read(authProvider.notifier).register(
             email: _emailController.text.trim(),
             password: _passwordController.text,
             displayName: _nameController.text.trim(),
             phoneNumber: _phoneController.text.trim(),
-            role: _selectedRole,
-            organizationId: _selectedOrganizationId!,
+            role: _isCreatingNewOrg ? UserRole.president : _selectedRole,
+            organizationId: _isCreatingNewOrg ? '' : _selectedOrganizationId!,
             dateOfBirth: _selectedDob!,
+            branchId: _isCreatingNewOrg || _isCreatingNewBranch
+                ? null
+                : _selectedBranchId,
+            branchName: _isCreatingNewOrg
+                ? (_newBranchNameController.text.trim().isNotEmpty
+                    ? _newBranchNameController.text.trim()
+                    : 'Headquarters / Main Branch')
+                : (_isCreatingNewBranch
+                    ? _newBranchNameController.text.trim()
+                    : _selectedBranchName),
+            isNewOrganization: _isCreatingNewOrg,
+            newOrganizationName: _isCreatingNewOrg
+                ? _newOrgNameController.text.trim()
+                : null,
+            newBranchName: (_isCreatingNewOrg || _isCreatingNewBranch)
+                ? _newBranchNameController.text.trim()
+                : null,
+            coFounderName: _isCreatingNewOrg
+                ? _secretaryNameController.text.trim()
+                : null,
+            coFounderPhone: _isCreatingNewOrg
+                ? _secretaryPhoneController.text.trim()
+                : null,
           );
     } catch (e) {
       if (mounted) {
@@ -122,20 +184,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 480),
+              constraints: const BoxConstraints(maxWidth: 500),
               child: Form(
                 key: _formKey,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
                     Icon(
                       Icons.account_balance,
-                      size: 64,
+                      size: 56,
                       color: theme.colorScheme.primary,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     Text(
                       'Create Account',
                       style: theme.textTheme.headlineMedium?.copyWith(
@@ -143,15 +205,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Text(
-                      'Join your organization on AgePay',
+                      'Join or register your Age Grade on AgePay',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                     if (_error != null)
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -172,6 +234,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ),
                         ),
                       ),
+
+                    // Personal Details Section
+                    Text(
+                      'Personal Details',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     TextFormField(
                       controller: _nameController,
                       textCapitalization: TextCapitalization.words,
@@ -194,7 +266,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
-                        labelText: 'Email',
+                        labelText: 'Email Address',
                         prefixIcon: Icon(Icons.email_outlined),
                       ),
                       validator: (value) {
@@ -215,6 +287,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Phone Number',
                         prefixIcon: Icon(Icons.phone_outlined),
+                        hintText: 'e.g. 0803 123 4567',
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -247,64 +320,246 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer.withValues(
-                          alpha: 0.3,
+
+                    const SizedBox(height: 28),
+                    // Multi-Level Organization & Branch Section
+                    Text(
+                      'Organization & Branch',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Choice: Join Existing vs Register New
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ChoiceChip(
+                            label: const Text('Join Existing Age Grade'),
+                            selected: !_isCreatingNewOrg,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setState(() {
+                                  _isCreatingNewOrg = false;
+                                  _selectedRole = UserRole.member;
+                                });
+                              }
+                            },
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: theme.colorScheme.primaryContainer,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ChoiceChip(
+                            label: const Text('+ Register New'),
+                            selected: _isCreatingNewOrg,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setState(() {
+                                  _isCreatingNewOrg = true;
+                                  _selectedRole = UserRole.president;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    if (_isCreatingNewOrg) ...[
+                      // Registering a brand new Age Grade
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.shield_outlined,
+                                color: Colors.blue.shade800, size: 22),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                '🛡️ Dual-Executive Verification:\nAs pioneer founder, you will be registered as President. Provide your General Secretary\'s details below—they will receive an alert to co-sign and activate the Age Grade.',
+                                style: TextStyle(
+                                  color: Colors.blue.shade900,
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            size: 20,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Select your role during registration.',
-                              style: theme.textTheme.bodySmall,
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _newOrgNameController,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          labelText: 'Age Grade Name',
+                          hintText: 'e.g. Udoka Age Grade',
+                          prefixIcon: Icon(Icons.corporate_fare_outlined),
+                        ),
+                        validator: (v) => _isCreatingNewOrg && (v == null || v.isEmpty)
+                            ? 'Enter the Age Grade name'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _newBranchNameController,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          labelText: 'Primary Branch / Headquarters',
+                          hintText: 'e.g. Lagos Branch (or Abiriba HQ)',
+                          prefixIcon: Icon(Icons.location_on_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _secretaryNameController,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          labelText: 'General Secretary Full Name',
+                          hintText: 'e.g. Chief Kalu Anya',
+                          prefixIcon: Icon(Icons.person_add_outlined),
+                        ),
+                        validator: (v) => _isCreatingNewOrg && (v == null || v.isEmpty)
+                            ? 'Enter Secretary name'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _secretaryPhoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          labelText: 'General Secretary Phone Number',
+                          hintText: 'e.g. 0803 123 4567',
+                          prefixIcon: Icon(Icons.phone_android_outlined),
+                        ),
+                        validator: (v) => _isCreatingNewOrg && (v == null || v.isEmpty)
+                            ? 'Enter Secretary phone number for co-signing'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Role',
+                          prefixIcon: Icon(Icons.badge_outlined),
+                        ),
+                        child: const Text('President (Pioneer Founder)'),
+                      ),
+                    ] else ...[
+                      // Joining existing Age Grade
+                      _OrganizationPicker(
+                        selectedId: _selectedOrganizationId,
+                        onChanged: (id) {
+                          setState(() {
+                            _selectedOrganizationId = id;
+                            _selectedBranchId = null;
+                            _selectedBranchName = null;
+                            _isCreatingNewBranch = false;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      if (_selectedOrganizationId != null &&
+                          _selectedOrganizationId!.isNotEmpty) ...[
+                        _BranchPicker(
+                          organizationId: _selectedOrganizationId!,
+                          selectedBranchId: _selectedBranchId,
+                          isCreatingNew: _isCreatingNewBranch,
+                          onChanged: (branchId, branchName, isNew) {
+                            setState(() {
+                              _selectedBranchId = branchId;
+                              _selectedBranchName = branchName;
+                              _isCreatingNewBranch = isNew;
+                            });
+                          },
+                        ),
+                        if (_isCreatingNewBranch) ...[
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _newBranchNameController,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: const InputDecoration(
+                              labelText: 'New Branch Name',
+                              hintText: 'e.g. Port Harcourt Branch',
+                              prefixIcon: Icon(Icons.add_location_alt_outlined),
                             ),
+                            validator: (v) => _isCreatingNewBranch &&
+                                    (v == null || v.trim().isEmpty)
+                                ? 'Enter new branch name'
+                                : null,
                           ),
                         ],
+                        const SizedBox(height: 16),
+                      ],
+
+                      DropdownButtonFormField<UserRole>(
+                        initialValue: _selectedRole,
+                        decoration: const InputDecoration(
+                          labelText: 'Requested Role',
+                          prefixIcon: Icon(Icons.badge_outlined),
+                        ),
+                        items: UserRole.values
+                            .where((role) => role != UserRole.superAdmin)
+                            .map((role) {
+                          return DropdownMenuItem(
+                            value: role,
+                            child: Text(_roleLabel(role)),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _selectedRole = value);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.amber.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.lock_clock_outlined,
+                                size: 18, color: Colors.amber.shade800),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _selectedRole == UserRole.member
+                                    ? 'Your registration will be routed to your Branch President/VP for approval.'
+                                    : 'Executive roles require official presidential verification before ledger access is granted.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.amber.shade900,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 28),
+                    // Password Section
+                    Text(
+                      'Security',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _OrganizationPicker(
-                      selectedId: _selectedOrganizationId,
-                      onChanged: (id) => setState(() => _selectedOrganizationId = id),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<UserRole>(
-                      initialValue: _selectedRole,
-                      decoration: const InputDecoration(
-                        labelText: 'Role',
-                        prefixIcon: Icon(Icons.badge_outlined),
-                      ),
-                      items: UserRole.values
-                          .where((role) => role != UserRole.superAdmin)
-                          .map((role) {
-                        return DropdownMenuItem(
-                          value: role,
-                          child: Text(_roleLabel(role)),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedRole = value;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
@@ -362,7 +617,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -446,16 +701,16 @@ class _OrganizationPicker extends ConsumerWidget {
         if (orgs.isEmpty) {
           return const InputDecorator(
             decoration: InputDecoration(
-              labelText: 'Organization',
+              labelText: 'Age Grade',
               prefixIcon: Icon(Icons.business_outlined),
             ),
-            child: Text('No organizations available'),
+            child: Text('No Age Grades registered yet'),
           );
         }
         return DropdownButtonFormField<String>(
           initialValue: selectedId,
           decoration: const InputDecoration(
-            labelText: 'Organization',
+            labelText: 'Select Age Grade',
             prefixIcon: Icon(Icons.business_outlined),
           ),
           items: orgs
@@ -468,22 +723,110 @@ class _OrganizationPicker extends ConsumerWidget {
               .toList(),
           onChanged: onChanged,
           validator: (value) =>
-              value == null || value.isEmpty ? 'Select your organization' : null,
+              value == null || value.isEmpty ? 'Select your Age Grade' : null,
         );
       },
       loading: () => const InputDecorator(
         decoration: InputDecoration(
-          labelText: 'Organization',
+          labelText: 'Age Grade',
           prefixIcon: Icon(Icons.business_outlined),
         ),
-        child: Text('Loading...'),
+        child: Text('Loading Age Grades...'),
       ),
       error: (_, _) => const InputDecorator(
         decoration: InputDecoration(
-          labelText: 'Organization',
+          labelText: 'Age Grade',
           prefixIcon: Icon(Icons.business_outlined),
         ),
-        child: Text('Unable to load organizations'),
+        child: Text('Unable to load Age Grades'),
+      ),
+    );
+  }
+}
+
+class _BranchPicker extends ConsumerWidget {
+  final String organizationId;
+  final String? selectedBranchId;
+  final bool isCreatingNew;
+  final void Function(String? branchId, String? branchName, bool isNew) onChanged;
+
+  const _BranchPicker({
+    required this.organizationId,
+    required this.selectedBranchId,
+    required this.isCreatingNew,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final branchesAsync = ref.watch(branchesStreamFamily(organizationId));
+
+    return branchesAsync.when(
+      data: (branches) {
+        final items = <DropdownMenuItem<String>>[
+          ...branches.map(
+            (b) => DropdownMenuItem(
+              value: b.id,
+              child: Text(b.name),
+            ),
+          ),
+          const DropdownMenuItem(
+            value: '__NEW__',
+            child: Row(
+              children: [
+                Icon(Icons.add, size: 18, color: Colors.blue),
+                SizedBox(width: 8),
+                Text('+ Add New Branch',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    )),
+              ],
+            ),
+          ),
+        ];
+
+        final currentValue = isCreatingNew ? '__NEW__' : selectedBranchId;
+
+        return DropdownButtonFormField<String>(
+          initialValue: items.any((i) => i.value == currentValue) ? currentValue : null,
+          decoration: const InputDecoration(
+            labelText: 'Branch Name',
+            prefixIcon: Icon(Icons.location_city_outlined),
+          ),
+          items: items,
+          onChanged: (val) {
+            if (val == '__NEW__') {
+              onChanged(null, null, true);
+            } else if (val != null) {
+              final selected = branches.firstWhere((b) => b.id == val);
+              onChanged(selected.id, selected.name, false);
+            }
+          },
+          validator: (v) => !isCreatingNew && (v == null || v.isEmpty)
+              ? 'Select your branch'
+              : null,
+        );
+      },
+      loading: () => const InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Branch Name',
+          prefixIcon: Icon(Icons.location_city_outlined),
+        ),
+        child: Text('Loading branches...'),
+      ),
+      error: (_, _) => DropdownButtonFormField<String>(
+        decoration: const InputDecoration(
+          labelText: 'Branch Name',
+          prefixIcon: Icon(Icons.location_city_outlined),
+        ),
+        items: const [
+          DropdownMenuItem(
+            value: '__NEW__',
+            child: Text('+ Add New Branch'),
+          ),
+        ],
+        onChanged: (_) => onChanged(null, null, true),
       ),
     );
   }
