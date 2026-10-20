@@ -223,6 +223,7 @@ class _HomeTab extends ConsumerWidget {
                   icon: Icons.people,
                   color: theme.colorScheme.primary,
                   streamAsync: membersAsync,
+                  onTap: () => onNavigate(1),
                 ),
               ),
               const SizedBox(width: 12),
@@ -233,6 +234,7 @@ class _HomeTab extends ConsumerWidget {
                   icon: Icons.check_circle,
                   color: Colors.green,
                   streamAsync: membersAsync,
+                  onTap: () => onNavigate(1),
                 ),
               ),
             ],
@@ -248,6 +250,7 @@ class _HomeTab extends ConsumerWidget {
                   color: Colors.blue,
                   futureAsync: paymentsAsync,
                   formatter: (v) => currency.format(v ?? 0),
+                  onTap: () => onNavigate(4),
                 ),
               ),
               const SizedBox(width: 12),
@@ -259,6 +262,7 @@ class _HomeTab extends ConsumerWidget {
                   color: Colors.orange,
                   futureAsync: obligationsAsync,
                   formatter: (v) => currency.format(v ?? 0),
+                  onTap: () => onNavigate(4),
                 ),
               ),
             ],
@@ -280,6 +284,7 @@ class _HomeTab extends ConsumerWidget {
                         ),
                       )
                       .toList(),
+                  onTap: () => onNavigate(2),
                 ),
               ),
               const SizedBox(width: 12),
@@ -290,6 +295,7 @@ class _HomeTab extends ConsumerWidget {
                   icon: Icons.campaign,
                   color: Colors.teal,
                   streamAsync: announcementsAsync,
+                  onTap: () => onNavigate(3),
                 ),
               ),
             ],
@@ -304,6 +310,10 @@ class _HomeTab extends ConsumerWidget {
                   icon: Icons.folder,
                   color: Colors.indigo,
                   streamAsync: documentsAsync,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DocumentsScreen()),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -314,6 +324,12 @@ class _HomeTab extends ConsumerWidget {
                   icon: Icons.notifications,
                   color: Colors.red,
                   showBadge: notificationsCount > 0,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => NotificationsScreen(currentUser: user),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -419,6 +435,7 @@ class _StatCard extends ConsumerWidget {
   final String Function(dynamic)? formatter;
   final dynamic Function(List)? filter;
   final bool showBadge;
+  final VoidCallback? onTap;
 
   const _StatCard({
     required this.label,
@@ -430,6 +447,7 @@ class _StatCard extends ConsumerWidget {
     this.formatter,
     this.filter,
     this.showBadge = false,
+    this.onTap,
   });
 
   @override
@@ -484,31 +502,36 @@ class _StatCard extends ConsumerWidget {
         elevation: 0,
         color: color.withValues(alpha: 0.06),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(icon, color: color, size: 20),
                 ),
-                padding: const EdgeInsets.all(8),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const SizedBox(height: 12),
-              content,
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
+                const SizedBox(height: 12),
+                content,
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

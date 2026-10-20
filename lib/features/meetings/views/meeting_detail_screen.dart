@@ -19,11 +19,7 @@ class MeetingDetailScreen extends ConsumerStatefulWidget {
   final MeetingModel? meeting;
   final bool readOnly;
 
-  const MeetingDetailScreen({
-    super.key,
-    this.meeting,
-    this.readOnly = false,
-  });
+  const MeetingDetailScreen({super.key, this.meeting, this.readOnly = false});
 
   @override
   ConsumerState<MeetingDetailScreen> createState() =>
@@ -130,18 +126,20 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
       final controller = ref.read(meetingControllerProvider);
       final title = _titleController.text.trim();
       final venue = _venueController.text.trim();
-      final minutesText =
-          _minutesController.text.trim().isEmpty
-              ? null
-              : _minutesController.text.trim();
+      final minutesText = _minutesController.text.trim().isEmpty
+          ? null
+          : _minutesController.text.trim();
 
-      String? minutesFileUrl =
-          _removeFile ? null : widget.meeting?.minutesFileUrl;
-      String? minutesFileName =
-          _removeFile ? null : widget.meeting?.minutesFileName;
+      String? minutesFileUrl = _removeFile
+          ? null
+          : widget.meeting?.minutesFileUrl;
+      String? minutesFileName = _removeFile
+          ? null
+          : widget.meeting?.minutesFileName;
 
-      final orgId =
-          user.organizationId.isNotEmpty ? user.organizationId : user.uid;
+      final orgId = user.organizationId.isNotEmpty
+          ? user.organizationId
+          : user.uid;
 
       if (_pickedFile != null && _pickedFileName != null) {
         final meetingId =
@@ -219,8 +217,9 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
         ref.invalidate(announcementsStreamProvider(orgId));
 
         // 2. Add to in-app Notifications inbox
-        final notificationNotifier =
-            ref.read(notificationListProvider.notifier);
+        final notificationNotifier = ref.read(
+          notificationListProvider.notifier,
+        );
         notificationNotifier.addNotification(
           NotificationModel(
             id: 'meet_${DateTime.now().millisecondsSinceEpoch}',
@@ -282,10 +281,11 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
               : (_isNew ? 'New Meeting' : 'Meeting Minutes'),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          child: Form(
+            key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -347,12 +347,13 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                 decoration: InputDecoration(
                   labelText: 'Meeting Date & Time',
                   prefixIcon: const Icon(Icons.calendar_today),
-                  suffixIcon: widget.readOnly ? null : const Icon(Icons.access_time),
+                  suffixIcon: widget.readOnly
+                      ? null
+                      : const Icon(Icons.access_time),
                   border: const OutlineInputBorder(),
-                  hintText:
-                      _selectedDate == null
-                          ? 'Select date and time'
-                          : dateTimeFormat.format(_selectedDate!),
+                  hintText: _selectedDate == null
+                      ? 'Select date and time'
+                      : dateTimeFormat.format(_selectedDate!),
                 ),
               ),
               if (!_isNew && widget.meeting != null) ...[
@@ -383,17 +384,18 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                 ),
               ),
               if (!widget.readOnly) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: _pickMinutesFile,
                   icon: const Icon(Icons.upload_file),
                   label: const Text('Upload Minutes (image/scan)'),
                 ),
               ],
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _MinutesFilePreview(
-                existingUrl:
-                    _removeFile ? null : widget.meeting?.minutesFileUrl,
+                existingUrl: _removeFile
+                    ? null
+                    : widget.meeting?.minutesFileUrl,
                 existingName: widget.meeting?.minutesFileName,
                 pickedFile: _pickedFile,
                 pickedFileName: _pickedFileName,
@@ -407,7 +409,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                 onUndoRemove: () => setState(() => _removeFile = false),
               ),
               if (!widget.readOnly) ...[
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 SizedBox(
                   height: 48,
                   child: ElevatedButton.icon(
@@ -425,17 +427,21 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                             ),
                           )
                         : Text(
-                            _isNew ? 'Schedule & Notify Members' : 'Save Minutes',
+                            _isNew
+                                ? 'Schedule & Notify Members'
+                                : 'Save Minutes',
                             style: const TextStyle(fontSize: 16),
                           ),
                   ),
                 ),
+                const SizedBox(height: 16),
               ],
             ],
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -472,10 +478,7 @@ class _MinutesFilePreview extends StatelessWidget {
           subtitle: const Text('Ready to upload'),
           trailing: readOnly
               ? null
-              : IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: onRemove,
-                ),
+              : IconButton(icon: const Icon(Icons.close), onPressed: onRemove),
         ),
       );
     }
@@ -498,7 +501,10 @@ class _MinutesFilePreview extends StatelessWidget {
                       icon: const Icon(Icons.open_in_new),
                       onPressed: () => onOpen(existingUrl!),
                     ),
-                    IconButton(icon: const Icon(Icons.delete), onPressed: onRemove),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: onRemove,
+                    ),
                   ],
                 ),
           onTap: () => onOpen(existingUrl!),
