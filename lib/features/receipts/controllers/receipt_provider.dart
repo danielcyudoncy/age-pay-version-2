@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cls/features/receipts/models/receipt_model.dart';
 import 'package:cls/features/receipts/repositories/receipt_repository.dart';
 import 'package:cls/features/receipts/services/receipt_service.dart';
+import '../../auth/controllers/auth_provider.dart';
+import '../../admin/controllers/admin_provider.dart';
 
 final receiptRepositoryProvider = Provider<ReceiptRepository>((ref) {
   return ReceiptRepository();
@@ -37,8 +39,20 @@ final receiptByPaymentIdProvider = FutureProvider.autoDispose
 final receiptPdfGenerationProvider = FutureProvider.autoDispose
     .family<Uint8List, ReceiptModel>((ref, receipt) async {
       final service = ref.watch(_receiptServiceProvider);
+      String orgName = 'Age Grade Association';
+      try {
+        final orgId = await ref.watch(organizationIdProvider.future);
+        if (orgId.isNotEmpty) {
+          final org = await ref
+              .watch(organizationRepositoryProvider)
+              .getOrganizationById(orgId);
+          if (org != null && org.name.isNotEmpty) {
+            orgName = org.name;
+          }
+        }
+      } catch (_) {}
       return service.generateReceiptPdf(
         receipt: receipt,
-        associationName: 'Age Grade Association',
+        associationName: orgName,
       );
     });

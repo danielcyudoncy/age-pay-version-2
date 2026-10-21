@@ -45,12 +45,21 @@ class PdfService {
   static String _fmt(double amount) => _currencyFormat.format(amount);
   static String _fmtDate(DateTime date) => _dateFormat.format(date);
 
-  static pw.Widget _buildHeader(String title, {List<String>? subtitles}) {
+  static pw.Widget _buildHeader(
+    String title, {
+    List<String>? subtitles,
+    String? organizationName,
+  }) {
+    final heading =
+        (organizationName != null && organizationName.trim().isNotEmpty)
+            ? organizationName.trim()
+            : _associationName;
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
-          _associationName,
+          heading,
           style: _regularStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 4),
@@ -167,6 +176,7 @@ class PdfService {
     required List<ObligationModel> obligations,
     required List<PaymentModel> payments,
     required DateTime reportDate,
+    String? organizationName,
   }) async {
     await _ensureFonts();
 
@@ -196,6 +206,7 @@ class PdfService {
         build: (context) => [
           _buildHeader(
             'Member Statement',
+            organizationName: organizationName,
             subtitles: [
               'Report Date: ${_fmtDate(reportDate)}',
               'Member: ${member.fullName}',
@@ -293,17 +304,38 @@ class PdfService {
     required List<ObligationModel> obligations,
     required List<PaymentModel> payments,
     required int totalMembers,
+    List<MemberModel> members = const [],
+    String? organizationName,
   }) async {
     await _ensureFonts();
 
     final pdf = pw.Document();
 
-    final computedTarget = levy.amountPerMember * totalMembers;
+    final memberNameMap = <String, String>{};
+    for (final m in members) {
+      if (m.fullName.isNotEmpty) {
+        memberNameMap[m.id] = m.fullName;
+        if (m.userId.isNotEmpty) {
+          memberNameMap[m.userId] = m.fullName;
+        }
+      }
+    }
+
+    String getMemberName(String id) {
+      final name = memberNameMap[id];
+      if (name != null && name.trim().isNotEmpty) {
+        return name;
+      }
+      return id;
+    }
+
+    final memberCount = obligations.isNotEmpty ? obligations.length : totalMembers;
     final obligationsTarget = obligations.fold<double>(
       0,
       (sum, o) => sum + o.amount,
     );
-    final totalTarget = computedTarget > 0 ? computedTarget : obligationsTarget;
+    final computedTarget = levy.amountPerMember * memberCount;
+    final totalTarget = obligationsTarget > 0 ? obligationsTarget : computedTarget;
 
     final totalCollectedFromObligations = obligations.fold<double>(
       0,
@@ -331,10 +363,11 @@ class PdfService {
         build: (context) => [
           _buildHeader(
             'Levy Report',
+            organizationName: organizationName,
             subtitles: [
               'Levy: ${levy.title}',
               'Amount per Member: ${_fmt(levy.amountPerMember > 0 ? levy.amountPerMember : (obligations.isNotEmpty ? obligations.first.amount : 0))}',
-              'Member Count: $totalMembers',
+              'Member Count: $memberCount',
               'Total Target: ${_fmt(totalTarget)}',
               'Report Date: ${_fmtDate(DateTime.now())}',
             ],
@@ -370,10 +403,10 @@ class PdfService {
           ),
           pw.SizedBox(height: 4),
           _buildTable(
-            headers: ['Member ID', 'Amount', 'Paid', 'Outstanding', 'Status'],
+            headers: ['Member Name', 'Amount', 'Paid', 'Outstanding', 'Status'],
             rows: obligations.map((o) {
               return [
-                o.memberId,
+                getMemberName(o.memberId),
                 _fmt(o.amount),
                 _fmt(o.paidAmount),
                 _fmt(o.outstandingBalance),
@@ -419,6 +452,7 @@ class PdfService {
     required List<PaymentModel> payments,
     required List<ExpenseModel> expenses,
     required List<ObligationModel> obligations,
+    String? organizationName,
   }) async {
     await _ensureFonts();
 
@@ -504,6 +538,7 @@ class PdfService {
         build: (context) => [
           _buildHeader(
             'Yearly Financial Summary - $year',
+            organizationName: organizationName,
             subtitles: ['Report Date: ${_fmtDate(DateTime.now())}'],
           ),
           pw.SizedBox(height: 12),
@@ -617,6 +652,7 @@ class PdfService {
     required List<ExpenseModel> expenses,
     required DateTime? startDate,
     required DateTime? endDate,
+    String? organizationName,
   }) async {
     await _ensureFonts();
 
@@ -656,6 +692,7 @@ class PdfService {
         build: (context) => [
           _buildHeader(
             'Expense Breakdown',
+            organizationName: organizationName,
             subtitles: ['Date Range: $dateRange'],
           ),
           pw.SizedBox(height: 12),
@@ -722,6 +759,7 @@ class PdfService {
     required List<ObligationModel> obligations,
     required DateTime? startDate,
     required DateTime? endDate,
+    String? organizationName,
   }) async {
     await _ensureFonts();
 
@@ -834,6 +872,7 @@ class PdfService {
         build: (context) => [
           _buildHeader(
             'Financial Summary',
+            organizationName: organizationName,
             subtitles: [
               if (dateRangeText != null) 'Period: $dateRangeText',
               'Report Date: ${_fmtDate(DateTime.now())}',

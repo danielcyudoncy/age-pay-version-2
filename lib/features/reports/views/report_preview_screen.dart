@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../members/models/member_model.dart';
 import '../../levies/models/levy_model.dart';
 import '../../../core/constants/enums.dart';
+import '../../auth/controllers/auth_provider.dart';
+import '../../admin/controllers/admin_provider.dart';
 import '../controllers/reports_provider.dart';
 import 'report_detail_screen.dart';
 
@@ -108,6 +110,17 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
   }
 
   Future<ReportRequest> _buildRequest() async {
+    String? orgName;
+    try {
+      final orgId = await ref.read(organizationIdProvider.future);
+      if (orgId.isNotEmpty) {
+        final org = await ref
+            .read(organizationRepositoryProvider)
+            .getOrganizationById(orgId);
+        orgName = org?.name;
+      }
+    } catch (_) {}
+
     switch (widget.reportType) {
       case ReportType.memberStatement:
         final members = await ref.read(reportsMembersStreamProvider.future);
@@ -137,12 +150,14 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
           obligations: memberObligations,
           payments: memberPayments,
           reportDate: DateTime.now(),
+          organizationName: orgName,
         );
       case ReportType.levyReport:
         final levies = await ref.read(reportsAllLeviesStreamProvider.future);
         final obligations = await ref
             .read(reportsAllObligationsStreamProvider.future);
         final payments = await ref.read(reportsAllPaymentsStreamProvider.future);
+        final members = await ref.read(reportsMembersStreamProvider.future);
 
         LevyModel? resolvedLevy = (_selectedLevyId != null
             ? levies.where((l) => l.id == _selectedLevyId).firstOrNull
@@ -194,7 +209,11 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
           levy: targetLevy,
           obligations: levyObligations,
           payments: levyPayments,
-          totalMembers: _totalMembers > 0 ? _totalMembers : null,
+          members: members,
+          totalMembers: _totalMembers > 0
+              ? _totalMembers
+              : (levyObligations.isNotEmpty ? levyObligations.length : null),
+          organizationName: orgName,
         );
       case ReportType.yearlySummary:
         final year = _selectedYear;
@@ -218,6 +237,7 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
           payments: yearPayments,
           expenses: yearExpenses,
           obligations: yearObligations,
+          organizationName: orgName,
         );
       case ReportType.expenseBreakdown:
         final expenses = await ref.read(reportsAllExpensesStreamProvider.future);
@@ -237,6 +257,7 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
           expenses: filtered,
           startDate: _startDate,
           endDate: _endDate,
+          organizationName: orgName,
         );
       case ReportType.financialSummary:
         final payments = await ref.read(reportsAllPaymentsStreamProvider.future);
@@ -274,6 +295,7 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
           obligations: obligations,
           startDate: _startDate,
           endDate: _endDate,
+          organizationName: orgName,
         );
     }
   }
@@ -418,8 +440,11 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
             ),
             const SizedBox(height: 12),
             TextFormField(
-              initialValue: _totalMembers > 0 ? '$_totalMembers' : '10',
-              decoration: const InputDecoration(labelText: 'Total Members (for target calculation)'),
+              initialValue: _totalMembers > 0 ? '$_totalMembers' : '',
+              decoration: const InputDecoration(
+                labelText: 'Total Members (Optional override)',
+                hintText: 'Leave blank to use actual assigned members',
+              ),
               keyboardType: TextInputType.number,
               onChanged: (v) =>
                   setState(() => _totalMembers = int.tryParse(v) ?? 0),
