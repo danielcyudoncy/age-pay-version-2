@@ -594,56 +594,56 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.account_balance,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'RECEIVING BANK ACCOUNT',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ],
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.account_balance,
+                    color: Colors.white,
+                    size: 15,
+                  ),
                 ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'RECEIVING ACCOUNT',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 6),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.verified, size: 12, color: Colors.white),
-                      const SizedBox(width: 4),
+                      Icon(Icons.verified, size: 11, color: Colors.white),
+                      SizedBox(width: 3),
                       Text(
-                        'Official Account',
+                        'Official',
                         style: TextStyle(
-                          fontSize: 10.5,
-                          color: Colors.white.withValues(alpha: 0.95),
+                          fontSize: 10,
+                          color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -668,7 +668,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
             // Account Number & Copy Button Row
             Container(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.22),
                 borderRadius: BorderRadius.circular(12),
@@ -677,7 +677,6 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                 ),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Column(
@@ -693,19 +692,24 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Text(
-                          accountNumber,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 2.0,
-                            fontFamily: 'monospace',
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            accountNumber,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                              fontFamily: 'monospace',
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: accountNumber));
@@ -726,18 +730,19 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.copy_rounded, size: 16),
+                    icon: const Icon(Icons.copy_rounded, size: 15),
                     label: const Text(
                       'Copy',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: theme.colorScheme.primary,
                       elevation: 0,
+                      visualDensity: VisualDensity.compact,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
+                        horizontal: 10,
+                        vertical: 8,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
