@@ -117,11 +117,12 @@ class _EditOrganizationBankDialogState
     final theme = Theme.of(context);
 
     return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Form(
             key: _formKey,
             child: Column(
@@ -366,26 +367,47 @@ class _EditOrganizationBankDialogState
 
                 // Buttons
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(
-                      onPressed: _isLoading ? null : () => Navigator.pop(context),
-                      child: const Text('Cancel'),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed:
+                            _isLoading ? null : () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    FilledButton.icon(
-                      onPressed: _isLoading ? null : _save,
-                      icon: _isLoading
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.save),
-                      label: Text(_isLoading ? 'Saving...' : 'Save Account'),
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton.icon(
+                        onPressed: _isLoading ? null : _save,
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        icon: _isLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.save, size: 18),
+                        label: Text(
+                          _isLoading ? 'Saving...' : 'Save Account',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
                   ],
                 ),
