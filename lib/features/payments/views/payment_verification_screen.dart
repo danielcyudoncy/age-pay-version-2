@@ -229,6 +229,9 @@ class _PaymentVerificationScreenState
                 ),
                 const SizedBox(height: 16),
                 _DetailRow(label: 'Payment ID', value: payment.id),
+                if (payment.memberName != null &&
+                    payment.memberName!.isNotEmpty)
+                  _DetailRow(label: 'Member', value: payment.memberName!),
                 _DetailRow(label: 'Member ID', value: payment.memberId),
                 _DetailRow(
                   label: 'Amount',
@@ -342,7 +345,7 @@ class _PaymentCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Member: ${payment.memberId}',
+                          'Member: ${payment.memberName != null && payment.memberName!.isNotEmpty ? payment.memberName : payment.memberId}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,

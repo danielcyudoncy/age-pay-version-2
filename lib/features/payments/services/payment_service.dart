@@ -69,6 +69,7 @@ abstract class PaymentService {
   /// Creates a PENDING payment awaiting treasurer verification.
   Future<BankTransferResult> submitBankTransfer({
     required String memberId,
+    String? memberName,
     required List<String> obligationIds,
     required double amount,
     required String transferReference,
@@ -271,6 +272,7 @@ class CloudFunctionPaymentService implements PaymentService {
   @override
   Future<BankTransferResult> submitBankTransfer({
     required String memberId,
+    String? memberName,
     required List<String> obligationIds,
     required double amount,
     required String transferReference,
@@ -282,6 +284,7 @@ class CloudFunctionPaymentService implements PaymentService {
       final callable = _functions.httpsCallable('submitBankTransfer');
       final response = await callable.call({
         'memberId': memberId,
+        'memberName': ?memberName,
         'obligationIds': obligationIds,
         'amount': amount,
         'transferReference': transferReference,
@@ -304,10 +307,46 @@ class CloudFunctionPaymentService implements PaymentService {
                 ))
             .toList();
 
+        // Resolve member name if not provided
+        String? resolvedMemberName = memberName;
+        if (resolvedMemberName == null || resolvedMemberName.isEmpty) {
+          try {
+            final memDoc = await FirebaseFirestore.instance
+                .collection('members')
+                .doc(memberId)
+                .get();
+            if (memDoc.exists) {
+              resolvedMemberName = memDoc.data()?['fullName'] as String?;
+            } else {
+              final memByUid = await FirebaseFirestore.instance
+                  .collection('members')
+                  .where('userId', isEqualTo: memberId)
+                  .limit(1)
+                  .get();
+              if (memByUid.docs.isNotEmpty) {
+                resolvedMemberName =
+                    memByUid.docs.first.data()['fullName'] as String?;
+              } else {
+                final userDoc = await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(memberId)
+                    .get();
+                if (userDoc.exists) {
+                  resolvedMemberName =
+                      userDoc.data()?['displayName'] as String?;
+                }
+              }
+            }
+          } catch (_) {
+            // Ignore resolution error and proceed with write
+          }
+        }
+
         final docRef = FirebaseFirestore.instance.collection('payments').doc();
         final payment = PaymentModel(
           id: docRef.id,
           memberId: memberId,
+          memberName: resolvedMemberName,
           amount: amount,
           method: PaymentMethod.bankTransfer,
           status: PaymentStatus.pending,

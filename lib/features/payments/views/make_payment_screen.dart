@@ -15,6 +15,7 @@ import 'package:cls/features/payments/controllers/offline_payment_provider.dart'
 import 'package:flutter/services.dart';
 import 'package:cls/features/admin/controllers/admin_provider.dart';
 import 'package:cls/features/admin/models/organization_model.dart';
+import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 enum PaymentOptionMode { specific, allOutstanding, custom, bankTransfer }
@@ -1609,10 +1610,14 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
       return;
     }
 
+    final currentUser = ref.read(authProvider).valueOrNull;
+    final memberName = currentUser?.displayName;
+
     await ref
         .read(offlinePaymentProvider.notifier)
         .submitBankTransfer(
           memberId: widget.memberId,
+          memberName: memberName,
           obligationIds: selectedIds,
           amount: amount,
           transferReference: 'TRF-${DateTime.now().millisecondsSinceEpoch}',

@@ -270,10 +270,14 @@ final memberCollectionSummaryProvider =
           }
 
           final summaries = members.map((member) {
+            final fromDocId = memberTotals[member.id] ?? 0.0;
+            final fromUserId = member.userId.isNotEmpty
+                ? (memberTotals[member.userId] ?? 0.0)
+                : 0.0;
             return MemberCollectionSummary(
               memberId: member.id,
               fullName: member.fullName,
-              totalAmount: memberTotals[member.id] ?? 0.0,
+              totalAmount: fromDocId + fromUserId,
             );
           }).toList();
 

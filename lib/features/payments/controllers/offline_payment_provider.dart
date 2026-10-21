@@ -130,6 +130,7 @@ class OfflinePaymentNotifier extends StateNotifier<OfflinePaymentState> {
   /// Submit a bank transfer (member)
   Future<void> submitBankTransfer({
     required String memberId,
+    String? memberName,
     required List<String> obligationIds,
     required double amount,
     required String transferReference,
@@ -147,6 +148,7 @@ class OfflinePaymentNotifier extends StateNotifier<OfflinePaymentState> {
     try {
       final result = await _paymentService.submitBankTransfer(
         memberId: memberId,
+        memberName: memberName,
         obligationIds: obligationIds,
         amount: amount,
         transferReference: transferReference,

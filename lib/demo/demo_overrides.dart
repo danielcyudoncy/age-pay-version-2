@@ -451,6 +451,7 @@ class DemoPaymentService implements PaymentService {
   @override
   Future<BankTransferResult> submitBankTransfer({
     required String memberId,
+    String? memberName,
     required List<String> obligationIds,
     required double amount,
     required String transferReference,
