@@ -12,8 +12,9 @@ import 'package:cls/features/obligations/models/obligation_model.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/payments/controllers/payment_provider.dart';
 import 'package:cls/features/payments/controllers/offline_payment_provider.dart';
-import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:flutter/services.dart';
 import 'package:cls/features/admin/controllers/admin_provider.dart';
+import 'package:cls/features/admin/models/organization_model.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 enum PaymentOptionMode { specific, allOutstanding, custom, bankTransfer }
@@ -48,31 +49,15 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
   WebViewController? _webViewController;
 
   List<ObligationModel> _cachedObligations = [];
-  String? _cachedOrgName;
 
   @override
   void initState() {
     super.initState();
-    _fetchOrgName();
     // Clean up previous flow state on entrance
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(paymentFlowProvider.notifier).reset();
       ref.read(offlinePaymentProvider.notifier).reset();
     });
-  }
-
-  Future<void> _fetchOrgName() async {
-    try {
-      final orgId = await ref.read(organizationIdProvider.future);
-      if (orgId.isNotEmpty) {
-        final org = await ref
-            .read(organizationRepositoryProvider)
-            .getOrganizationById(orgId);
-        if (mounted && org != null && org.name.isNotEmpty) {
-          setState(() => _cachedOrgName = org.name);
-        }
-      }
-    } catch (_) {}
   }
 
   List<ObligationModel> _getFilteredObligations(List<ObligationModel> items) {
@@ -575,12 +560,261 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
     );
   }
 
+  Widget _buildReceivingAccountCard(ThemeData theme, OrganizationModel? org) {
+    final bankName = (org?.bankName?.isNotEmpty == true)
+        ? org!.bankName!
+        : 'First Bank of Nigeria';
+    final accountNumber = (org?.accountNumber?.isNotEmpty == true)
+        ? org!.accountNumber!
+        : '0123456789';
+    final accountName = (org?.accountName?.isNotEmpty == true)
+        ? org!.accountName!
+        : (org?.name.isNotEmpty == true
+            ? '${org!.name} Central Treasury'
+            : 'Age Grade Central Treasury');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withValues(alpha: 0.85),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withValues(alpha: 0.22),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.account_balance,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'RECEIVING BANK ACCOUNT',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.verified, size: 12, color: Colors.white),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Official Account',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: Colors.white.withValues(alpha: 0.95),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // Bank Name
+            Text(
+              bankName,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Account Number & Copy Button Row
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.22),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.15),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ACCOUNT NUMBER',
+                          style: TextStyle(
+                            fontSize: 10,
+                            letterSpacing: 0.8,
+                            color: Colors.white.withValues(alpha: 0.75),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          accountNumber,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 2.0,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: accountNumber));
+                      HapticFeedback.lightImpact();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(Icons.check_circle,
+                                  color: Colors.white, size: 18),
+                              const SizedBox(width: 8),
+                              Text('Account number copied: $accountNumber'),
+                            ],
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Colors.grey.shade900,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.copy_rounded, size: 16),
+                    label: const Text(
+                      'Copy',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: theme.colorScheme.primary,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Account Name
+            Row(
+              children: [
+                Text(
+                  'ACCOUNT NAME: ',
+                  style: TextStyle(
+                    fontSize: 11,
+                    letterSpacing: 0.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.75),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    accountName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Tip on narration
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('💡', style: TextStyle(fontSize: 13)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Tip: Use your full name or Member ID as payment reference/narration for faster verification.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontSize: 11.5,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildObligationSelector(
     NumberFormat currency,
     PaymentFlowState paymentState,
     OfflinePaymentState offlineState, {
     List<ObligationModel>? obligations,
   }) {
+    final theme = Theme.of(context);
     final items = obligations ?? [];
     final activeError = paymentState.error ?? offlineState.error;
 
@@ -797,37 +1031,32 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
 
                 // 4. Bank Transfer Form
                 if (_paymentMode == PaymentOptionMode.bankTransfer) ...[
+                  Builder(
+                    builder: (context) {
+                      final org =
+                          ref.watch(currentOrganizationProvider).valueOrNull;
+                      return _buildReceivingAccountCard(theme, org);
+                    },
+                  ),
                   _buildPaymentModeCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.blue.shade200),
+                        Text(
+                          'Submit Payment Proof',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                color: Colors.blue.shade800,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Transfer funds to the designated account for ${_cachedOrgName ?? 'your organization'}, enter your transfer details and upload your payment proof below.',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    color: Colors.blue.shade900,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ),
-                            ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'After completing the transfer to the official account above, enter the transfer details and upload your receipt below.',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: theme.colorScheme.onSurfaceVariant,
+                            height: 1.3,
                           ),
                         ),
                         const SizedBox(height: 16),

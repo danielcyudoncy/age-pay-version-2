@@ -11,6 +11,9 @@ class OrganizationModel {
   final bool isActive;
   final bool openForJoin;
   final int memberCount;
+  final String? bankName;
+  final String? accountNumber;
+  final String? accountName;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -25,6 +28,9 @@ class OrganizationModel {
     this.isActive = true,
     this.openForJoin = true,
     this.memberCount = 0,
+    this.bankName,
+    this.accountNumber,
+    this.accountName,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -42,6 +48,9 @@ class OrganizationModel {
       isActive: data['isActive'] ?? true,
       openForJoin: data['openForJoin'] ?? true,
       memberCount: (data['memberCount'] is int) ? data['memberCount'] : 0,
+      bankName: data['bankName'] as String?,
+      accountNumber: data['accountNumber'] as String?,
+      accountName: data['accountName'] as String?,
       createdAt: _parseDate(data['createdAt']),
       updatedAt: _parseDate(data['updatedAt']),
     );
@@ -58,6 +67,9 @@ class OrganizationModel {
       'isActive': isActive,
       'openForJoin': openForJoin,
       'memberCount': memberCount,
+      if (bankName != null) 'bankName': bankName,
+      if (accountNumber != null) 'accountNumber': accountNumber,
+      if (accountName != null) 'accountName': accountName,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -80,6 +92,9 @@ class OrganizationModel {
     bool? isActive,
     bool? openForJoin,
     int? memberCount,
+    String? bankName,
+    String? accountNumber,
+    String? accountName,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -94,6 +109,9 @@ class OrganizationModel {
       isActive: isActive ?? this.isActive,
       openForJoin: openForJoin ?? this.openForJoin,
       memberCount: memberCount ?? this.memberCount,
+      bankName: bankName ?? this.bankName,
+      accountNumber: accountNumber ?? this.accountNumber,
+      accountName: accountName ?? this.accountName,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

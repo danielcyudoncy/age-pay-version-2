@@ -82,4 +82,18 @@ class OrganizationRepository {
       'updatedAt': Timestamp.fromDate(DateTime.now()),
     });
   }
+
+  Future<void> updateBankDetails({
+    required String organizationId,
+    required String bankName,
+    required String accountNumber,
+    required String accountName,
+  }) async {
+    await _collection.doc(organizationId).update({
+      'bankName': bankName,
+      'accountNumber': accountNumber,
+      'accountName': accountName,
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
 }

@@ -4,6 +4,7 @@ import '../repositories/organization_repository.dart';
 import '../models/branch_model.dart';
 import '../repositories/branch_repository.dart';
 import '../models/admin_dashboard_data.dart';
+import '../../auth/controllers/auth_provider.dart';
 
 final branchRepositoryProvider = Provider<BranchRepository>((ref) {
   return BranchRepository();
@@ -55,3 +56,12 @@ final adminDashboardProvider = Provider<AsyncValue<AdminDashboardData>>((ref) {
     );
   });
 });
+
+final currentOrganizationProvider =
+    FutureProvider.autoDispose<OrganizationModel?>((ref) async {
+      final orgId = await ref.watch(organizationIdProvider.future);
+      if (orgId.isEmpty) return null;
+      return ref
+          .watch(organizationRepositoryProvider)
+          .getOrganizationById(orgId);
+    });
