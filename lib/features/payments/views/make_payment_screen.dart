@@ -40,7 +40,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
   final TextEditingController _bankNameController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
 
-  PaymentOptionMode _paymentMode = PaymentOptionMode.specific;
+  PaymentOptionMode _paymentMode = PaymentOptionMode.bankTransfer;
   File? _pickedImage;
   String? _uploadedImageUrl;
   bool _isUploading = false;
@@ -73,16 +73,6 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
         }
       }
     } catch (_) {}
-  }
-
-  String get _effectiveMemberEmail {
-    final passed = widget.memberEmail?.trim() ?? '';
-    if (passed.isNotEmpty) return passed;
-    final user = ref.read(authProvider).valueOrNull;
-    if (user != null && user.email.trim().isNotEmpty) {
-      return user.email.trim();
-    }
-    return '';
   }
 
   List<ObligationModel> _getFilteredObligations(List<ObligationModel> items) {
@@ -673,11 +663,34 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
 
                 // 2. Online Payment Gateway selector (if not Bank Transfer)
                 if (_paymentMode != PaymentOptionMode.bankTransfer) ...[
-                  Text(
-                    'Online Gateway',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Online Gateway',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
                         ),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Coming Soon',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber.shade900,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -707,6 +720,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                             ref
                                 .read(paymentFlowProvider.notifier)
                                 .selectProvider(PaymentProvider.paystack);
+                            _showOnlineGatewayComingSoonDialog('Paystack');
                           },
                           icon: const Icon(Icons.credit_card, size: 18),
                           label: const Text('Paystack'),
@@ -738,6 +752,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                             ref
                                 .read(paymentFlowProvider.notifier)
                                 .selectProvider(PaymentProvider.flutterwave);
+                            _showOnlineGatewayComingSoonDialog('Flutterwave');
                           },
                           icon: const Icon(Icons.account_balance_wallet, size: 18),
                           label: const Text('Flutterwave'),
@@ -1228,46 +1243,56 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
     }
   }
 
-  Future<void> _initiatePayment(List<ObligationModel> allItems) async {
-    final email = _effectiveMemberEmail;
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Unable to process payment: No email address linked to your account. Please update your profile.',
+  void _showOnlineGatewayComingSoonDialog(String gatewayName) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        icon: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            shape: BoxShape.circle,
           ),
-          backgroundColor: Colors.red,
+          child: const Icon(
+            Icons.rocket_launch_outlined,
+            color: Colors.blue,
+            size: 40,
+          ),
         ),
-      );
-      return;
-    }
-
-    final obligationsToPay = _getFilteredObligations(allItems);
-    final amount = _getTotalToPay(allItems);
-
-    if (amount <= 0 || obligationsToPay.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one obligation to pay.'),
+        title: const Text(
+          'Coming Soon',
+          style: TextStyle(fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
         ),
-      );
-      return;
-    }
+        content: Text(
+          '$gatewayName online card payment is currently under development and will be available in an upcoming update.\n\nPlease proceed using Bank Transfer to submit your payment proof.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(height: 1.4, fontSize: 14),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          FilledButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _setPaymentMode(PaymentOptionMode.bankTransfer, _cachedObligations);
+            },
+            child: const Text('Use Bank Transfer'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Dismiss'),
+          ),
+        ],
+      ),
+    );
+  }
 
-    await ref
-        .read(paymentFlowProvider.notifier)
-        .initializePayment(
-          email: email,
-          amountNaira: amount,
-          memberId: widget.memberId,
-          obligations: obligationsToPay,
-        );
-
-    final state = ref.read(paymentFlowProvider);
-    if (state.authorizationUrl != null && state.error == null) {
-      _initWebViewController(state.authorizationUrl!);
-      setState(() => _showWebView = true);
-    }
+  Future<void> _initiatePayment(List<ObligationModel> allItems) async {
+    final provider = ref.read(paymentFlowProvider).selectedProvider;
+    final providerName =
+        provider == PaymentProvider.paystack ? 'Paystack' : 'Flutterwave';
+    _showOnlineGatewayComingSoonDialog(providerName);
   }
 
   Future<void> _verifyPayment(
