@@ -84,6 +84,7 @@ final pdfGenerationProvider = FutureProvider.family<Uint8List, ReportRequest>((
         obligations: request.obligations,
         payments: request.payments,
         reportDate: request.reportDate ?? DateTime.now(),
+        organizationName: request.organizationName,
       );
     case ReportType.levyReport:
       return pdfService.generateLevyReport(
@@ -91,6 +92,8 @@ final pdfGenerationProvider = FutureProvider.family<Uint8List, ReportRequest>((
         obligations: request.obligations,
         payments: request.payments,
         totalMembers: request.totalMembers ?? 0,
+        members: request.members,
+        organizationName: request.organizationName,
       );
     case ReportType.yearlySummary:
       return pdfService.generateYearlySummary(
@@ -98,12 +101,14 @@ final pdfGenerationProvider = FutureProvider.family<Uint8List, ReportRequest>((
         payments: request.payments,
         expenses: request.expenses,
         obligations: request.obligations,
+        organizationName: request.organizationName,
       );
     case ReportType.expenseBreakdown:
       return pdfService.generateExpenseBreakdown(
         expenses: request.expenses,
         startDate: request.startDate,
         endDate: request.endDate,
+        organizationName: request.organizationName,
       );
     case ReportType.financialSummary:
       return pdfService.generateFinancialSummary(
@@ -113,6 +118,7 @@ final pdfGenerationProvider = FutureProvider.family<Uint8List, ReportRequest>((
         obligations: request.obligations,
         startDate: request.startDate,
         endDate: request.endDate,
+        organizationName: request.organizationName,
       );
   }
 });
@@ -130,6 +136,7 @@ class ReportRequest {
   final DateTime? endDate;
   final int? year;
   final int? totalMembers;
+  final String? organizationName;
 
   const ReportRequest({
     required this.type,
@@ -144,5 +151,6 @@ class ReportRequest {
     this.endDate,
     this.year,
     this.totalMembers,
+    this.organizationName,
   });
 }

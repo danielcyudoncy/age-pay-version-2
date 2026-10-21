@@ -9,6 +9,9 @@ class MemberModel {
   final DateTime dateOfBirth;
   final DateTime joinedDate;
   final bool isActive;
+  final String status;
+  final String? branchId;
+  final String? branchName;
   final String? profilePhotoUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -22,6 +25,9 @@ class MemberModel {
     required this.dateOfBirth,
     required this.joinedDate,
     this.isActive = true,
+    this.status = 'approved',
+    this.branchId,
+    this.branchName,
     this.profilePhotoUrl,
     required this.createdAt,
     required this.updatedAt,
@@ -38,6 +44,9 @@ class MemberModel {
       dateOfBirth: _parseDate(data['dateOfBirth']),
       joinedDate: _parseDate(data['joinedDate']),
       isActive: data['isActive'] ?? true,
+      status: data['status'] ?? ((data['isActive'] == false) ? 'pending_approval' : 'approved'),
+      branchId: data['branchId'],
+      branchName: data['branchName'],
       profilePhotoUrl: data['profilePhotoUrl'],
       createdAt: _parseDate(data['createdAt']),
       updatedAt: _parseDate(data['updatedAt']),
@@ -53,6 +62,9 @@ class MemberModel {
       'dateOfBirth': Timestamp.fromDate(dateOfBirth),
       'joinedDate': Timestamp.fromDate(joinedDate),
       'isActive': isActive,
+      'status': status,
+      if (branchId != null) 'branchId': branchId,
+      if (branchName != null) 'branchName': branchName,
       'profilePhotoUrl': profilePhotoUrl,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -74,6 +86,9 @@ class MemberModel {
     DateTime? dateOfBirth,
     DateTime? joinedDate,
     bool? isActive,
+    String? status,
+    String? branchId,
+    String? branchName,
     String? profilePhotoUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -87,6 +102,9 @@ class MemberModel {
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       joinedDate: joinedDate ?? this.joinedDate,
       isActive: isActive ?? this.isActive,
+      status: status ?? this.status,
+      branchId: branchId ?? this.branchId,
+      branchName: branchName ?? this.branchName,
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

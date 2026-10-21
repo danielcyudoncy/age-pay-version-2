@@ -41,6 +41,10 @@ class _MockAuthService implements AuthService {
   }
 
   @override
+  Stream<List<UserModel>> getPendingRegistrations(String organizationId) =>
+      Stream.value([]);
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

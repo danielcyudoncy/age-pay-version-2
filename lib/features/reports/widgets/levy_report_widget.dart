@@ -23,10 +23,25 @@ class LevyReportWidget extends StatelessWidget {
       return const Center(child: Text('No levy data available'));
     }
 
-    final totalMembers = request.totalMembers ?? (obligations.isNotEmpty ? obligations.length : 1);
+    final members = request.members;
+    final memberNameMap = <String, String>{};
+    for (final m in members) {
+      if (m.fullName.isNotEmpty) {
+        memberNameMap[m.id] = m.fullName;
+        if (m.userId.isNotEmpty) {
+          memberNameMap[m.userId] = m.fullName;
+        }
+      }
+    }
+
+    final totalMembers = obligations.isNotEmpty
+        ? obligations.length
+        : (request.totalMembers ?? 1);
+    final obligationsTarget =
+        obligations.fold<double>(0, (s, o) => s + o.amount);
     final computedTarget = levy.amountPerMember * totalMembers;
-    final obligationsTarget = obligations.fold<double>(0, (s, o) => s + o.amount);
-    final totalTarget = computedTarget > 0 ? computedTarget : obligationsTarget;
+    final totalTarget =
+        obligationsTarget > 0 ? obligationsTarget : computedTarget;
 
     final totalCollectedObligations = obligations.fold<double>(0, (s, o) => s + o.paidAmount);
     final totalCollectedPayments = payments
@@ -186,6 +201,15 @@ class LevyReportWidget extends StatelessWidget {
         else
           ...obligations.map((o) {
             final isFullyPaid = o.outstandingBalance <= 0;
+            final memberName = memberNameMap[o.memberId];
+            final displayName =
+                (memberName != null && memberName.trim().isNotEmpty)
+                    ? memberName
+                    : (o.title.isNotEmpty ? o.title : 'Member Dues');
+            final subtitleText =
+                (memberName != null && o.title.isNotEmpty && o.title != displayName)
+                    ? o.title
+                    : null;
             return Card(
               margin: const EdgeInsets.only(bottom: 10),
               elevation: 0.5,
@@ -210,9 +234,24 @@ class LevyReportWidget extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            o.title.isNotEmpty ? o.title : 'Member Dues',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displayName,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              if (subtitleText != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitleText,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                         const SizedBox(width: 8),

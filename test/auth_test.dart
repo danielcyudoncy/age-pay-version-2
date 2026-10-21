@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/auth/views/login_screen.dart';
 import 'package:cls/features/auth/views/register_screen.dart';
 
@@ -24,9 +23,14 @@ void main() {
       );
 
       expect(find.text('Create Account'), findsOneWidget);
-      // 6 TextFormFields + 1 DropdownButtonFormField = 7 input widgets
+      // 6 TextFormFields (Name, Email, Phone, DOB, Password, Confirm Password)
       expect(find.byType(TextFormField), findsNWidgets(6));
-      expect(find.byType(DropdownButtonFormField<UserRole>), findsOneWidget);
+      expect(
+        find.text(
+          'Your registration will be submitted to the Branch Executive for review and role assignment.',
+        ),
+        findsOneWidget,
+      );
       expect(find.widgetWithText(ElevatedButton, 'Register'), findsOneWidget);
     });
 

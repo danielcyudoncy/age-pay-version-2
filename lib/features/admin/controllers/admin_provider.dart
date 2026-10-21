@@ -1,7 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/organization_model.dart';
 import '../repositories/organization_repository.dart';
+import '../models/branch_model.dart';
+import '../repositories/branch_repository.dart';
 import '../models/admin_dashboard_data.dart';
+
+final branchRepositoryProvider = Provider<BranchRepository>((ref) {
+  return BranchRepository();
+});
+
+final branchesStreamFamily =
+    StreamProvider.family<List<BranchModel>, String>((ref, organizationId) {
+  return ref.watch(branchRepositoryProvider).getBranches(organizationId);
+});
 
 final organizationRepositoryProvider = Provider<OrganizationRepository>((ref) {
   return OrganizationRepository();

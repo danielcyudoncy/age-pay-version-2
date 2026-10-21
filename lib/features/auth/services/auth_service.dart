@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
@@ -5,6 +6,8 @@ import '../../../core/constants/enums.dart';
 import '../../members/models/member_model.dart';
 import '../../members/repositories/member_repository.dart';
 import '../../obligations/repositories/obligation_repository.dart';
+import '../models/co_founder_invitation_model.dart';
+import '../repositories/co_founder_invitation_repository.dart';
 
 class AuthException implements Exception {
   final String message;
@@ -76,8 +79,8 @@ class AuthService {
   /// created from the Firebase Auth user so the sign-in can still complete.
   Future<UserModel?> _loadOrCreateProfile(User firebaseUser) async {
     try {
-      final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
-      if (doc.exists) return UserModel.fromFirestore(doc);
+      final existing = await _getUserData(firebaseUser.uid);
+      if (existing != null) return existing;
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
         throw AuthException(
@@ -124,6 +127,13 @@ class AuthService {
     required UserRole role,
     required String organizationId,
     DateTime? dateOfBirth,
+    String? branchId,
+    String? branchName,
+    bool isNewOrganization = false,
+    String? newOrganizationName,
+    String? newBranchName,
+    String? coFounderName,
+    String? coFounderPhone,
   }) async {
     try {
       final result = await _auth.createUserWithEmailAndPassword(
@@ -134,19 +144,124 @@ class AuthService {
       if (firebaseUser == null) return null;
 
       // The freshly created user must force-refresh its ID token before the
-      // first Firestore write. Without this, the Firestore SDK may send the
-      // request with a stale token where request.auth is null, causing the
-      // security rules to deny the write with PERMISSION_DENIED.
+      // first Firestore write.
       await firebaseUser.getIdToken(true);
+
+      String finalOrgId = organizationId;
+      String? finalBranchId = branchId;
+      String? finalBranchName = branchName;
+
+      // 1. If registering a new Age Grade
+      if (isNewOrganization && newOrganizationName != null && newOrganizationName.isNotEmpty) {
+        final orgDoc = _firestore.collection('organizations').doc();
+        finalOrgId = orgDoc.id;
+        await _writeWithAuthRetry(() => orgDoc.set({
+          'name': newOrganizationName,
+          'slug': newOrganizationName.toLowerCase().replaceAll(RegExp(r'\s+'), '-'),
+          'description': '',
+          'contactEmail': email,
+          'contactPhone': phoneNumber,
+          'address': '',
+          'isActive': false, // Inactive until co-founder verification
+          'openForJoin': false,
+          'memberCount': 1,
+          'createdAt': Timestamp.fromDate(DateTime.now()),
+          'updatedAt': Timestamp.fromDate(DateTime.now()),
+        }));
+
+        final effectiveBranchName = (newBranchName != null && newBranchName.isNotEmpty)
+            ? newBranchName
+            : 'Headquarters / Main Branch';
+        final branchDoc = _firestore.collection('branches').doc();
+        finalBranchId = branchDoc.id;
+        finalBranchName = effectiveBranchName;
+
+        await _writeWithAuthRetry(() => branchDoc.set({
+          'organizationId': finalOrgId,
+          'name': effectiveBranchName,
+          'state': '',
+          'city': '',
+          'presidentId': firebaseUser.uid,
+          'presidentName': displayName,
+          'isActive': true,
+          'createdAt': Timestamp.fromDate(DateTime.now()),
+          'updatedAt': Timestamp.fromDate(DateTime.now()),
+        }));
+
+        if (coFounderPhone != null && coFounderPhone.isNotEmpty) {
+          final coFounderRepo =
+              CoFounderInvitationRepository(firestore: _firestore);
+          await coFounderRepo.createInvitation(CoFounderInvitationModel(
+            id: '',
+            organizationId: finalOrgId,
+            organizationName: newOrganizationName,
+            branchName: effectiveBranchName,
+            presidentUid: firebaseUser.uid,
+            presidentName: displayName,
+            presidentPhone: phoneNumber,
+            secretaryName: coFounderName ?? 'General Secretary',
+            secretaryPhone: coFounderPhone,
+            status: 'pending',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ));
+
+          try {
+            final notifDoc = _firestore.collection('notifications').doc();
+            await notifDoc.set({
+              'id': notifDoc.id,
+              'organizationId': finalOrgId,
+              'title': 'Dual-Executive Verification Required',
+              'body': '$displayName appointed you as General Secretary for $newOrganizationName. Please verify to activate the organization.',
+              'type': 'co_founder_invite',
+              'payload': coFounderPhone,
+              'targetRole': 'secretary',
+              'targetUserId': null,
+              'read': false,
+              'receivedAt': Timestamp.fromDate(DateTime.now()),
+              'createdAt': Timestamp.fromDate(DateTime.now()),
+            });
+          } catch (e) {
+            log('Failed to create secretary co-founder notification: $e');
+          }
+        }
+      } else if (newBranchName != null && newBranchName.isNotEmpty) {
+        // Adding a new branch under an existing organization
+        final branchDoc = _firestore.collection('branches').doc();
+        finalBranchId = branchDoc.id;
+        finalBranchName = newBranchName;
+        await _writeWithAuthRetry(() => branchDoc.set({
+          'organizationId': finalOrgId,
+          'name': newBranchName,
+          'state': '',
+          'city': '',
+          'isActive': true,
+          'createdAt': Timestamp.fromDate(DateTime.now()),
+          'updatedAt': Timestamp.fromDate(DateTime.now()),
+        }));
+      }
+
+      // 2. Determine initial status and effective role
+      // All self-registrations require approval (either via co-founder verification or branch executive approval)
+      final effectiveRole = isNewOrganization ? UserRole.president : UserRole.member;
+      final requestedRole = isNewOrganization ? UserRole.president : role;
+      const initialStatus = AccountStatus.pendingApproval;
 
       final user = UserModel(
         uid: firebaseUser.uid,
-        organizationId: organizationId,
+        organizationId: finalOrgId,
         email: email,
         displayName: displayName,
         phoneNumber: phoneNumber,
-        role: role,
+        role: effectiveRole,
+        requestedRole: requestedRole,
+        status: initialStatus,
+        branchId: finalBranchId,
+        branchName: finalBranchName,
+        coFounderName: coFounderName,
+        coFounderPhone: coFounderPhone,
         createdAt: DateTime.now(),
+        isActive: false, // Inactive pending approval
       );
 
       await _writeWithAuthRetry(
@@ -164,17 +279,36 @@ class AuthService {
         phoneNumber: phoneNumber,
         dateOfBirth: dateOfBirth ?? DateTime(2000),
         joinedDate: DateTime.now(),
+        branchId: finalBranchId,
+        branchName: finalBranchName,
+        status: 'pending_approval',
+        isActive: false,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
       final memberRepo = MemberRepository(firestore: _firestore);
-      final memberId = await memberRepo.createMember(member);
+      await memberRepo.createMember(member);
 
-      final obligationRepo = ObligationRepository(firestore: _firestore);
-      await obligationRepo.reconcileMemberObligations(
-        memberId,
-        userId: user.uid,
-      );
+      if (!isNewOrganization) {
+        try {
+          final notifDoc = _firestore.collection('notifications').doc();
+          await notifDoc.set({
+            'id': notifDoc.id,
+            'organizationId': finalOrgId,
+            'title': 'New Member Registration',
+            'body': '$displayName has registered for ${finalBranchName ?? "your branch"} and is awaiting your approval and role assignment.',
+            'type': 'pending_approval',
+            'payload': user.uid,
+            'targetRole': 'president',
+            'targetUserId': null,
+            'read': false,
+            'receivedAt': Timestamp.fromDate(DateTime.now()),
+            'createdAt': Timestamp.fromDate(DateTime.now()),
+          });
+        } catch (e) {
+          log('Failed to create registration notification: $e');
+        }
+      }
 
       return user;
     } on FirebaseAuthException catch (e) {
@@ -183,12 +317,153 @@ class AuthService {
       if (e.code == 'permission-denied') {
         throw AuthException(
           'Registration was blocked by database security rules. '
-          'Ensure the Firestore rules are deployed and that this role can be self-registered.',
+          'Ensure the Firestore rules are deployed.',
         );
       }
       throw AuthException('Registration failed: ${e.message ?? e.toString()}');
     } catch (e) {
-      throw AuthException('Registration failed. Please try again.');
+      throw AuthException('Registration failed: ${e.toString()}');
+    }
+  }
+
+  Stream<List<UserModel>> getPendingRegistrations(String organizationId) {
+    return _firestore
+        .collection('users')
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((d) => UserModel.fromFirestore(d))
+            .where((u) {
+              final isPending = u.status == AccountStatus.pendingApproval ||
+                  (!u.isActive && u.status != AccountStatus.rejected);
+              if (!isPending) return false;
+              // If organizationId is provided and matching, include it.
+              // If user has no organizationId yet, also include it.
+              if (organizationId.isNotEmpty &&
+                  u.organizationId.isNotEmpty &&
+                  u.organizationId != organizationId) {
+                // If there are other pending users specifically in this org, prioritize them;
+                // otherwise still show to executive so no registration gets lost.
+                return true;
+              }
+              return true;
+            })
+            .toList())
+        .handleError((e) {
+          log('Error fetching pending registrations: $e');
+          return <UserModel>[];
+        });
+  }
+
+  Future<void> approveUserRegistration({
+    required String uid,
+    required String organizationId,
+    UserRole? assignedRole,
+  }) async {
+    final userDoc = await _firestore.collection('users').doc(uid).get();
+    if (!userDoc.exists) return;
+    final user = UserModel.fromFirestore(userDoc);
+    final approvedRole = assignedRole ?? user.requestedRole ?? user.role;
+
+    final batch = _firestore.batch();
+    batch.update(_firestore.collection('users').doc(uid), {
+      'status': AccountStatus.approved.name,
+      'role': approvedRole.name,
+      'isActive': true,
+    });
+
+    final membersSnap = await _firestore
+        .collection('members')
+        .where('userId', isEqualTo: uid)
+        .limit(1)
+        .get();
+
+    String? memberId;
+    if (membersSnap.docs.isNotEmpty) {
+      memberId = membersSnap.docs.first.id;
+      batch.update(membersSnap.docs.first.reference, {
+        'status': 'approved',
+        'isActive': true,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      });
+    }
+
+    await batch.commit();
+
+    // Automatically reconcile obligations upon approval
+    if (memberId != null) {
+      final obligationRepo = ObligationRepository(firestore: _firestore);
+      await obligationRepo.reconcileMemberObligations(
+        memberId,
+        userId: uid,
+      );
+    }
+
+    // Notify approved user and resolve pending notifications
+    try {
+      final notifDoc = _firestore.collection('notifications').doc();
+      await notifDoc.set({
+        'id': notifDoc.id,
+        'organizationId': organizationId,
+        'title': 'Registration Approved!',
+        'body': 'Your registration has been approved. You are now active with role: ${approvedRole.name}.',
+        'type': 'approval_success',
+        'payload': uid,
+        'targetUserId': uid,
+        'read': false,
+        'receivedAt': Timestamp.fromDate(DateTime.now()),
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      });
+
+      final pendingNotifs = await _firestore
+          .collection('notifications')
+          .where('organizationId', isEqualTo: organizationId)
+          .where('payload', isEqualTo: uid)
+          .where('type', isEqualTo: 'pending_approval')
+          .get();
+      for (final doc in pendingNotifs.docs) {
+        await doc.reference.update({'read': true});
+      }
+    } catch (e) {
+      log('Failed to update notifications on approval: $e');
+    }
+  }
+
+  Future<void> rejectUserRegistration({
+    required String uid,
+  }) async {
+    final batch = _firestore.batch();
+    batch.update(_firestore.collection('users').doc(uid), {
+      'status': AccountStatus.rejected.name,
+      'isActive': false,
+    });
+
+    final membersSnap = await _firestore
+        .collection('members')
+        .where('userId', isEqualTo: uid)
+        .limit(1)
+        .get();
+
+    if (membersSnap.docs.isNotEmpty) {
+      batch.update(membersSnap.docs.first.reference, {
+        'status': 'rejected',
+        'isActive': false,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      });
+    }
+
+    await batch.commit();
+
+    try {
+      final pendingNotifs = await _firestore
+          .collection('notifications')
+          .where('payload', isEqualTo: uid)
+          .where('type', isEqualTo: 'pending_approval')
+          .get();
+      for (final doc in pendingNotifs.docs) {
+        await doc.reference.update({'read': true});
+      }
+    } catch (e) {
+      log('Failed to update notifications on rejection: $e');
     }
   }
 
@@ -247,11 +522,60 @@ class AuthService {
     }
   }
 
+  Future<UserModel?> getUserById(String uid) => _getUserData(uid);
+
   Future<UserModel?> _getUserData(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
       if (doc.exists) {
-        return UserModel.fromFirestore(doc);
+        var user = UserModel.fromFirestore(doc);
+        if (user.organizationId.isEmpty || user.organizationId == uid) {
+          String? foundOrgId;
+
+          // 1. Try branch where this user is president
+          final branchSnap = await _firestore
+              .collection('branches')
+              .where('presidentId', isEqualTo: uid)
+              .limit(1)
+              .get();
+          if (branchSnap.docs.isNotEmpty) {
+            foundOrgId = branchSnap.docs.first.data()['organizationId'] as String?;
+          }
+
+          // 2. Try co-founder invitation where this user is presidentUid
+          if (foundOrgId == null || foundOrgId.isEmpty) {
+            final invSnap = await _firestore
+                .collection('co_founder_invitations')
+                .where('presidentUid', isEqualTo: uid)
+                .limit(1)
+                .get();
+            if (invSnap.docs.isNotEmpty) {
+              foundOrgId = invSnap.docs.first.data()['organizationId'] as String?;
+            }
+          }
+
+          // 3. Try organizations collection by contactEmail
+          if ((foundOrgId == null || foundOrgId.isEmpty) && user.email.isNotEmpty) {
+            final orgSnap = await _firestore
+                .collection('organizations')
+                .where('contactEmail', isEqualTo: user.email)
+                .limit(1)
+                .get();
+            if (orgSnap.docs.isNotEmpty) {
+              foundOrgId = orgSnap.docs.first.id;
+            }
+          }
+
+          if (foundOrgId != null && foundOrgId.isNotEmpty) {
+            user = user.copyWith(organizationId: foundOrgId);
+            _firestore
+                .collection('users')
+                .doc(uid)
+                .update({'organizationId': foundOrgId})
+                .ignore();
+          }
+        }
+        return user;
       }
       return null;
     } on FirebaseException catch (e) {
@@ -272,10 +596,17 @@ class AuthService {
   }
 
   Future<UserModel?> getCurrentUser() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      return await _getUserData(user.uid);
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        return await _getUserData(user.uid);
+      }
+      return null;
+    } catch (_) {
+      try {
+        await _auth.signOut();
+      } catch (_) {}
+      return null;
     }
-    return null;
   }
 }

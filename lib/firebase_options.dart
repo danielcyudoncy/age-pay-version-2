@@ -14,10 +14,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -54,11 +51,29 @@ class DefaultFirebaseOptions {
 
   static FirebaseOptions get ios => FirebaseOptions(
     apiKey: EnvService.firebaseApiKey,
-    appId: EnvService.firebaseIosAppId,
+    appId: EnvService.firebaseIosAppId.isNotEmpty
+        ? EnvService.firebaseIosAppId
+        : '1:241674796862:ios:09d0da68250aef3090f66f',
     messagingSenderId: '241674796862',
     projectId: 'agepay-9a80d',
     storageBucket: 'agepay-9a80d.firebasestorage.app',
-    iosClientId: EnvService.firebaseIosClientId,
+    iosClientId: EnvService.firebaseIosClientId.isNotEmpty
+        ? EnvService.firebaseIosClientId
+        : null,
+    iosBundleId: 'com.agegrade.cls',
+  );
+
+  static FirebaseOptions get macos => FirebaseOptions(
+    apiKey: EnvService.firebaseApiKey,
+    appId: EnvService.firebaseIosAppId.isNotEmpty
+        ? EnvService.firebaseIosAppId
+        : '1:241674796862:ios:09d0da68250aef3090f66f',
+    messagingSenderId: '241674796862',
+    projectId: 'agepay-9a80d',
+    storageBucket: 'agepay-9a80d.firebasestorage.app',
+    iosClientId: EnvService.firebaseIosClientId.isNotEmpty
+        ? EnvService.firebaseIosClientId
+        : null,
     iosBundleId: 'com.agegrade.cls',
   );
 }

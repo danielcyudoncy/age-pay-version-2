@@ -25,6 +25,9 @@ import 'package:cls/features/secretary/views/attendance_screen.dart';
 import 'package:cls/features/secretary/views/calendar_screen.dart';
 import 'package:cls/features/secretary/views/documents_screen.dart';
 import 'package:cls/features/settings/views/settings_screen.dart';
+import 'package:cls/features/dashboard/widgets/executive_approval_queue_card.dart';
+import 'package:cls/features/notifications/controllers/notification_provider.dart';
+import 'package:cls/features/notifications/views/notifications_screen.dart';
 
 class PresidentDashboard extends ConsumerStatefulWidget {
   const PresidentDashboard({super.key});
@@ -59,9 +62,31 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_appBarTitle(_selectedIndex)),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(_appBarTitle(_selectedIndex)),
+        ),
         actions: [
           IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: Badge(
+              isLabelVisible: ref.watch(unreadCountProvider) > 0,
+              label: Text('${ref.watch(unreadCountProvider)}'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            tooltip: 'Notifications',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NotificationsScreen(currentUser: user),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
             onPressed: () {
@@ -76,6 +101,7 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
             },
           ),
           IconButton(
+            visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.logout),
             tooltip: 'Sign Out',
             onPressed: () async {
@@ -257,6 +283,9 @@ class _HomeTab extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
 
+            // Pending Member Registration Approvals
+            ExecutiveApprovalQueueCard(organizationId: user.organizationId),
+
             // Executive Quick Actions
             Text(
               'Executive Quick Actions',
@@ -368,7 +397,11 @@ class _HomeTab extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            _ExecutiveOverviewCards(data: data, currency: currency),
+            _ExecutiveOverviewCards(
+              data: data,
+              currency: currency,
+              onNavigate: onNavigate,
+            ),
             const SizedBox(height: 24),
 
             // Active Levies & Projects Section
@@ -431,8 +464,13 @@ class _HomeTab extends ConsumerWidget {
 class _ExecutiveOverviewCards extends StatelessWidget {
   final PresidentDashboardData data;
   final NumberFormat currency;
+  final ValueChanged<int> onNavigate;
 
-  const _ExecutiveOverviewCards({required this.data, required this.currency});
+  const _ExecutiveOverviewCards({
+    required this.data,
+    required this.currency,
+    required this.onNavigate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -451,24 +489,38 @@ class _ExecutiveOverviewCards extends StatelessWidget {
           value: currency.format(data.totalCollections),
           icon: Icons.payments,
           color: Colors.green,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ReportsScreen()),
+            );
+          },
         ),
         _MetricCard(
           label: 'Total Disbursed',
           value: currency.format(data.totalExpenses),
           icon: Icons.receipt_long,
           color: Colors.redAccent,
+          onTap: () => onNavigate(1),
         ),
         _MetricCard(
           label: 'Net Balance',
           value: currency.format(data.netPosition),
           icon: Icons.account_balance,
           color: theme.colorScheme.primary,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ReportsScreen()),
+            );
+          },
         ),
         _MetricCard(
           label: 'Total Members',
           value: data.totalMembers.toString(),
           icon: Icons.people,
           color: Colors.deepPurple,
+          onTap: () => onNavigate(3),
         ),
       ],
     );
@@ -480,12 +532,14 @@ class _MetricCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   const _MetricCard({
     required this.label,
     required this.value,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   @override
@@ -494,50 +548,66 @@ class _MetricCard extends StatelessWidget {
       elevation: 0,
       color: color.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(8),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, color: color, size: 20),
+                  ),
+                  if (onTap != null)
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 12,
+                      color: color.withValues(alpha: 0.5),
+                    ),
+                ],
               ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: color,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1072,6 +1142,7 @@ class _PresidentMeetingsTab extends ConsumerWidget {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab_call_meeting',
         icon: const Icon(Icons.add),
         label: const Text('Call Meeting'),
         onPressed: () {

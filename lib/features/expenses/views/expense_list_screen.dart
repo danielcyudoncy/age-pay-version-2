@@ -178,6 +178,7 @@ class ExpenseListScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab_add_expense',
         onPressed: () {
           Navigator.of(context).push(
             MaterialPageRoute(
