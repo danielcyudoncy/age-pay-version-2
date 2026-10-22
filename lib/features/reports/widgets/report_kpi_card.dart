@@ -6,6 +6,7 @@ class ReportKpiCard extends StatelessWidget {
   final String? subtitle;
   final IconData icon;
   final Color? color;
+  final double? titleFontSize;
 
   const ReportKpiCard({
     super.key,
@@ -14,6 +15,7 @@ class ReportKpiCard extends StatelessWidget {
     this.subtitle,
     required this.icon,
     this.color,
+    this.titleFontSize,
   });
 
   @override
@@ -47,15 +49,18 @@ class ReportKpiCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 11,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      title,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                        fontSize: titleFontSize ?? 10,
+                      ),
+                      maxLines: 1,
                     ),
-                    maxLines: 2,
-                    softWrap: true,
                   ),
                 ),
               ],

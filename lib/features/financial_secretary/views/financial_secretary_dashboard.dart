@@ -693,6 +693,7 @@ class _CollectionsTabState extends ConsumerState<_CollectionsTab> {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'finsec_record_cash_fab',
         icon: const Icon(Icons.add),
         label: const Text('Record Cash'),
         onPressed: () {
@@ -934,6 +935,7 @@ class _CollectionsTabState extends ConsumerState<_CollectionsTab> {
                     verifiedBy: widget.user.displayName,
                   );
               ref.invalidate(allPaymentsStreamProvider);
+              ref.invalidate(allObligationsProvider);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Reject'),
@@ -949,6 +951,7 @@ class _CollectionsTabState extends ConsumerState<_CollectionsTab> {
                     verifiedBy: widget.user.displayName,
                   );
               ref.invalidate(allPaymentsStreamProvider);
+              ref.invalidate(allObligationsProvider);
             },
             child: const Text('Approve & Credit'),
           ),
@@ -1125,6 +1128,7 @@ class _LeviesTab extends ConsumerWidget {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'finsec_create_levy_fab',
         icon: const Icon(Icons.add),
         label: const Text('Create Levy'),
         onPressed: () {

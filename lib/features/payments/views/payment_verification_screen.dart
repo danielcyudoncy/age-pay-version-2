@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/payments/models/payment_model.dart';
 import 'package:cls/features/payments/controllers/offline_payment_provider.dart';
+import 'package:cls/features/obligations/controllers/obligation_provider.dart';
+import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart'
+    show allPaymentsStreamProvider;
 
 class PaymentVerificationScreen extends ConsumerStatefulWidget {
   final String verifiedBy;
@@ -189,6 +192,9 @@ class _PaymentVerificationScreenState
             verifiedBy: widget.verifiedBy,
             notes: payment.notes,
           );
+      ref.invalidate(pendingPaymentsProvider);
+      ref.invalidate(allPaymentsStreamProvider);
+      ref.invalidate(allObligationsProvider);
     }
   }
 

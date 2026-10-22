@@ -45,9 +45,6 @@ class NotificationService {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       log('Message opened from background: ${message.messageId}');
     });
-
-    // Set background message handler
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
 
   Future<String?> getToken() async {

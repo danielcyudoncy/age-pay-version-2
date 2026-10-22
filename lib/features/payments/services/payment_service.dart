@@ -250,11 +250,18 @@ class CloudFunctionPaymentService implements PaymentService {
             final newObStatus = newPaid >= totalAmount
                 ? 'paid'
                 : (newPaid > 0 ? 'partial' : 'unpaid');
-            await obRef.update({
+            final newOutstanding =
+                (totalAmount - newPaid).clamp(0.0, double.infinity);
+            final obUpdates = <String, dynamic>{
               'paidAmount': newPaid,
+              'outstandingBalance': newOutstanding,
               'status': newObStatus,
               'updatedAt': Timestamp.fromDate(now),
-            });
+            };
+            if (newObStatus == 'paid') {
+              obUpdates['settledAt'] = Timestamp.fromDate(now);
+            }
+            await obRef.update(obUpdates);
           }
         }
 
@@ -442,11 +449,18 @@ class CloudFunctionPaymentService implements PaymentService {
                 final newObStatus = newPaid >= totalAmount
                     ? 'paid'
                     : (newPaid > 0 ? 'partial' : 'unpaid');
-                await obRef.update({
+                final newOutstanding =
+                    (totalAmount - newPaid).clamp(0.0, double.infinity);
+                final obUpdates = <String, dynamic>{
                   'paidAmount': newPaid,
+                  'outstandingBalance': newOutstanding,
                   'status': newObStatus,
                   'updatedAt': Timestamp.fromDate(now),
-                });
+                };
+                if (newObStatus == 'paid') {
+                  obUpdates['settledAt'] = Timestamp.fromDate(now);
+                }
+                await obRef.update(obUpdates);
               }
             }
           }
