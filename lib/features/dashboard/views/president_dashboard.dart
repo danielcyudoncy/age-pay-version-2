@@ -1268,31 +1268,77 @@ class _PresidentMeetingsTab extends ConsumerWidget {
                                         ),
                                       ),
                                     ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 3,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: meeting.hasMinutes
-                                            ? Colors.green.withValues(alpha: 0.15)
-                                            : Colors.orange.withValues(
-                                                alpha: 0.15,
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      alignment: WrapAlignment.end,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: meeting.isExecutivesOnly
+                                                ? Colors.deepOrange.withValues(alpha: 0.15)
+                                                : theme.colorScheme.primary.withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                meeting.isExecutivesOnly
+                                                    ? Icons.shield_outlined
+                                                    : Icons.groups_outlined,
+                                                size: 11,
+                                                color: meeting.isExecutivesOnly
+                                                    ? Colors.deepOrange
+                                                    : theme.colorScheme.primary,
                                               ),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        meeting.hasMinutes
-                                            ? 'Minutes Available'
-                                            : 'No Minutes Yet',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: meeting.hasMinutes
-                                              ? Colors.green.shade800
-                                              : Colors.orange.shade800,
+                                              const SizedBox(width: 3),
+                                              Text(
+                                                meeting.isExecutivesOnly
+                                                    ? 'Executives'
+                                                    : 'All Members',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: meeting.isExecutivesOnly
+                                                      ? Colors.deepOrange.shade800
+                                                      : theme.colorScheme.primary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: meeting.hasMinutes
+                                                ? Colors.green.withValues(alpha: 0.15)
+                                                : Colors.orange.withValues(
+                                                    alpha: 0.15,
+                                                  ),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            meeting.hasMinutes
+                                                ? 'Minutes'
+                                                : 'No Minutes',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: meeting.hasMinutes
+                                                  ? Colors.green.shade800
+                                                  : Colors.orange.shade800,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),

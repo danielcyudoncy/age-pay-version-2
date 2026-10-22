@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
+import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart'
+    show membersStreamProvider;
 import 'package:intl/intl.dart';
 
 class TreasurerObligationsScreen extends ConsumerWidget {
@@ -12,9 +14,19 @@ class TreasurerObligationsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final obligationsAsync = ref.watch(filteredObligationsProvider);
+    final membersAsync = ref.watch(membersStreamProvider);
     final filter = ref.watch(obligationFilterProvider);
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
     final dateFormat = DateFormat('MMM d, yyyy');
+
+    final members = membersAsync.valueOrNull ?? [];
+    final memberMap = <String, String>{};
+    for (final m in members) {
+      memberMap[m.id] = m.fullName;
+      if (m.userId.isNotEmpty) {
+        memberMap[m.userId] = m.fullName;
+      }
+    }
 
     final statusFilters = <ObligationStatus?, String>{
       null: 'All',
@@ -41,7 +53,7 @@ class TreasurerObligationsScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Search by title or description...',
+                hintText: 'Search by member, title, or description...',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -73,8 +85,13 @@ class TreasurerObligationsScreen extends ConsumerWidget {
                   itemCount: obligations.length,
                   itemBuilder: (context, index) {
                     final obligation = obligations[index];
+                    final memberName = memberMap[obligation.memberId] ??
+                        (membersAsync.isLoading
+                            ? 'Loading...'
+                            : 'Unknown Member');
                     return _ObligationAdminCard(
                       obligation: obligation,
+                      memberName: memberName,
                       currency: currency,
                       dateFormat: dateFormat,
                     );
@@ -154,11 +171,13 @@ class TreasurerObligationsScreen extends ConsumerWidget {
 
 class _ObligationAdminCard extends StatelessWidget {
   final ObligationModel obligation;
+  final String memberName;
   final NumberFormat currency;
   final DateFormat dateFormat;
 
   const _ObligationAdminCard({
     required this.obligation,
+    required this.memberName,
     required this.currency,
     required this.dateFormat,
   });
@@ -211,7 +230,7 @@ class _ObligationAdminCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Member: ${obligation.memberId.substring(0, obligation.memberId.length > 8 ? 8 : obligation.memberId.length)}',
+                        'Member: $memberName',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade600,

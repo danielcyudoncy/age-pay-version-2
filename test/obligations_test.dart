@@ -7,6 +7,9 @@ import 'package:cls/features/obligations/repositories/obligation_repository.dart
 import 'package:cls/features/obligations/views/member_obligations_screen.dart';
 import 'package:cls/features/obligations/views/treasurer_obligations_screen.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
+import 'package:cls/features/members/models/member_model.dart';
+import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart'
+    show membersStreamProvider;
 
 class _MockObligationRepository implements ObligationRepository {
   List<ObligationModel> _obligations = [];
@@ -110,6 +113,31 @@ void main() {
     ),
   ];
 
+  final testMembers = [
+    MemberModel(
+      id: 'member1',
+      userId: 'user1',
+      fullName: 'John Doe',
+      email: 'john@example.com',
+      phoneNumber: '1234567890',
+      dateOfBirth: DateTime(1990, 1, 1),
+      joinedDate: DateTime(2020, 1, 1),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+    MemberModel(
+      id: 'member2',
+      userId: 'user2',
+      fullName: 'Jane Smith',
+      email: 'jane@example.com',
+      phoneNumber: '0987654321',
+      dateOfBirth: DateTime(1992, 2, 2),
+      joinedDate: DateTime(2021, 1, 1),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+  ];
+
   group('MemberObligationsScreen', () {
     Widget buildScreen(List<ObligationModel> obligations) {
       final mockRepo = _MockObligationRepository();
@@ -201,8 +229,14 @@ void main() {
       return ProviderScope(
         overrides: [
           obligationRepositoryProvider.overrideWith((ref) => mockRepo),
+          membersStreamProvider.overrideWith((ref) => Stream.value(testMembers)),
         ],
-        child: MaterialApp(home: TreasurerObligationsScreen()),
+        child: MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(size: Size(800, 1400)),
+            child: const TreasurerObligationsScreen(),
+          ),
+        ),
       );
     }
 
@@ -219,9 +253,19 @@ void main() {
       await tester.pumpWidget(buildScreen(testObligations));
       await tester.pumpAndSettle();
 
-      expect(find.text('June Monthly Due'), findsOneWidget);
+      expect(find.text('June Monthly Due'), findsWidgets);
       expect(find.text('Project Fund'), findsOneWidget);
       expect(find.text('Emergency Relief'), findsOneWidget);
+    });
+
+    testWidgets('displays member full name instead of raw member ID', (tester) async {
+      await tester.pumpWidget(buildScreen([testObligations[0], testObligations[3]]));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Member: John Doe'), findsOneWidget);
+      expect(find.text('Member: Jane Smith'), findsOneWidget);
+      expect(find.text('Member: member1'), findsNothing);
+      expect(find.text('Member: member2'), findsNothing);
     });
 
     testWidgets('filters obligations by status', (tester) async {
@@ -257,6 +301,18 @@ void main() {
 
       expect(find.text('Project Fund'), findsOneWidget);
       expect(find.text('Emergency Relief'), findsNothing);
+    });
+
+    testWidgets('search filters by member name', (tester) async {
+      await tester.pumpWidget(buildScreen(testObligations));
+      await tester.pumpAndSettle();
+
+      final searchField = find.byType(TextField);
+      await tester.enterText(searchField, 'Jane Smith');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Member: Jane Smith'), findsOneWidget);
+      expect(find.text('Member: John Doe'), findsNothing);
     });
 
     testWidgets('shows action buttons for unpaid obligations', (tester) async {

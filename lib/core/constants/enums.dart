@@ -13,6 +13,10 @@ enum UserRole {
   member,
 }
 
+extension UserRoleExtension on UserRole {
+  bool get isExecutive => this != UserRole.member;
+}
+
 enum ObligationType {
   registrationFee,
   monthlyDue,

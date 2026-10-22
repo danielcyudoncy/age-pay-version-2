@@ -28,6 +28,7 @@ class MeetingController {
     String? organizationId,
     required DateTime meetingDate,
     required String createdBy,
+    String targetAudience = 'all',
   }) {
     return _repository.createMeeting(
       title: title,
@@ -35,6 +36,7 @@ class MeetingController {
       organizationId: organizationId,
       meetingDate: meetingDate,
       createdBy: createdBy,
+      targetAudience: targetAudience,
     );
   }
 

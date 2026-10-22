@@ -308,14 +308,7 @@ final levyCollectionProvider =
 final expenseTotalProvider = Provider.autoDispose<AsyncValue<double>>((ref) {
   final expensesAsync = ref.watch(expensesStreamProvider);
   return expensesAsync.whenData((list) {
-    final now = DateTime.now();
-    return list
-        .where(
-          (e) =>
-              e.expenseDate.year == now.year &&
-              e.expenseDate.month == now.month,
-        )
-        .fold<double>(0.0, (sum, e) => sum + e.amount);
+    return list.fold<double>(0.0, (sum, e) => sum + e.amount);
   });
 });
 

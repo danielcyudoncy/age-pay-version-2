@@ -179,7 +179,7 @@ class FinancialSummaryReportWidget extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Net Position',
+                            'Net Position (Purse Balance)',
                             style: theme.textTheme.bodySmall,
                           ),
                           const SizedBox(height: 2),

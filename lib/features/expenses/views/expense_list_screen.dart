@@ -8,12 +8,18 @@ import 'expense_form_screen.dart';
 
 class ExpenseListScreen extends ConsumerWidget {
   final String currentUserId;
+  final bool isExecutive;
 
-  const ExpenseListScreen({super.key, required this.currentUserId});
+  const ExpenseListScreen({
+    super.key,
+    required this.currentUserId,
+    this.isExecutive = true,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final canManage = isExecutive;
     final expensesAsync = ref.watch(expensesStreamProvider);
     final total = ref.watch(expenseTotalProvider);
     final selectedFilter = ref.watch(expenseFilterProvider);
@@ -135,14 +141,18 @@ class ExpenseListScreen extends ConsumerWidget {
                       return _ExpenseCard(
                         expense: expense,
                         onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => ExpenseFormScreen(
-                                currentUserId: currentUserId,
-                                expense: expense,
+                          if (canManage) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ExpenseFormScreen(
+                                  currentUserId: currentUserId,
+                                  expense: expense,
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          } else {
+                            _showExpenseDetails(context, expense);
+                          }
                         },
                       );
                     },
@@ -177,18 +187,139 @@ class ExpenseListScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'fab_add_expense',
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ExpenseFormScreen(currentUserId: currentUserId),
-            ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Add Expense'),
+      floatingActionButton: canManage
+          ? FloatingActionButton.extended(
+              heroTag: 'fab_add_expense',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        ExpenseFormScreen(currentUserId: currentUserId),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Add Expense'),
+            )
+          : null,
+    );
+  }
+
+  void _showExpenseDetails(BuildContext context, ExpenseModel expense) {
+    final theme = Theme.of(context);
+    final currencyFormat = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
+    final dateFormat = DateFormat('EEE, dd MMM yyyy');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          maxChildSize: 0.9,
+          minChildSize: 0.4,
+          expand: false,
+          builder: (_, scrollController) {
+            return ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.all(20),
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Chip(
+                      label: Text(_categoryLabel(expense.category)),
+                      backgroundColor: theme.colorScheme.primaryContainer,
+                    ),
+                    Text(
+                      currencyFormat.format(expense.amount),
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  expense.title,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  dateFormat.format(expense.expenseDate),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+                Text(
+                  'Description',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  expense.description.isNotEmpty
+                      ? expense.description
+                      : 'No description provided.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                if (expense.receiptUrl != null &&
+                    expense.receiptUrl!.isNotEmpty) ...[
+                  Text(
+                    'Receipt / Proof of Payment',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      expense.receiptUrl!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return const SizedBox(
+                          height: 160,
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 100,
+                        color: Colors.grey.shade100,
+                        alignment: Alignment.center,
+                        child: const Text('Failed to load receipt image'),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

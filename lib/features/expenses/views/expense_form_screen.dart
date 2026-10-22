@@ -12,11 +12,13 @@ import '../controllers/expense_provider.dart';
 
 class ExpenseFormScreen extends ConsumerStatefulWidget {
   final String currentUserId;
+  final String organizationId;
   final ExpenseModel? expense;
 
   const ExpenseFormScreen({
     super.key,
     required this.currentUserId,
+    this.organizationId = '',
     this.expense,
   });
 
@@ -111,6 +113,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       final amount = double.tryParse(_amountController.text) ?? 0.0;
       final receiptUrl = await _uploadReceipt();
       final repo = ref.read(expenseRepositoryProvider);
+      final orgId = widget.organizationId;
 
       if (_isEditing) {
         final updated = widget.expense!.copyWith(
@@ -120,12 +123,16 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           category: _selectedCategory,
           expenseDate: _expenseDate,
           receiptUrl: receiptUrl,
+          organizationId: widget.expense!.organizationId.isNotEmpty
+              ? widget.expense!.organizationId
+              : orgId,
           updatedAt: DateTime.now(),
         );
         await repo.updateExpense(updated);
       } else {
         final expense = ExpenseModel(
           id: '',
+          organizationId: orgId,
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim(),
           amount: amount,
@@ -138,6 +145,11 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         );
         await repo.createExpense(expense);
       }
+
+      try {
+        ref.invalidate(expensesStreamProvider);
+        ref.invalidate(expenseTotalProvider);
+      } catch (_) {}
 
       if (mounted) {
         Navigator.of(context).pop();

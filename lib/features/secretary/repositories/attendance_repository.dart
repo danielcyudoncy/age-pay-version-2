@@ -13,26 +13,26 @@ class AttendanceRepository {
   Stream<List<AttendanceModel>> getAttendanceForMeeting(String meetingId) {
     return _collection
         .where('meetingId', isEqualTo: meetingId)
-        .orderBy('recordedAt', descending: true)
         .snapshots()
         .map(
           (snapshot) =>
               snapshot.docs
                   .map((doc) => AttendanceModel.fromFirestore(doc))
-                  .toList(),
+                  .toList()
+                ..sort((a, b) => b.recordedAt.compareTo(a.recordedAt)),
         );
   }
 
   Stream<List<AttendanceModel>> getAttendanceForMember(String memberId) {
     return _collection
         .where('memberId', isEqualTo: memberId)
-        .orderBy('recordedAt', descending: true)
         .snapshots()
         .map(
           (snapshot) =>
               snapshot.docs
                   .map((doc) => AttendanceModel.fromFirestore(doc))
-                  .toList(),
+                  .toList()
+                ..sort((a, b) => b.recordedAt.compareTo(a.recordedAt)),
         );
   }
 

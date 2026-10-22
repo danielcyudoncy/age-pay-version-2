@@ -68,7 +68,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     child: ListTile(
                       leading: const CircleAvatar(child: Icon(Icons.event)),
                       title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      subtitle: Text(DateFormat('MMM dd, yyyy').format(item.meetingDate)),
+                      subtitle: Text('${DateFormat('MMM dd, yyyy').format(item.meetingDate)} • ${item.isExecutivesOnly ? 'Executives Only' : 'All Members'}'),
                     ),
                   );
                 } else if (item is AnnouncementModel) {
