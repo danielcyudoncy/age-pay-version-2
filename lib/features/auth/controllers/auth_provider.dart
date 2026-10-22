@@ -90,6 +90,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     String? newBranchName,
     String? coFounderName,
     String? coFounderPhone,
+    MemberDuesStanding duesStanding = MemberDuesStanding.newMember,
+    double? openingBalance,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -108,6 +110,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         newBranchName: newBranchName,
         coFounderName: coFounderName,
         coFounderPhone: coFounderPhone,
+        duesStanding: duesStanding,
+        openingBalance: openingBalance,
       );
       state = AsyncValue.data(user);
     } catch (e, st) {

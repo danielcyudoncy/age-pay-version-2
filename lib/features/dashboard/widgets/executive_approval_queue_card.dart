@@ -21,6 +21,8 @@ class _ExecutiveApprovalQueueCardState
     extends ConsumerState<ExecutiveApprovalQueueCard> {
   final Set<String> _processingIds = {};
   final Map<String, UserRole> _assignedRoles = {};
+  final Map<String, MemberDuesStanding> _assignedStandings = {};
+  final Map<String, double> _openingBalances = {};
 
   Future<void> _approve(UserModel applicant) async {
     setState(() => _processingIds.add(applicant.uid));
@@ -29,17 +31,24 @@ class _ExecutiveApprovalQueueCardState
       final assignedRole = _assignedRoles[applicant.uid] ??
           applicant.requestedRole ??
           UserRole.member;
+      final assignedStanding = _assignedStandings[applicant.uid] ??
+          applicant.duesStanding;
+      final openingBalance = _openingBalances[applicant.uid] ??
+          applicant.openingBalance;
+
       await authService.approveUserRegistration(
         uid: applicant.uid,
         organizationId: widget.organizationId,
         assignedRole: assignedRole,
+        duesStanding: assignedStanding,
+        openingBalance: openingBalance,
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green.shade700,
             content: Text(
-              '${applicant.displayName} approved as ${_roleLabel(assignedRole)}.',
+              '${applicant.displayName} approved as ${_roleLabel(assignedRole)} (${_standingLabel(assignedStanding)}).',
             ),
           ),
         );
@@ -329,6 +338,55 @@ class _ExecutiveApprovalQueueCardState
                               ),
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          Container(
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.green.shade400),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<MemberDuesStanding>(
+                                value: _assignedStandings[applicant.uid] ??
+                                    applicant.duesStanding,
+                                isExpanded: true,
+                                icon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.green.shade800,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade900,
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: MemberDuesStanding.cleared,
+                                    child: Text('Existing Member (Dues Cleared)'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: MemberDuesStanding.openingBalance,
+                                    child: Text('Existing Member (Opening Balance)'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: MemberDuesStanding.newMember,
+                                    child: Text('New Member (Calculate Dues)'),
+                                  ),
+                                ],
+                                onChanged: isProcessing
+                                    ? null
+                                    : (newStanding) {
+                                        if (newStanding != null) {
+                                          setState(() =>
+                                              _assignedStandings[applicant.uid] =
+                                                  newStanding);
+                                        }
+                                      },
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
@@ -447,6 +505,17 @@ class _ExecutiveApprovalQueueCardState
         return 'Committee Chair';
       case UserRole.member:
         return 'Member';
+    }
+  }
+
+  String _standingLabel(MemberDuesStanding standing) {
+    switch (standing) {
+      case MemberDuesStanding.cleared:
+        return 'Dues Cleared';
+      case MemberDuesStanding.openingBalance:
+        return 'Opening Balance';
+      case MemberDuesStanding.newMember:
+        return 'New Member';
     }
   }
 }

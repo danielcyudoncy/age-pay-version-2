@@ -40,6 +40,18 @@ enum PaymentProvider { paystack, flutterwave }
 
 enum PaymentStatus { pending, approved, rejected }
 
+enum ExpenseStatus {
+  pendingApproval,
+  approved,
+  rejected,
+}
+
+enum MemberDuesStanding {
+  cleared,
+  openingBalance,
+  newMember,
+}
+
 enum ExpenseCategory {
   welfare,
   projects,
@@ -47,3 +59,4 @@ enum ExpenseCategory {
   administration,
   miscellaneous,
 }
+

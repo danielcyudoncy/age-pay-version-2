@@ -134,6 +134,8 @@ class AuthService {
     String? newBranchName,
     String? coFounderName,
     String? coFounderPhone,
+    MemberDuesStanding duesStanding = MemberDuesStanding.newMember,
+    double? openingBalance,
   }) async {
     try {
       final result = await _auth.createUserWithEmailAndPassword(
@@ -260,6 +262,8 @@ class AuthService {
         branchName: finalBranchName,
         coFounderName: coFounderName,
         coFounderPhone: coFounderPhone,
+        duesStanding: duesStanding,
+        openingBalance: openingBalance,
         createdAt: DateTime.now(),
         isActive: false, // Inactive pending approval
       );
@@ -281,6 +285,8 @@ class AuthService {
         joinedDate: DateTime.now(),
         branchId: finalBranchId,
         branchName: finalBranchName,
+        duesStanding: duesStanding,
+        openingBalance: openingBalance,
         status: 'pending_approval',
         isActive: false,
         createdAt: DateTime.now(),
@@ -358,17 +364,23 @@ class AuthService {
     required String uid,
     required String organizationId,
     UserRole? assignedRole,
+    MemberDuesStanding? duesStanding,
+    double? openingBalance,
   }) async {
     final userDoc = await _firestore.collection('users').doc(uid).get();
     if (!userDoc.exists) return;
     final user = UserModel.fromFirestore(userDoc);
     final approvedRole = assignedRole ?? user.requestedRole ?? user.role;
+    final effectiveStanding = duesStanding ?? user.duesStanding;
+    final effectiveOpeningBalance = openingBalance ?? user.openingBalance;
 
     final batch = _firestore.batch();
     batch.update(_firestore.collection('users').doc(uid), {
       'status': AccountStatus.approved.name,
       'role': approvedRole.name,
       'isActive': true,
+      'duesStanding': effectiveStanding.name,
+      'openingBalance': ?effectiveOpeningBalance,
     });
 
     final membersSnap = await _firestore
@@ -383,18 +395,22 @@ class AuthService {
       batch.update(membersSnap.docs.first.reference, {
         'status': 'approved',
         'isActive': true,
+        'duesStanding': effectiveStanding.name,
+        'openingBalance': ?effectiveOpeningBalance,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
     }
 
     await batch.commit();
 
-    // Automatically reconcile obligations upon approval
+    // Automatically reconcile obligations upon approval with member dues standing
     if (memberId != null) {
       final obligationRepo = ObligationRepository(firestore: _firestore);
       await obligationRepo.reconcileMemberObligations(
         memberId,
         userId: uid,
+        duesStanding: effectiveStanding,
+        openingBalance: effectiveOpeningBalance,
       );
     }
 

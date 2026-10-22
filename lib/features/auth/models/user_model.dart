@@ -16,6 +16,8 @@ class UserModel {
   final UserRole? requestedRole;
   final String? coFounderName;
   final String? coFounderPhone;
+  final MemberDuesStanding duesStanding;
+  final double? openingBalance;
 
   const UserModel({
     required this.uid,
@@ -32,6 +34,8 @@ class UserModel {
     this.requestedRole,
     this.coFounderName,
     this.coFounderPhone,
+    this.duesStanding = MemberDuesStanding.newMember,
+    this.openingBalance,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -67,6 +71,14 @@ class UserModel {
       orElse: () => UserRole.member,
     );
 
+    final standingStr = data['duesStanding'] as String?;
+    final MemberDuesStanding parsedStanding = standingStr != null
+        ? MemberDuesStanding.values.firstWhere(
+            (s) => s.name.toLowerCase() == standingStr.trim().toLowerCase(),
+            orElse: () => MemberDuesStanding.newMember,
+          )
+        : MemberDuesStanding.newMember;
+
     return UserModel(
       uid: uid,
       organizationId: data['organizationId'] ?? uid,
@@ -82,6 +94,8 @@ class UserModel {
       requestedRole: parsedReqRole,
       coFounderName: data['coFounderName'],
       coFounderPhone: data['coFounderPhone'],
+      duesStanding: parsedStanding,
+      openingBalance: (data['openingBalance'] as num?)?.toDouble(),
     );
   }
 
@@ -95,6 +109,8 @@ class UserModel {
       'createdAt': Timestamp.fromDate(createdAt),
       'isActive': isActive,
       'status': status.name,
+      'duesStanding': duesStanding.name,
+      if (openingBalance != null) 'openingBalance': openingBalance,
       if (branchId != null) 'branchId': branchId,
       if (branchName != null) 'branchName': branchName,
       if (requestedRole != null) 'requestedRole': requestedRole!.name,
@@ -124,6 +140,8 @@ class UserModel {
     UserRole? requestedRole,
     String? coFounderName,
     String? coFounderPhone,
+    MemberDuesStanding? duesStanding,
+    double? openingBalance,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -140,6 +158,8 @@ class UserModel {
       requestedRole: requestedRole ?? this.requestedRole,
       coFounderName: coFounderName ?? this.coFounderName,
       coFounderPhone: coFounderPhone ?? this.coFounderPhone,
+      duesStanding: duesStanding ?? this.duesStanding,
+      openingBalance: openingBalance ?? this.openingBalance,
     );
   }
 

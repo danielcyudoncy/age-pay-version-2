@@ -4,16 +4,19 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/enums.dart';
 import '../models/expense_model.dart';
 import '../controllers/expense_provider.dart';
+import '../widgets/expense_approval_queue_card.dart';
 import 'expense_form_screen.dart';
 
 class ExpenseListScreen extends ConsumerWidget {
   final String currentUserId;
   final bool isExecutive;
+  final String? organizationId;
 
   const ExpenseListScreen({
     super.key,
     required this.currentUserId,
     this.isExecutive = true,
+    this.organizationId,
   });
 
   @override
@@ -21,8 +24,10 @@ class ExpenseListScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final canManage = isExecutive;
     final expensesAsync = ref.watch(expensesStreamProvider);
-    final total = ref.watch(expenseTotalProvider);
+    final approvedTotal = ref.watch(expenseTotalProvider);
+    final pendingTotal = ref.watch(pendingExpenseTotalProvider);
     final selectedFilter = ref.watch(expenseFilterProvider);
+    final orgId = organizationId ?? '';
 
     final currencyFormat = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
 
@@ -33,19 +38,39 @@ class ExpenseListScreen extends ConsumerWidget {
           preferredSize: const Size.fromHeight(56),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Chip(
-                  avatar: const Icon(Icons.account_balance_wallet, size: 18),
-                  label: Text(
-                    'Total: ${currencyFormat.format(total)}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  Chip(
+                    avatar: const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                    label: Text(
+                      'Total: ${currencyFormat.format(approvedTotal)} (Approved)',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade900,
+                      ),
                     ),
+                    backgroundColor: Colors.green.shade50,
+                    side: BorderSide(color: Colors.green.shade200),
                   ),
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                ),
-              ],
+                  if (pendingTotal > 0) ...[
+                    const SizedBox(width: 8),
+                    Chip(
+                      avatar: const Icon(Icons.hourglass_top, size: 16, color: Colors.amber),
+                      label: Text(
+                        'Pending Sign-off: ${currencyFormat.format(pendingTotal)}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber.shade900,
+                        ),
+                      ),
+                      backgroundColor: Colors.amber.shade50,
+                      side: BorderSide(color: Colors.amber.shade200),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
         ),
@@ -98,35 +123,47 @@ class ExpenseListScreen extends ConsumerWidget {
                             .where((e) => e.category == selectedFilter)
                             .toList();
 
+                  final hasQueue = canManage && orgId.isNotEmpty;
+
                   if (filtered.isEmpty) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         return SingleChildScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minHeight: constraints.maxHeight,
-                            ),
-                            child: const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.receipt_long,
-                                    size: 64,
-                                    color: Colors.grey,
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (hasQueue) ...[
+                                ExpenseApprovalQueueCard(organizationId: orgId),
+                                const SizedBox(height: 12),
+                              ],
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minHeight: constraints.maxHeight - (hasQueue ? 120 : 0),
+                                ),
+                                child: const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.receipt_long,
+                                        size: 64,
+                                        color: Colors.grey,
+                                      ),
+                                      SizedBox(height: 16),
+                                      Text(
+                                        'No expenses recorded',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'No expenses recorded',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         );
                       },
@@ -135,9 +172,15 @@ class ExpenseListScreen extends ConsumerWidget {
 
                   return ListView.builder(
                     padding: const EdgeInsets.all(12),
-                    itemCount: filtered.length,
+                    itemCount: filtered.length + (hasQueue ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final expense = filtered[index];
+                      if (hasQueue && index == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: ExpenseApprovalQueueCard(organizationId: orgId),
+                        );
+                      }
+                      final expense = filtered[hasQueue ? index - 1 : index];
                       return _ExpenseCard(
                         expense: expense,
                         onTap: () {
@@ -367,8 +410,30 @@ class _ExpenseCard extends StatelessWidget {
     final currencyFormat = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
     final dateFormat = DateFormat('MMM dd, yyyy');
 
+    final isApproved = expense.status == ExpenseStatus.approved;
+    final isRejected = expense.status == ExpenseStatus.rejected;
+    final isPending = expense.status == ExpenseStatus.pendingApproval;
+
+    final statusColor = isApproved
+        ? Colors.green.shade700
+        : (isRejected ? Colors.red.shade700 : Colors.amber.shade800);
+    final statusBg = isApproved
+        ? Colors.green.shade50
+        : (isRejected ? Colors.red.shade50 : Colors.amber.shade50);
+    final statusLabel = isApproved
+        ? 'APPROVED'
+        : (isRejected ? 'REJECTED' : 'PENDING (${expense.approvedCount}/3)');
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      elevation: isPending ? 1 : 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isPending ? Colors.amber.shade300 : Colors.grey.shade300,
+          width: isPending ? 1.2 : 0.8,
+        ),
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -389,9 +454,30 @@ class _ExpenseCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: statusBg,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: statusColor.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                   if (expense.receiptUrl != null &&
-                      expense.receiptUrl!.isNotEmpty)
-                    const Icon(Icons.receipt, size: 20, color: Colors.green),
+                      expense.receiptUrl!.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    const Icon(Icons.receipt, size: 18, color: Colors.green),
+                  ],
                 ],
               ),
               const SizedBox(height: 4),
@@ -403,7 +489,7 @@ class _ExpenseCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -418,20 +504,78 @@ class _ExpenseCard extends StatelessWidget {
                   Text(
                     currencyFormat.format(expense.amount),
                     style: theme.textTheme.titleSmall?.copyWith(
-                      color: Colors.red,
+                      color: isApproved ? Colors.red.shade700 : Colors.grey.shade800,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              Text(
-                dateFormat.format(expense.expenseDate),
-                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+              // Executive Signatures row
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  _signatoryIndicator('President', expense.isPresidentApproved),
+                  _signatoryIndicator(
+                    'Fin. Sec',
+                    expense.isFinancialSecretaryApproved,
+                  ),
+                  _signatoryIndicator('Secretary', expense.isSecretaryApproved),
+                  Text(
+                    dateFormat.format(expense.expenseDate),
+                    style:
+                        theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  ),
+                ],
               ),
+              if (isRejected && expense.rejectionReason != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Reason: ${expense.rejectionReason}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.red.shade700,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _signatoryIndicator(String title, bool signed) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: signed ? Colors.green.shade50 : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: signed ? Colors.green.shade300 : Colors.grey.shade300,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            signed ? Icons.check_circle : Icons.schedule,
+            size: 11,
+            color: signed ? Colors.green.shade700 : Colors.grey.shade600,
+          ),
+          const SizedBox(width: 3),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: signed ? FontWeight.bold : FontWeight.normal,
+              color: signed ? Colors.green.shade900 : Colors.grey.shade700,
+            ),
+          ),
+        ],
       ),
     );
   }

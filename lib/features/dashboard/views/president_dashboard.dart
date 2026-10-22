@@ -26,6 +26,7 @@ import 'package:cls/features/secretary/views/calendar_screen.dart';
 import 'package:cls/features/secretary/views/documents_screen.dart';
 import 'package:cls/features/settings/views/settings_screen.dart';
 import 'package:cls/features/dashboard/widgets/executive_approval_queue_card.dart';
+import 'package:cls/features/expenses/widgets/expense_approval_queue_card.dart';
 import 'package:cls/features/notifications/controllers/notification_provider.dart';
 import 'package:cls/features/notifications/views/notifications_screen.dart';
 
@@ -54,7 +55,10 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
 
     final pages = <Widget>[
       _HomeTab(user: user, onNavigate: _onNavigate),
-      ExpenseListScreen(currentUserId: user.uid),
+      ExpenseListScreen(
+        currentUserId: user.uid,
+        organizationId: user.organizationId,
+      ),
       const _PresidentMeetingsTab(),
       const _PresidentMembersTab(),
       const MemberDashboard(),
@@ -285,6 +289,9 @@ class _HomeTab extends ConsumerWidget {
 
             // Pending Member Registration Approvals
             ExecutiveApprovalQueueCard(organizationId: user.organizationId),
+
+            // Pending Expense Approvals (Multi-Executive Sign-Off)
+            ExpenseApprovalQueueCard(organizationId: user.organizationId),
 
             // Executive Quick Actions
             Text(

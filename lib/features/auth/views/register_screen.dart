@@ -28,6 +28,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _newBranchNameController = TextEditingController();
   final _secretaryNameController = TextEditingController();
   final _secretaryPhoneController = TextEditingController();
+  final _openingBalanceController = TextEditingController();
+  MemberDuesStanding _selectedDuesStanding = MemberDuesStanding.cleared;
 
   String? _selectedOrganizationId;
   String? _selectedBranchId;
@@ -51,6 +53,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _newBranchNameController.dispose();
     _secretaryNameController.dispose();
     _secretaryPhoneController.dispose();
+    _openingBalanceController.dispose();
     super.dispose();
   }
 
@@ -125,6 +128,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 : null,
             coFounderPhone: _isCreatingNewOrg
                 ? _secretaryPhoneController.text.trim()
+                : null,
+            duesStanding: _selectedDuesStanding,
+            openingBalance: _selectedDuesStanding == MemberDuesStanding.openingBalance
+                ? (double.tryParse(_openingBalanceController.text.trim()) ?? 0.0)
                 : null,
           );
     } catch (e) {
@@ -531,6 +538,99 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                       ),
                     ],
+
+                    const SizedBox(height: 28),
+                    // Membership Dues Standing Section
+                    Text(
+                      'Membership Status & Dues Standing',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Help us initialize your financial records accurately.',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(height: 12),
+                    Card(
+                      elevation: 0,
+                      color: Colors.grey.shade50,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: RadioGroup<MemberDuesStanding>(
+                          groupValue: _selectedDuesStanding,
+                          onChanged: (val) {
+                            if (val != null) setState(() => _selectedDuesStanding = val);
+                          },
+                          child: Column(
+                            children: [
+                              const RadioListTile<MemberDuesStanding>(
+                                value: MemberDuesStanding.cleared,
+                                title: Text(
+                                  'Existing Member (Dues Cleared)',
+                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                ),
+                                subtitle: Text(
+                                  'All past obligations & dues have already been paid before using this app.',
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                              ),
+                              const Divider(height: 1),
+                              const RadioListTile<MemberDuesStanding>(
+                                value: MemberDuesStanding.openingBalance,
+                                title: Text(
+                                  'Existing Member (Specify Opening Balance)',
+                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                ),
+                                subtitle: Text(
+                                  'Carry forward an existing outstanding debt or opening balance.',
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                              ),
+                              if (_selectedDuesStanding == MemberDuesStanding.openingBalance)
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                                  child: TextFormField(
+                                    controller: _openingBalanceController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Opening Balance (₦)',
+                                      prefixText: '₦ ',
+                                      hintText: 'e.g. 15000',
+                                      isDense: true,
+                                    ),
+                                    validator: (v) {
+                                      if (_selectedDuesStanding == MemberDuesStanding.openingBalance &&
+                                          (v == null || v.trim().isEmpty)) {
+                                        return 'Please enter opening balance';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              const Divider(height: 1),
+                              const RadioListTile<MemberDuesStanding>(
+                                value: MemberDuesStanding.newMember,
+                                title: Text(
+                                  'New Member',
+                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                ),
+                                subtitle: Text(
+                                  'Recently joined; dues will be calculated from registration date forward.',
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
 
                     const SizedBox(height: 28),
                     // Password Section

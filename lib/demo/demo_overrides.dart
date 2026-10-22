@@ -72,6 +72,8 @@ class DemoAuthService implements AuthService {
     String? newBranchName,
     String? coFounderName,
     String? coFounderPhone,
+    MemberDuesStanding duesStanding = MemberDuesStanding.newMember,
+    double? openingBalance,
   }) async {
     await Future.delayed(const Duration(milliseconds: 300));
     if (_users.containsKey(email)) {
@@ -84,6 +86,8 @@ class DemoAuthService implements AuthService {
       displayName: displayName,
       phoneNumber: phoneNumber,
       role: role,
+      duesStanding: duesStanding,
+      openingBalance: openingBalance,
       createdAt: DateTime.now(),
     );
     _users[email] = user;
