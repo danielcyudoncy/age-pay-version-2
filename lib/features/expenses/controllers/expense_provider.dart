@@ -11,6 +11,10 @@ final expensesStreamProvider = StreamProvider<List<ExpenseModel>>((ref) {
   return ref.watch(expenseRepositoryProvider).getExpenses();
 });
 
+final pendingExpensesStreamProvider = StreamProvider<List<ExpenseModel>>((ref) {
+  return ref.watch(expenseRepositoryProvider).getPendingExpenses();
+});
+
 final expensesByCategoryProvider =
     Provider.family<AsyncValue<List<ExpenseModel>>, ExpenseCategory>((
       ref,
@@ -22,10 +26,24 @@ final expensesByCategoryProvider =
       );
     });
 
+/// Only approved expenses are deducted from organization funds
 final expenseTotalProvider = Provider<double>((ref) {
   final asyncExpenses = ref.watch(expensesStreamProvider);
   return asyncExpenses.whenOrNull(
-        data: (list) => list.fold<double>(0.0, (sum, e) => sum + e.amount),
+        data: (list) => list
+            .where((e) => e.status == ExpenseStatus.approved)
+            .fold<double>(0.0, (sum, e) => sum + e.amount),
+      ) ??
+      0.0;
+});
+
+/// Total amount of expenses currently awaiting executive approvals
+final pendingExpenseTotalProvider = Provider<double>((ref) {
+  final asyncExpenses = ref.watch(expensesStreamProvider);
+  return asyncExpenses.whenOrNull(
+        data: (list) => list
+            .where((e) => e.status == ExpenseStatus.pendingApproval)
+            .fold<double>(0.0, (sum, e) => sum + e.amount),
       ) ??
       0.0;
 });

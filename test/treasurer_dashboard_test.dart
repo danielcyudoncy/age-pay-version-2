@@ -514,6 +514,10 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        // Scroll down to bring arrears into view
+        await tester.drag(find.byType(ListView).first, const Offset(0, -400));
+        await tester.pumpAndSettle();
+
         expect(find.text('Members in Arrears'), findsOneWidget);
         expect(find.text('John Doe'), findsOneWidget);
         expect(find.text('Jane Smith'), findsOneWidget);
@@ -533,6 +537,10 @@ void main() {
           members: testMembers,
         ),
       );
+      await tester.pumpAndSettle();
+
+      // Scroll down to bring levy collection into view
+      await tester.drag(find.byType(ListView).first, const Offset(0, -600));
       await tester.pumpAndSettle();
 
       expect(find.text('Levy Collection'), findsOneWidget);
@@ -557,7 +565,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Scroll down to bring Recent Activity into the viewport so SliverList builds it
-      await tester.drag(find.byType(ListView), const Offset(0, -1200));
+      await tester.drag(find.byType(ListView).first, const Offset(0, -1200));
       await tester.pumpAndSettle();
 
       final allTexts = tester.allWidgets
@@ -583,7 +591,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // scroll down to bring quick actions into viewport
-      await tester.drag(find.byType(ListView), const Offset(0, -800));
+      await tester.drag(find.byType(ListView).first, const Offset(0, -800));
       await tester.pumpAndSettle();
 
       final allTexts = tester.allWidgets
@@ -609,7 +617,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // scroll down to bring quick actions into viewport
-      await tester.drag(find.byType(ListView), const Offset(0, -800));
+      await tester.drag(find.byType(ListView).first, const Offset(0, -800));
       await tester.pumpAndSettle();
 
       // Verify all quick action buttons are present
@@ -624,15 +632,107 @@ void main() {
       await tester.pumpWidget(buildDashboard());
       await tester.pumpAndSettle();
 
+      expect(find.text('No members in arrears'), findsOneWidget);
+
+      // Scroll down to view levy collection and recent activity
+      await tester.drag(find.byType(ListView).first, const Offset(0, -400));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No active levies'), findsOneWidget);
+
       final allTexts = tester.allWidgets
           .whereType<Text>()
           .map((w) => w.data ?? '')
           .toList();
-      debugPrint('EMPTY_ALL_TEXTS: ${allTexts.join('|')}');
-
-      expect(find.text('No members in arrears'), findsOneWidget);
-      expect(find.text('No active levies'), findsOneWidget);
       expect(allTexts, contains('No recent activity'));
+    });
+
+    testWidgets('shows personal member status banner with dues status', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildDashboard(
+          payments: testPayments,
+          obligations: testObligations,
+          levies: testLevies,
+          expenses: testExpenses,
+          members: testMembers,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('My Personal Member Status'), findsOneWidget);
+      expect(find.text('Your Outstanding Dues'), findsOneWidget);
+      expect(find.text('My Account'), findsWidgets);
+    });
+
+    testWidgets('switches to My Account tab and renders member dashboard', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildDashboard(
+          payments: testPayments,
+          obligations: testObligations,
+          levies: testLevies,
+          expenses: testExpenses,
+          members: testMembers,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap "My Account" in bottom navigation bar
+      await tester.tap(find.text('My Account').last);
+      await tester.pumpAndSettle();
+
+      // Expect to see member dashboard components
+      expect(find.textContaining('Test Treasurer'), findsOneWidget);
+      expect(find.text('Total Paid'), findsOneWidget);
+    });
+
+    testWidgets('switches to Collections tab and verifies payment search and filter', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildDashboard(
+          payments: testPayments,
+          obligations: testObligations,
+          levies: testLevies,
+          expenses: testExpenses,
+          members: testMembers,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap Collections tab
+      await tester.tap(find.text('Collections'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Verify Queue'), findsOneWidget);
+      expect(find.text('Record Cash'), findsOneWidget);
+      expect(find.text('Pending'), findsWidgets);
+      expect(find.text('Bank'), findsWidgets);
+    });
+
+    testWidgets('switches to Members tab and shows debtors filter', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildDashboard(
+          payments: testPayments,
+          obligations: testObligations,
+          levies: testLevies,
+          expenses: testExpenses,
+          members: testMembers,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap Members tab
+      await tester.tap(find.text('Members'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Debtors Only'), findsOneWidget);
+      expect(find.text('John Doe'), findsWidgets);
     });
 
     testWidgets('shows loading state initially', (tester) async {

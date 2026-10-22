@@ -109,11 +109,19 @@ class NotificationService {
   }
 
   Stream<RemoteMessage> get onForegroundMessage {
-    return FirebaseMessaging.onMessage;
+    try {
+      return FirebaseMessaging.onMessage;
+    } catch (_) {
+      return const Stream.empty();
+    }
   }
 
   Stream<RemoteMessage> get onMessageOpenedApp {
-    return FirebaseMessaging.onMessageOpenedApp;
+    try {
+      return FirebaseMessaging.onMessageOpenedApp;
+    } catch (_) {
+      return const Stream.empty();
+    }
   }
 
   List<String> get subscribedTopics => List.unmodifiable(_subscribedTopics);

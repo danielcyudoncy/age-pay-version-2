@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/constants/enums.dart';
 
 class MemberModel {
   final String id;
@@ -13,6 +14,8 @@ class MemberModel {
   final String? branchId;
   final String? branchName;
   final String? profilePhotoUrl;
+  final MemberDuesStanding duesStanding;
+  final double? openingBalance;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -29,12 +32,22 @@ class MemberModel {
     this.branchId,
     this.branchName,
     this.profilePhotoUrl,
+    this.duesStanding = MemberDuesStanding.newMember,
+    this.openingBalance,
     required this.createdAt,
     required this.updatedAt,
   });
 
   factory MemberModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    final standingStr = data['duesStanding'] as String?;
+    final MemberDuesStanding parsedStanding = standingStr != null
+        ? MemberDuesStanding.values.firstWhere(
+            (s) => s.name.toLowerCase() == standingStr.trim().toLowerCase(),
+            orElse: () => MemberDuesStanding.newMember,
+          )
+        : MemberDuesStanding.newMember;
+
     return MemberModel(
       id: doc.id,
       userId: data['userId'] ?? '',
@@ -48,6 +61,8 @@ class MemberModel {
       branchId: data['branchId'],
       branchName: data['branchName'],
       profilePhotoUrl: data['profilePhotoUrl'],
+      duesStanding: parsedStanding,
+      openingBalance: (data['openingBalance'] as num?)?.toDouble(),
       createdAt: _parseDate(data['createdAt']),
       updatedAt: _parseDate(data['updatedAt']),
     );
@@ -63,6 +78,8 @@ class MemberModel {
       'joinedDate': Timestamp.fromDate(joinedDate),
       'isActive': isActive,
       'status': status,
+      'duesStanding': duesStanding.name,
+      if (openingBalance != null) 'openingBalance': openingBalance,
       if (branchId != null) 'branchId': branchId,
       if (branchName != null) 'branchName': branchName,
       'profilePhotoUrl': profilePhotoUrl,
@@ -90,6 +107,8 @@ class MemberModel {
     String? branchId,
     String? branchName,
     String? profilePhotoUrl,
+    MemberDuesStanding? duesStanding,
+    double? openingBalance,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -106,6 +125,8 @@ class MemberModel {
       branchId: branchId ?? this.branchId,
       branchName: branchName ?? this.branchName,
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
+      duesStanding: duesStanding ?? this.duesStanding,
+      openingBalance: openingBalance ?? this.openingBalance,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

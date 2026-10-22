@@ -22,6 +22,7 @@ import 'package:cls/features/levies/controllers/levy_provider.dart'
     show activeLeviesProvider;
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart'
     show allPaymentsStreamProvider, membersStreamProvider;
+import 'package:cls/features/expenses/widgets/expense_approval_queue_card.dart';
 
 class FinancialSecretaryDashboard extends ConsumerStatefulWidget {
   const FinancialSecretaryDashboard({super.key});
@@ -259,7 +260,11 @@ class _HomeTab extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+
+              // Multi-Executive Expense Sign-Off Queue
+              ExpenseApprovalQueueCard(organizationId: user.organizationId),
+              const SizedBox(height: 12),
 
               // Cash Handover Banner (Separation of duties highlight!)
               Card(

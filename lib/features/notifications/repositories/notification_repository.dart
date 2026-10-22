@@ -5,13 +5,15 @@ import '../../../core/constants/enums.dart';
 import '../models/notification_model.dart';
 
 class NotificationRepository {
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _firestore;
   static const String collection = 'notifications';
 
   NotificationRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+      : _firestore = firestore;
 
-  CollectionReference get _collection => _firestore.collection(collection);
+  FirebaseFirestore get _fs => _firestore ?? FirebaseFirestore.instance;
+
+  CollectionReference get _collection => _fs.collection(collection);
 
   /// Send or save a notification to Firestore.
   Future<void> sendNotification(NotificationModel notification) async {
@@ -36,28 +38,29 @@ class NotificationRepository {
     String? userId,
     UserRole? role,
   }) {
-    final isExecutive = role == UserRole.president ||
-        role == UserRole.vicePresident ||
-        role == UserRole.superAdmin;
+    try {
+      final isExecutive = role == UserRole.president ||
+          role == UserRole.vicePresident ||
+          role == UserRole.superAdmin;
 
-    if (organizationId.isEmpty && !isExecutive) {
-      return Stream.value([]);
-    }
+      if (organizationId.isEmpty && !isExecutive) {
+        return Stream.value([]);
+      }
 
-    final notifsQuery = isExecutive
-        ? _collection
-        : (organizationId.isNotEmpty
-            ? _collection.where('organizationId', isEqualTo: organizationId)
-            : _collection);
+      final notifsQuery = isExecutive
+          ? _collection
+          : (organizationId.isNotEmpty
+              ? _collection.where('organizationId', isEqualTo: organizationId)
+              : _collection);
 
-    final notifsStream = notifsQuery.snapshots().map((snapshot) {
-      final items = snapshot.docs
-          .map((doc) => NotificationModel.fromMap(
-                doc.data() as Map<String, dynamic>,
-                doc.id,
-              ))
-          .where((n) => _isNotificationForUser(n, userId, role))
-          .toList();
+      final notifsStream = notifsQuery.snapshots().map((snapshot) {
+        final items = snapshot.docs
+            .map((doc) => NotificationModel.fromMap(
+                  doc.data() as Map<String, dynamic>,
+                  doc.id,
+                ))
+            .where((n) => _isNotificationForUser(n, userId, role))
+            .toList();
       items.sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
       return items;
     }).handleError((error) {
@@ -109,7 +112,7 @@ class NotificationRepository {
         },
       );
 
-      final usersStream = _firestore.collection('users').snapshots();
+      final usersStream = _fs.collection('users').snapshots();
       usersSub = usersStream.listen(
         (snap) {
           final pendingList = <NotificationModel>[];
@@ -169,7 +172,10 @@ class NotificationRepository {
       usersSub?.cancel();
     };
 
-    return controller.stream;
+      return controller.stream;
+    } catch (_) {
+      return Stream.value([]);
+    }
   }
 
   bool _isNotificationForUser(
@@ -229,7 +235,7 @@ class NotificationRepository {
           .where('read', isEqualTo: false)
           .get();
 
-      final batch = _firestore.batch();
+      final batch = _fs.batch();
       for (final doc in snap.docs) {
         batch.update(doc.reference, {'read': true});
       }

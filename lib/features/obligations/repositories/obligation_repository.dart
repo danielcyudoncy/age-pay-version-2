@@ -138,9 +138,12 @@ class ObligationRepository {
   /// dues and levies for a member. If the member downloaded the app today while
   /// there are already running obligations, this creates missing obligations
   /// idempotently without duplicating any records.
+  /// If [duesStanding] is cleared, obligations are marked as settled (status: paid, balance: 0).
   Future<int> reconcileMemberObligations(
     String memberOrUserId, {
     String? userId,
+    MemberDuesStanding? duesStanding,
+    double? openingBalance,
   }) async {
     String targetMemberId = memberOrUserId;
     String? targetUserId = userId;
@@ -168,6 +171,30 @@ class ObligationRepository {
       // Best-effort ID resolution fallback
     }
 
+    MemberDuesStanding resolvedStanding = duesStanding ?? MemberDuesStanding.newMember;
+    double? resolvedOpeningBalance = openingBalance;
+
+    if (duesStanding == null) {
+      try {
+        final checkUid = targetUserId ?? (memberOrUserId.isNotEmpty ? memberOrUserId : null);
+        if (checkUid != null) {
+          final uDoc = await _firestore.collection('users').doc(checkUid).get();
+          if (uDoc.exists) {
+            final s = uDoc.data()?['duesStanding'] as String?;
+            if (s != null) {
+              resolvedStanding = MemberDuesStanding.values.firstWhere(
+                (e) => e.name.toLowerCase() == s.trim().toLowerCase(),
+                orElse: () => MemberDuesStanding.newMember,
+              );
+            }
+            resolvedOpeningBalance ??= (uDoc.data()?['openingBalance'] as num?)?.toDouble();
+          }
+        }
+      } catch (_) {}
+    }
+
+    final isCleared = resolvedStanding == MemberDuesStanding.cleared;
+
     final allMemberIds = <String>{
       targetMemberId,
       if (targetUserId != null && targetUserId.isNotEmpty) targetUserId,
@@ -183,6 +210,28 @@ class ObligationRepository {
     final memberExisting = allObligations
         .where((o) => allMemberIds.contains(o.memberId))
         .toList();
+
+    // If marked cleared, settle any existing unpaid obligations for this member
+    if (isCleared && memberExisting.isNotEmpty) {
+      final now = DateTime.now();
+      final batch = _firestore.batch();
+      bool needsUpdate = false;
+      for (final o in memberExisting) {
+        if (o.status != ObligationStatus.paid || o.outstandingBalance > 0.0) {
+          needsUpdate = true;
+          batch.update(_collection.doc(o.id), {
+            'paidAmount': o.amount,
+            'outstandingBalance': 0.0,
+            'status': ObligationStatus.paid.name,
+            'settledAt': Timestamp.fromDate(now),
+            'updatedAt': Timestamp.fromDate(now),
+          });
+        }
+      }
+      if (needsUpdate) {
+        await batch.commit();
+      }
+    }
 
     final existingLevyIds = <String>{
       for (final o in memberExisting)
@@ -221,10 +270,11 @@ class ObligationRepository {
           'title': levy.title,
           'description': levy.description,
           'amount': levy.amountPerMember,
-          'paidAmount': 0.0,
-          'outstandingBalance': levy.amountPerMember,
-          'status': 'unpaid',
+          'paidAmount': isCleared ? levy.amountPerMember : 0.0,
+          'outstandingBalance': isCleared ? 0.0 : levy.amountPerMember,
+          'status': isCleared ? ObligationStatus.paid.name : ObligationStatus.unpaid.name,
           'dueDate': Timestamp.fromDate(levy.dueDate),
+          'settledAt': isCleared ? Timestamp.fromDate(now) : null,
           'createdAt': Timestamp.fromDate(now),
           'updatedAt': Timestamp.fromDate(now),
         });
@@ -269,20 +319,55 @@ class ObligationRepository {
         'title': template.title,
         'description': template.description,
         'amount': template.amount,
-        'paidAmount': 0.0,
-        'outstandingBalance': template.amount,
-        'status': 'unpaid',
+        'paidAmount': isCleared ? template.amount : 0.0,
+        'outstandingBalance': isCleared ? 0.0 : template.amount,
+        'status': isCleared ? ObligationStatus.paid.name : ObligationStatus.unpaid.name,
         'dueDate': Timestamp.fromDate(template.dueDate),
+        'settledAt': isCleared ? Timestamp.fromDate(now) : null,
         'createdAt': Timestamp.fromDate(now),
         'updatedAt': Timestamp.fromDate(now),
       });
     }
 
-    // 4. Batch commit missing obligations
+    // 4. Source C: Specific Opening Balance if provided
+    if (resolvedStanding == MemberDuesStanding.openingBalance &&
+        resolvedOpeningBalance != null &&
+        resolvedOpeningBalance > 0 &&
+        !existingTitles.contains('opening balance')) {
+      newObligations.add({
+        'memberId': targetMemberId,
+        'userId': targetUserId ?? targetMemberId,
+        'levyId': 'opening_balance',
+        'type': ObligationType.monthlyDue.name,
+        'title': 'Opening Balance (Historical Arrears)',
+        'description': 'Historical dues carried forward upon registration',
+        'amount': resolvedOpeningBalance,
+        'paidAmount': 0.0,
+        'outstandingBalance': resolvedOpeningBalance,
+        'status': ObligationStatus.unpaid.name,
+        'dueDate': Timestamp.fromDate(now),
+        'createdAt': Timestamp.fromDate(now),
+        'updatedAt': Timestamp.fromDate(now),
+      });
+    }
+
+    // 5. Batch commit missing obligations
     if (newObligations.isNotEmpty) {
       await batchCreateFromMaps(newObligations);
     }
 
     return newObligations.length;
+  }
+
+  /// Explicitly marks all past obligations for a member as paid/cleared
+  Future<void> clearMemberHistoricalObligations(
+    String memberOrUserId, {
+    String? userId,
+  }) async {
+    await reconcileMemberObligations(
+      memberOrUserId,
+      userId: userId,
+      duesStanding: MemberDuesStanding.cleared,
+    );
   }
 }

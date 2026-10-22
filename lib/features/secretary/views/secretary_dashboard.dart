@@ -25,6 +25,7 @@ import 'package:cls/features/settings/views/help_screen.dart';
 import 'package:cls/features/settings/views/about_screen.dart';
 import 'package:cls/features/reports/views/reports_screen.dart';
 import 'package:cls/features/notifications/views/notifications_screen.dart';
+import 'package:cls/features/expenses/widgets/expense_approval_queue_card.dart';
 
 class SecretaryDashboard extends ConsumerStatefulWidget {
   const SecretaryDashboard({super.key});
@@ -334,7 +335,11 @@ class _HomeTab extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // Multi-Executive Expense Sign-Off Queue
+          ExpenseApprovalQueueCard(organizationId: orgId),
+          const SizedBox(height: 12),
           Text(
             'Quick Actions',
             style: theme.textTheme.titleMedium?.copyWith(
