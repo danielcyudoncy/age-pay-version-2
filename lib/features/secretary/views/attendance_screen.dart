@@ -850,6 +850,7 @@ class _RollCallTabState extends ConsumerState<_RollCallTab> {
 
               return DropdownButtonFormField<String>(
                 initialValue: _selectedMeetingId,
+                isExpanded: true,
                 decoration: InputDecoration(
                   labelText: 'Meeting Session',
                   prefixIcon: const Icon(Icons.event),
@@ -861,10 +862,11 @@ class _RollCallTabState extends ConsumerState<_RollCallTab> {
                   ),
                 ),
                 items: meetings.map((m) {
+                  final audienceTag = m.isExecutivesOnly ? ' [Executives]' : '';
                   return DropdownMenuItem(
                     value: m.id,
                     child: Text(
-                      '${m.title} (${dateFormat.format(m.meetingDate)})',
+                      '${m.title}$audienceTag (${dateFormat.format(m.meetingDate)})',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

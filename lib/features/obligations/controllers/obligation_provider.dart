@@ -104,6 +104,7 @@ final filteredObligationsProvider =
     Provider.autoDispose<AsyncValue<List<ObligationModel>>>((ref) {
       final obligationsAsync = ref.watch(allObligationsProvider);
       final filter = ref.watch(obligationFilterProvider);
+      final membersAsync = ref.watch(membersStreamProvider);
 
       return obligationsAsync.when(
         data: (obligations) {
@@ -124,9 +125,20 @@ final filteredObligationsProvider =
 
           if (filter.searchQuery.isNotEmpty) {
             final query = filter.searchQuery.toLowerCase();
+            final members = membersAsync.valueOrNull ?? [];
+            final memberMap = <String, String>{};
+            for (final m in members) {
+              memberMap[m.id] = m.fullName.toLowerCase();
+              if (m.userId.isNotEmpty) {
+                memberMap[m.userId] = m.fullName.toLowerCase();
+              }
+            }
+
             filtered = filtered.where((o) {
+              final memberName = memberMap[o.memberId] ?? '';
               return o.title.toLowerCase().contains(query) ||
-                  o.description.toLowerCase().contains(query);
+                  o.description.toLowerCase().contains(query) ||
+                  memberName.contains(query);
             }).toList();
           }
 

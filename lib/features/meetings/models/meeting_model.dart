@@ -12,6 +12,7 @@ class MeetingModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String createdBy;
+  final String targetAudience; // 'all' | 'executives'
 
   const MeetingModel({
     required this.id,
@@ -25,6 +26,7 @@ class MeetingModel {
     required this.createdAt,
     required this.updatedAt,
     required this.createdBy,
+    this.targetAudience = 'all',
   });
 
   factory MeetingModel.fromFirestore(DocumentSnapshot doc) {
@@ -42,6 +44,7 @@ class MeetingModel {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       createdBy: data['createdBy'] ?? '',
+      targetAudience: data['targetAudience'] ?? 'all',
     );
   }
 
@@ -57,6 +60,7 @@ class MeetingModel {
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'createdBy': createdBy,
+      'targetAudience': targetAudience,
     };
   }
 
@@ -72,6 +76,7 @@ class MeetingModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? createdBy,
+    String? targetAudience,
   }) {
     return MeetingModel(
       id: id ?? this.id,
@@ -85,10 +90,13 @@ class MeetingModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       createdBy: createdBy ?? this.createdBy,
+      targetAudience: targetAudience ?? this.targetAudience,
     );
   }
 
   bool get hasMinutes =>
       (minutesText?.trim().isNotEmpty ?? false) ||
       (minutesFileUrl?.isNotEmpty ?? false);
+
+  bool get isExecutivesOnly => targetAudience == 'executives';
 }

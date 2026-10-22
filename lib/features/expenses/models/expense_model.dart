@@ -3,6 +3,7 @@ import '../../../core/constants/enums.dart';
 
 class ExpenseModel {
   final String id;
+  final String organizationId;
   final String title;
   final String description;
   final double amount;
@@ -15,6 +16,7 @@ class ExpenseModel {
 
   const ExpenseModel({
     required this.id,
+    this.organizationId = '',
     required this.title,
     required this.description,
     required this.amount,
@@ -30,6 +32,7 @@ class ExpenseModel {
     final data = doc.data() as Map<String, dynamic>;
     return ExpenseModel(
       id: doc.id,
+      organizationId: data['organizationId'] ?? '',
       title: data['title'] ?? '',
       description: data['description'] ?? '',
       amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
@@ -47,6 +50,7 @@ class ExpenseModel {
 
   Map<String, dynamic> toFirestore() {
     return {
+      'organizationId': organizationId,
       'title': title,
       'description': description,
       'amount': amount,
@@ -67,6 +71,7 @@ class ExpenseModel {
 
   ExpenseModel copyWith({
     String? id,
+    String? organizationId,
     String? title,
     String? description,
     double? amount,
@@ -79,6 +84,7 @@ class ExpenseModel {
   }) {
     return ExpenseModel(
       id: id ?? this.id,
+      organizationId: organizationId ?? this.organizationId,
       title: title ?? this.title,
       description: description ?? this.description,
       amount: amount ?? this.amount,

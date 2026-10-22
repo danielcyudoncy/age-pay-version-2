@@ -18,6 +18,8 @@ import 'package:cls/features/meetings/controllers/meeting_provider.dart';
 import 'package:cls/features/meetings/models/meeting_rsvp_model.dart';
 import 'package:cls/features/meetings/controllers/meeting_rsvp_provider.dart';
 import 'package:cls/features/meetings/views/meeting_detail_screen.dart';
+import 'package:cls/features/reports/views/reports_screen.dart';
+import 'package:cls/features/expenses/views/expense_list_screen.dart';
 import 'package:cls/features/auth/views/login_screen.dart';
 
 class MemberDashboard extends ConsumerWidget {
@@ -54,6 +56,16 @@ class MemberDashboard extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.assessment_outlined),
+            tooltip: 'Financial Reports & Purse',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ReportsScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: () {
@@ -848,6 +860,33 @@ class _QuickActionsRow extends StatelessWidget {
                 );
               },
             ),
+            QuickActionButton(
+              icon: Icons.assessment_outlined,
+              label: 'Reports & Purse',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ReportsScreen(),
+                  ),
+                );
+              },
+            ),
+            QuickActionButton(
+              icon: Icons.receipt_long_outlined,
+              label: 'Expenses',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ExpenseListScreen(
+                      currentUserId: memberId,
+                      isExecutive: false,
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ],
@@ -861,13 +900,19 @@ class _UpcomingMeetingCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final meetingsAsync = ref.watch(meetingsStreamProvider);
+    final user = ref.watch(authProvider).valueOrNull;
+    final isExecutive = user?.isExecutive ?? false;
 
     return meetingsAsync.when(
       data: (meetings) {
         final now = DateTime.now();
         final threshold = now.subtract(const Duration(hours: 4));
         final upcomingMeetings =
-            meetings.where((m) => m.meetingDate.isAfter(threshold)).toList()
+            meetings.where((m) {
+              if (!m.meetingDate.isAfter(threshold)) return false;
+              if (m.isExecutivesOnly && !isExecutive) return false;
+              return true;
+            }).toList()
               ..sort((a, b) => a.meetingDate.compareTo(b.meetingDate));
 
         if (upcomingMeetings.isEmpty) {
@@ -878,7 +923,6 @@ class _UpcomingMeetingCard extends ConsumerWidget {
         final theme = Theme.of(context);
         final dateTimeFormat = DateFormat('EEE, MMM dd, yyyy \u2022 hh:mm a');
 
-        final user = ref.watch(authProvider).valueOrNull;
         final myRsvp = user != null
             ? ref.watch(
                 memberMeetingRsvpProvider((
@@ -894,7 +938,9 @@ class _UpcomingMeetingCard extends ConsumerWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(
-              color: theme.colorScheme.primary.withValues(alpha: 0.25),
+              color: meeting.isExecutivesOnly
+                  ? Colors.deepOrange.withValues(alpha: 0.35)
+                  : theme.colorScheme.primary.withValues(alpha: 0.25),
             ),
           ),
           child: InkWell(
@@ -918,7 +964,10 @@ class _UpcomingMeetingCard extends ConsumerWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    theme.colorScheme.primary.withValues(alpha: 0.08),
+                    (meeting.isExecutivesOnly
+                            ? Colors.deepOrange
+                            : theme.colorScheme.primary)
+                        .withValues(alpha: 0.08),
                     theme.colorScheme.surface,
                   ],
                 ),
@@ -936,21 +985,27 @@ class _UpcomingMeetingCard extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
+                          color: meeting.isExecutivesOnly
+                              ? Colors.deepOrange
+                              : theme.colorScheme.primary,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.event_available,
+                              meeting.isExecutivesOnly
+                                  ? Icons.shield_outlined
+                                  : Icons.event_available,
                               color: Colors.white,
                               size: 14,
                             ),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Text(
-                              'UPCOMING MEETING',
-                              style: TextStyle(
+                              meeting.isExecutivesOnly
+                                  ? 'EXECUTIVE MEETING'
+                                  : 'UPCOMING MEETING',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,

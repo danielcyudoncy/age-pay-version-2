@@ -658,6 +658,53 @@ class _MeetingsTab extends ConsumerWidget {
                           children: [
                             const SizedBox(height: 2),
                             Text(dateFormat.format(meeting.meetingDate)),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: meeting.isExecutivesOnly
+                                        ? Colors.deepOrange.withValues(alpha: 0.12)
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        meeting.isExecutivesOnly
+                                            ? Icons.shield_outlined
+                                            : Icons.groups_outlined,
+                                        size: 11,
+                                        color: meeting.isExecutivesOnly
+                                            ? Colors.deepOrange
+                                            : Theme.of(context).colorScheme.primary,
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        meeting.isExecutivesOnly
+                                            ? 'Executives Only'
+                                            : 'All Members',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: meeting.isExecutivesOnly
+                                              ? Colors.deepOrange.shade800
+                                              : Theme.of(context).colorScheme.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                             if (meeting.venue.isNotEmpty) ...[
                               const SizedBox(height: 2),
                               Row(

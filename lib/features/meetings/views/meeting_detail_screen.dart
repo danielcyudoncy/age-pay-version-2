@@ -39,6 +39,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
   bool _removeFile = false;
   bool _isSaving = false;
   String? _error;
+  String _targetAudience = 'all';
 
   bool get _isNew => widget.meeting == null;
 
@@ -51,6 +52,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
       _venueController.text = meeting.venue;
       _minutesController.text = meeting.minutesText ?? '';
       _selectedDate = meeting.meetingDate;
+      _targetAudience = meeting.targetAudience;
     }
   }
 
@@ -150,6 +152,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
               organizationId: orgId,
               meetingDate: _selectedDate!,
               createdBy: user.uid,
+              targetAudience: _targetAudience,
             );
         final result = await controller.uploadMinutesFile(
           meetingId,
@@ -168,6 +171,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
             organizationId: orgId,
             meetingDate: _selectedDate!,
             createdBy: user.uid,
+            targetAudience: _targetAudience,
           );
 
       final meeting = MeetingModel(
@@ -184,6 +188,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
         createdAt: widget.meeting?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
         createdBy: widget.meeting?.createdBy ?? user.uid,
+        targetAudience: _targetAudience,
       );
 
       await controller.updateMeeting(meeting);
@@ -194,16 +199,24 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
           'EEEE, MMM dd, yyyy \u2022 hh:mm a',
         ).format(_selectedDate!);
 
-        // 1. Post to Announcements for all members to see
+        final isExecutiveOnly = _targetAudience == 'executives';
+
+        // 1. Post to Announcements
         final announcement = AnnouncementModel(
           id: '',
           organizationId: orgId,
-          title: '📅 Upcoming Meeting: $title',
-          body:
-              'A new meeting session has been scheduled for all members.\n\n'
-              '📅 Date & Time: $formattedDateTime\n'
-              '📍 Venue: $venue\n\n'
-              'Please plan to attend and arrive promptly. Attendance is mandatory.',
+          title: isExecutiveOnly
+              ? '🏛️ Executive Meeting: $title'
+              : '📅 Upcoming Meeting: $title',
+          body: isExecutiveOnly
+              ? 'An executive meeting session has been scheduled for all executive members.\n\n'
+                  '📅 Date & Time: $formattedDateTime\n'
+                  '📍 Venue: $venue\n\n'
+                  'Please plan to attend and arrive promptly. Attendance is mandatory for all executive officers.'
+              : 'A new meeting session has been scheduled for all members.\n\n'
+                  '📅 Date & Time: $formattedDateTime\n'
+                  '📍 Venue: $venue\n\n'
+                  'Please plan to attend and arrive promptly. Attendance is mandatory.',
           category: AnnouncementCategory.meeting,
           isPinned: true,
           announcementDate: _selectedDate!,
@@ -223,7 +236,9 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
         notificationNotifier.addNotification(
           NotificationModel(
             id: 'meet_${DateTime.now().millisecondsSinceEpoch}',
-            title: 'Meeting Scheduled: $title',
+            title: isExecutiveOnly
+                ? 'Executive Meeting Scheduled: $title'
+                : 'Meeting Scheduled: $title',
             body: '$formattedDateTime at $venue',
             type: 'meeting',
             receivedAt: DateTime.now(),
@@ -356,6 +371,104 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                       : dateTimeFormat.format(_selectedDate!),
                 ),
               ),
+              const SizedBox(height: 16),
+              if (!widget.readOnly) ...[
+                Text(
+                  'Target Audience',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment<String>(
+                        value: 'all',
+                        icon: Icon(Icons.groups_outlined),
+                        label: Text('All Members'),
+                      ),
+                      ButtonSegment<String>(
+                        value: 'executives',
+                        icon: Icon(Icons.shield_outlined),
+                        label: Text('Executives Only'),
+                      ),
+                    ],
+                    selected: {_targetAudience},
+                    onSelectionChanged: (newSelection) {
+                      setState(() {
+                        _targetAudience = newSelection.first;
+                      });
+                    },
+                    style: SegmentedButton.styleFrom(
+                      selectedBackgroundColor: _targetAudience == 'executives'
+                          ? Colors.deepOrange.withValues(alpha: 0.15)
+                          : theme.colorScheme.primaryContainer,
+                      selectedForegroundColor: _targetAudience == 'executives'
+                          ? Colors.deepOrange
+                          : theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _targetAudience == 'executives'
+                      ? 'Only executive members will see this meeting on their dashboard.'
+                      : 'All registered members will see this meeting on their dashboard.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: _targetAudience == 'executives'
+                        ? Colors.deepOrange.withValues(alpha: 0.08)
+                        : theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: _targetAudience == 'executives'
+                          ? Colors.deepOrange.withValues(alpha: 0.3)
+                          : theme.colorScheme.primary.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _targetAudience == 'executives'
+                            ? Icons.shield_outlined
+                            : Icons.groups_outlined,
+                        size: 20,
+                        color: _targetAudience == 'executives'
+                            ? Colors.deepOrange
+                            : theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Target Audience: ',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        _targetAudience == 'executives'
+                            ? 'Executives Only'
+                            : 'All Members',
+                        style: TextStyle(
+                          color: _targetAudience == 'executives'
+                              ? Colors.deepOrange.shade800
+                              : theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (!_isNew && widget.meeting != null) ...[
                 const SizedBox(height: 20),
                 MeetingRsvpCard(meetingId: widget.meeting!.id),

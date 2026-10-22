@@ -142,4 +142,6 @@ class UserModel {
       coFounderPhone: coFounderPhone ?? this.coFounderPhone,
     );
   }
+
+  bool get isExecutive => role.isExecutive;
 }

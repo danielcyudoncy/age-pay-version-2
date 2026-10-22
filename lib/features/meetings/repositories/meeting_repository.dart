@@ -33,6 +33,7 @@ class MeetingRepository {
     String? organizationId,
     required DateTime meetingDate,
     required String createdBy,
+    String targetAudience = 'all',
   }) async {
     final docRef = _collection.doc();
     final meeting = MeetingModel(
@@ -44,6 +45,7 @@ class MeetingRepository {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       createdBy: createdBy,
+      targetAudience: targetAudience,
     );
     await docRef.set(meeting.toFirestore());
     return docRef.id;

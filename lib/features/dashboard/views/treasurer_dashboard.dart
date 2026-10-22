@@ -12,6 +12,9 @@ import 'package:cls/features/levies/controllers/levy_provider.dart'
 import 'package:cls/features/levies/views/create_levy_screen.dart';
 import 'package:cls/features/members/views/treasurer_members_list_screen.dart';
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
+import 'package:cls/features/expenses/views/expense_form_screen.dart';
+import 'package:cls/features/expenses/views/expense_list_screen.dart';
+import 'package:cls/features/reports/views/reports_screen.dart';
 import 'package:cls/features/dashboard/views/member_dashboard.dart';
 import 'package:cls/features/auth/views/login_screen.dart';
 import 'package:cls/features/admin/controllers/admin_provider.dart';
@@ -28,6 +31,16 @@ class TreasurerDashboard extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Treasurer Dashboard'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.assessment_outlined),
+            tooltip: 'Financial Reports',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ReportsScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.person),
             tooltip: 'My Personal Dues',
@@ -143,7 +156,11 @@ class TreasurerDashboard extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
-            _OverviewCards(data: data, currency: currency),
+            _OverviewCards(
+              data: data,
+              currency: currency,
+              currentUserId: ref.read(authProvider).valueOrNull?.uid ?? '',
+            ),
             const SizedBox(height: 20),
             _MemberArrearsSection(
               arrears: data.memberArrears,
@@ -189,8 +206,13 @@ class TreasurerDashboard extends ConsumerWidget {
 class _OverviewCards extends StatelessWidget {
   final TreasurerDashboardData data;
   final NumberFormat currency;
+  final String currentUserId;
 
-  const _OverviewCards({required this.data, required this.currency});
+  const _OverviewCards({
+    required this.data,
+    required this.currency,
+    required this.currentUserId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -204,6 +226,38 @@ class _OverviewCards extends StatelessWidget {
             value: currency.format(data.totalCollected),
             icon: Icons.paid,
             color: Colors.green,
+          ),
+          const SizedBox(width: 12),
+          _OverviewCard(
+            label: 'Total Expenses',
+            value: currency.format(data.expenseTotal),
+            icon: Icons.receipt_long,
+            color: Colors.purple,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ExpenseListScreen(
+                    currentUserId: currentUserId,
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 12),
+          _OverviewCard(
+            label: 'Net Position',
+            value: currency.format(data.netPosition),
+            icon: Icons.account_balance,
+            color: theme.colorScheme.primary,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ReportsScreen(),
+                ),
+              );
+            },
           ),
           const SizedBox(width: 12),
           _OverviewCard(
@@ -233,13 +287,6 @@ class _OverviewCards extends StatelessWidget {
                 ),
               );
             },
-          ),
-          const SizedBox(width: 12),
-          _OverviewCard(
-            label: 'Net Position',
-            value: currency.format(data.netPosition),
-            icon: Icons.account_balance,
-            color: theme.colorScheme.primary,
           ),
         ],
       ),
@@ -753,7 +800,49 @@ class _QuickActionsRow extends ConsumerWidget {
             QuickActionButton(
               icon: Icons.money_off,
               label: 'Add Expense',
-              onPressed: () {},
+              onPressed: () {
+                final currentUser = authState.valueOrNull;
+                if (currentUser != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ExpenseFormScreen(
+                        currentUserId: currentUser.uid,
+                        organizationId: currentUser.organizationId,
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+            QuickActionButton(
+              icon: Icons.receipt_long,
+              label: 'View Expenses',
+              onPressed: () {
+                final currentUser = authState.valueOrNull;
+                if (currentUser != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ExpenseListScreen(
+                        currentUserId: currentUser.uid,
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+            QuickActionButton(
+              icon: Icons.assessment_outlined,
+              label: 'Financial Reports',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ReportsScreen(),
+                  ),
+                );
+              },
             ),
             QuickActionButton(
               icon: Icons.account_balance,
