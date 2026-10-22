@@ -215,7 +215,8 @@ final financialSecretaryDashboardProvider =
           final member = memberByDocId[resolvedId];
           return RecentPaymentItem(
             payment: p,
-            memberName: member?.fullName ?? 'Unknown Member',
+            memberName:
+                member?.fullName ?? p.memberName ?? 'Unknown Member',
           );
         }).toList();
 

@@ -183,6 +183,7 @@ class MemberDashboard extends ConsumerWidget {
             currency: currency,
             dateTimeFormat: dateTimeFormat,
             memberId: memberId,
+            memberEmail: userEmail(ref),
           ),
           const SizedBox(height: 20),
           _ActiveLeviesSection(
@@ -395,12 +396,14 @@ class _RecentPaymentsSection extends StatelessWidget {
   final NumberFormat currency;
   final DateFormat dateTimeFormat;
   final String memberId;
+  final String memberEmail;
 
   const _RecentPaymentsSection({
     required this.paymentsAsync,
     required this.currency,
     required this.dateTimeFormat,
     required this.memberId,
+    required this.memberEmail,
   });
 
   Color _statusColor(PaymentStatus status) {
@@ -490,7 +493,7 @@ class _RecentPaymentsSection extends StatelessWidget {
                             MaterialPageRoute(
                               builder: (_) => MakePaymentScreen(
                                 memberId: memberId,
-                                memberEmail: '',
+                                memberEmail: memberEmail,
                               ),
                             ),
                           );

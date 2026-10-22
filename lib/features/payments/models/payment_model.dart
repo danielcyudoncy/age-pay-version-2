@@ -29,6 +29,7 @@ class PaymentModel {
   final PaymentMethod method;
   final PaymentStatus status;
   final List<PaymentAllocationModel> allocations;
+  final String? memberName;
   final String? receiptUrl;
   final String? transferProofUrl;
   final String? paystackReference;
@@ -40,6 +41,7 @@ class PaymentModel {
   const PaymentModel({
     required this.id,
     required this.memberId,
+    this.memberName,
     required this.amount,
     required this.method,
     this.status = PaymentStatus.pending,
@@ -58,6 +60,7 @@ class PaymentModel {
     return PaymentModel(
       id: doc.id,
       memberId: data['memberId'] ?? '',
+      memberName: data['memberName'] as String?,
       amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
       method: PaymentMethod.values.firstWhere(
         (e) => e.name == (data['method'] ?? 'cash'),
@@ -85,6 +88,7 @@ class PaymentModel {
   Map<String, dynamic> toFirestore() {
     return {
       'memberId': memberId,
+      if (memberName != null) 'memberName': memberName,
       'amount': amount,
       'method': method.name,
       'status': status.name,
@@ -108,6 +112,7 @@ class PaymentModel {
   PaymentModel copyWith({
     String? id,
     String? memberId,
+    String? memberName,
     double? amount,
     PaymentMethod? method,
     PaymentStatus? status,
@@ -123,6 +128,7 @@ class PaymentModel {
     return PaymentModel(
       id: id ?? this.id,
       memberId: memberId ?? this.memberId,
+      memberName: memberName ?? this.memberName,
       amount: amount ?? this.amount,
       method: method ?? this.method,
       status: status ?? this.status,

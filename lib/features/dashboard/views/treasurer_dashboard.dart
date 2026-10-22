@@ -14,6 +14,8 @@ import 'package:cls/features/members/views/treasurer_members_list_screen.dart';
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
 import 'package:cls/features/dashboard/views/member_dashboard.dart';
 import 'package:cls/features/auth/views/login_screen.dart';
+import 'package:cls/features/admin/controllers/admin_provider.dart';
+import 'package:cls/features/admin/widgets/edit_organization_bank_dialog.dart';
 
 class TreasurerDashboard extends ConsumerWidget {
   const TreasurerDashboard({super.key});
@@ -752,6 +754,16 @@ class _QuickActionsRow extends ConsumerWidget {
               icon: Icons.money_off,
               label: 'Add Expense',
               onPressed: () {},
+            ),
+            QuickActionButton(
+              icon: Icons.account_balance,
+              label: 'Receiving Account',
+              onPressed: () async {
+                final org = await ref.read(currentOrganizationProvider.future);
+                if (org != null && context.mounted) {
+                  EditOrganizationBankDialog.show(context, organization: org);
+                }
+              },
             ),
           ],
         ),

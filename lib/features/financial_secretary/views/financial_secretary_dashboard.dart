@@ -711,7 +711,13 @@ class _CollectionsTabState extends ConsumerState<_CollectionsTab> {
       body: paymentsAsync.when(
         data: (payments) {
           final members = membersAsync.valueOrNull ?? [];
-          final memberMap = {for (final m in members) m.id: m.fullName};
+          final memberMap = <String, String>{};
+          for (final m in members) {
+            memberMap[m.id] = m.fullName;
+            if (m.userId.isNotEmpty) {
+              memberMap[m.userId] = m.fullName;
+            }
+          }
 
           var filtered = payments;
           if (_filter == 'Cash') {
@@ -731,7 +737,7 @@ class _CollectionsTabState extends ConsumerState<_CollectionsTab> {
           final query = _searchController.text.trim().toLowerCase();
           if (query.isNotEmpty) {
             filtered = filtered.where((p) {
-              final name = memberMap[p.memberId]?.toLowerCase() ?? '';
+              final name = (memberMap[p.memberId] ?? p.memberName ?? '').toLowerCase();
               return name.contains(query) || p.id.toLowerCase().contains(query);
             }).toList();
           }
@@ -801,8 +807,11 @@ class _CollectionsTabState extends ConsumerState<_CollectionsTab> {
                         itemCount: filtered.length,
                         itemBuilder: (ctx, index) {
                           final payment = filtered[index];
-                          final memberName =
-                              memberMap[payment.memberId] ?? 'Unknown Member';
+                          final memberName = memberMap[payment.memberId] ??
+                              (payment.memberName != null &&
+                                      payment.memberName!.isNotEmpty
+                                  ? payment.memberName!
+                                  : 'Unknown Member');
 
                           return Card(
                             margin: const EdgeInsets.only(bottom: 10),
