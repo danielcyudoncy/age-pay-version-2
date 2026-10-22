@@ -34,6 +34,22 @@ class ObligationModel {
 
   factory ObligationModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    final totalAmount = (data['amount'] as num?)?.toDouble() ?? 0.0;
+    final paidAmount = (data['paidAmount'] as num?)?.toDouble() ?? 0.0;
+    final status = ObligationStatus.values.firstWhere(
+      (e) => e.name == (data['status'] ?? 'unpaid'),
+      orElse: () => ObligationStatus.unpaid,
+    );
+    final rawOutstanding = (data['outstandingBalance'] as num?)?.toDouble();
+    final calculatedOutstanding =
+        (totalAmount - paidAmount).clamp(0.0, double.infinity);
+    final outstandingBalance =
+        (status == ObligationStatus.paid || paidAmount >= totalAmount)
+            ? 0.0
+            : (rawOutstanding != null && rawOutstanding <= calculatedOutstanding
+                ? rawOutstanding
+                : calculatedOutstanding);
+
     return ObligationModel(
       id: doc.id,
       memberId: data['memberId'] ?? '',
@@ -44,14 +60,10 @@ class ObligationModel {
       ),
       title: data['title'] ?? '',
       description: data['description'] ?? '',
-      amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
-      paidAmount: (data['paidAmount'] as num?)?.toDouble() ?? 0.0,
-      outstandingBalance:
-          (data['outstandingBalance'] as num?)?.toDouble() ?? 0.0,
-      status: ObligationStatus.values.firstWhere(
-        (e) => e.name == (data['status'] ?? 'unpaid'),
-        orElse: () => ObligationStatus.unpaid,
-      ),
+      amount: totalAmount,
+      paidAmount: paidAmount,
+      outstandingBalance: outstandingBalance,
+      status: status,
       dueDate: _parseDate(data['dueDate']),
       createdAt: _parseDate(data['createdAt']),
       settledAt: data['settledAt'] != null
@@ -98,6 +110,14 @@ class ObligationModel {
     DateTime? createdAt,
     DateTime? settledAt,
   }) {
+    final newStatus = status ?? this.status;
+    final newPaid = paidAmount ?? this.paidAmount;
+    final newAmount = amount ?? this.amount;
+    final resolvedOutstanding = outstandingBalance ??
+        ((newStatus == ObligationStatus.paid || newPaid >= newAmount)
+            ? 0.0
+            : this.outstandingBalance);
+
     return ObligationModel(
       id: id ?? this.id,
       memberId: memberId ?? this.memberId,
@@ -105,10 +125,10 @@ class ObligationModel {
       type: type ?? this.type,
       title: title ?? this.title,
       description: description ?? this.description,
-      amount: amount ?? this.amount,
-      paidAmount: paidAmount ?? this.paidAmount,
-      outstandingBalance: outstandingBalance ?? this.outstandingBalance,
-      status: status ?? this.status,
+      amount: newAmount,
+      paidAmount: newPaid,
+      outstandingBalance: resolvedOutstanding,
+      status: newStatus,
       dueDate: dueDate ?? this.dueDate,
       createdAt: createdAt ?? this.createdAt,
       settledAt: settledAt ?? this.settledAt,

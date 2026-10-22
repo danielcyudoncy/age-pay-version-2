@@ -75,6 +75,30 @@ void main() {
       expect(obligation.paidAmount, 0.0);
       expect(obligation.outstandingBalance, 0.0);
     });
+
+    test('copyWith zeros out outstandingBalance when fully paid', () {
+      final obligation = ObligationModel(
+        id: '1',
+        memberId: 'member1',
+        levyId: 'levy1',
+        type: ObligationType.monthlyDue,
+        title: 'Monthly Due June',
+        description: 'Monthly contribution',
+        amount: 100.0,
+        outstandingBalance: 100.0,
+        dueDate: now,
+        createdAt: now,
+      );
+
+      final paidCopy = obligation.copyWith(
+        status: ObligationStatus.paid,
+        paidAmount: 100.0,
+      );
+
+      expect(paidCopy.status, ObligationStatus.paid);
+      expect(paidCopy.paidAmount, 100.0);
+      expect(paidCopy.outstandingBalance, 0.0);
+    });
   });
 
   group('PaymentModel', () {

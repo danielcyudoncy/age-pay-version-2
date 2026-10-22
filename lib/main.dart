@@ -15,6 +15,8 @@ import 'package:flutter/foundation.dart';
 /// Top-level background message handler required by Firebase Cloud Messaging.
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await NotificationService.firebaseMessagingBackgroundHandler(message);
 }
 
@@ -28,11 +30,22 @@ Future<void> _initFirebase() async {
     await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
   }
   
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  // On Android, debug builds automatically pass --start-paused to background
+  // isolates spawned by FlutterFirebaseMessagingBackgroundService, which causes
+  // an ANR (Signal 3) if opened standalone without a debugger attached.
+  // We only register the background isolate handler in release/profile mode.
+  if (!kDebugMode) {
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  }
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    debugPrint('FlutterError: ${details.exceptionAsString()}');
+  };
 
   await EnvService.init();
 
