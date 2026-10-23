@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cls/features/payments/models/payment_model.dart';
 import 'package:cls/features/payments/repositories/payment_repository.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
+import 'package:cls/features/auth/controllers/auth_provider.dart';
 
 final paymentRepositoryProvider = Provider<PaymentRepository>((ref) {
   return PaymentRepository();
@@ -9,6 +10,8 @@ final paymentRepositoryProvider = Provider<PaymentRepository>((ref) {
 
 final memberPaymentsStreamProvider = StreamProvider.autoDispose
     .family<List<PaymentModel>, String>((ref, memberId) {
+      final auth = ref.watch(authProvider);
+      if (auth.hasValue && auth.value == null) return const Stream.empty();
       return ref.watch(paymentRepositoryProvider).getMemberPayments(memberId);
     });
 

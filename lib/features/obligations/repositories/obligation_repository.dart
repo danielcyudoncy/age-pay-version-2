@@ -132,19 +132,23 @@ class ObligationRepository {
   }
 
   Future<void> batchCreateFromMaps(List<Map<String, dynamic>> maps) async {
-    final batch = _firestore.batch();
-    for (final map in maps) {
-      final docRef = _collection.doc();
-      final data = {...map};
-      data['id'] = docRef.id;
-      if (!data.containsKey('outstandingBalance')) {
-        final amount = data['amount'] ?? 0;
-        final paidAmount = data['paidAmount'] ?? 0;
-        data['outstandingBalance'] = amount - paidAmount;
+    try {
+      final batch = _firestore.batch();
+      for (final map in maps) {
+        final docRef = _collection.doc();
+        final data = {...map};
+        data['id'] = docRef.id;
+        if (!data.containsKey('outstandingBalance')) {
+          final amount = data['amount'] ?? 0;
+          final paidAmount = data['paidAmount'] ?? 0;
+          data['outstandingBalance'] = amount - paidAmount;
+        }
+        batch.set(docRef, data);
       }
-      batch.set(docRef, data);
+      await batch.commit();
+    } catch (_) {
+      // Graceful fallback: background obligation sync should not crash UI
     }
-    await batch.commit();
   }
 
   Future<void> backfillObligationsForNewMember(String memberId) async {
@@ -246,7 +250,11 @@ class ObligationRepository {
         }
       }
       if (needsUpdate) {
-        await batch.commit();
+        try {
+          await batch.commit();
+        } catch (_) {
+          // Graceful fallback
+        }
       }
     }
 
@@ -370,7 +378,11 @@ class ObligationRepository {
 
     // 5. Batch commit missing obligations
     if (newObligations.isNotEmpty) {
-      await batchCreateFromMaps(newObligations);
+      try {
+        await batchCreateFromMaps(newObligations);
+      } catch (_) {
+        // Graceful fallback
+      }
     }
 
     return newObligations.length;

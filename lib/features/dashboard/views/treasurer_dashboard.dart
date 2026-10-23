@@ -142,6 +142,12 @@ class _TreasurerDashboardState extends ConsumerState<TreasurerDashboard> {
                       onPressed: () async {
                         try {
                           await ref.read(authProvider.notifier).signOut();
+                          ref.invalidate(allPaymentsStreamProvider);
+                          ref.invalidate(allObligationsProvider);
+                          ref.invalidate(activeLeviesProvider);
+                          ref.invalidate(expensesStreamProvider);
+                          ref.invalidate(membersStreamProvider);
+                          ref.invalidate(treasurerDashboardProvider);
                         } catch (_) {}
                         if (context.mounted) {
                           Navigator.of(context).pushAndRemoveUntil(

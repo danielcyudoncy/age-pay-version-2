@@ -4,17 +4,22 @@ import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/levies/models/levy_model.dart';
 import 'package:cls/features/levies/repositories/levy_repository.dart';
 import 'package:cls/features/obligations/repositories/obligation_repository.dart';
+import 'package:cls/features/auth/controllers/auth_provider.dart';
 
 final levyRepositoryProvider = Provider<LevyRepository>((ref) {
   return LevyRepository();
 });
 
 final levyListProvider = StreamProvider.autoDispose<List<LevyModel>>((ref) {
+  final auth = ref.watch(authProvider);
+  if (auth.hasValue && auth.value == null) return const Stream.empty();
   final repo = ref.watch(levyRepositoryProvider);
   return repo.getAllLevies();
 });
 
 final activeLeviesProvider = StreamProvider.autoDispose<List<LevyModel>>((ref) {
+  final auth = ref.watch(authProvider);
+  if (auth.hasValue && auth.value == null) return const Stream.empty();
   final repo = ref.watch(levyRepositoryProvider);
   return repo.getActiveLevies();
 });
