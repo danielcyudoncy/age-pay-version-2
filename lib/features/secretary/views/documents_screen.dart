@@ -55,7 +55,12 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(documentsStreamProvider(orgId)),
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.paddingOf(context).bottom + 24,
+              ),
               itemCount: documents.length,
               itemBuilder: (context, index) {
                 final doc = documents[index];

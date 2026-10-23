@@ -155,10 +155,18 @@ class MemberDashboard extends ConsumerWidget {
       memberActiveObligationsProvider(memberId),
     );
 
+    final user = ref.watch(authProvider).valueOrNull;
+    final isExecutive = user?.isExecutive ?? false;
+
     final announcementsCount = ref
         .watch(announcementsStreamProvider(orgId))
         .when(
-          data: (items) => items.length,
+          data: (items) {
+            final visible = isExecutive
+                ? items
+                : items.where((a) => !a.isExecutivesOnly).toList();
+            return visible.length;
+          },
           loading: () => 0,
           error: (_, _) => 0,
         );
@@ -173,7 +181,12 @@ class MemberDashboard extends ConsumerWidget {
         ref.invalidate(memberActiveObligationsProvider(memberId));
       },
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          MediaQuery.paddingOf(context).bottom + 24,
+        ),
         children: [
           Text(
             _greeting(displayName),

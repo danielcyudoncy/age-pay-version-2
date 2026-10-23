@@ -250,6 +250,7 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
                     icon: const Icon(Icons.logout),
                     label: const Text('Sign Out'),
                   ),
+                  SizedBox(height: MediaQuery.paddingOf(context).bottom + 24),
                 ],
               ),
             ),

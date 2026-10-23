@@ -176,6 +176,7 @@ class _OrganizationPickerScreenState
                             ),
                     ),
                   ),
+                  SizedBox(height: MediaQuery.paddingOf(context).bottom + 24),
                 ],
               ),
             ),

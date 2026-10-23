@@ -157,11 +157,11 @@ class _HomeTab extends ConsumerWidget {
         ref.invalidate(calendarEventsStreamProvider(orgId));
       },
       child: ListView(
-        padding: const EdgeInsets.only(
-          top: 36,
-          left: 16,
-          right: 16,
-          bottom: 16,
+        padding: EdgeInsets.fromLTRB(
+          16,
+          36,
+          16,
+          MediaQuery.paddingOf(context).bottom + 24,
         ),
         children: [
           Row(
@@ -582,7 +582,12 @@ class _MeetingsTab extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(meetingsStreamProvider),
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.paddingOf(context).bottom + 24,
+              ),
               children: [
                 Row(
                   children: [
@@ -932,7 +937,12 @@ class _MoreTab extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('More')),
       body: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          MediaQuery.paddingOf(context).bottom + 24,
+        ),
         itemCount: items.length,
         itemBuilder: (context, index) {
           final item = items[index];

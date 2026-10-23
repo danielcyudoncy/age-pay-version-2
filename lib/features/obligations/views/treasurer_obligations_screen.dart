@@ -81,7 +81,12 @@ class TreasurerObligationsScreen extends ConsumerWidget {
                   );
                 }
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    MediaQuery.paddingOf(context).bottom + 24,
+                  ),
                   itemCount: obligations.length,
                   itemBuilder: (context, index) {
                     final obligation = obligations[index];

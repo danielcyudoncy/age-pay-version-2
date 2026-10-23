@@ -31,12 +31,18 @@ class MemberAnnouncementsScreen extends ConsumerWidget {
       ),
       data: (orgId) {
         final announcementsAsync = ref.watch(announcementsStreamProvider(orgId));
+        final user = ref.watch(authProvider).valueOrNull;
+        final isExecutive = user?.isExecutive ?? false;
 
         return Scaffold(
           appBar: AppBar(title: const Text('Announcements')),
           body: announcementsAsync.when(
             data: (announcements) {
-              if (announcements.isEmpty) {
+              final visible = isExecutive
+                  ? announcements
+                  : announcements.where((a) => !a.isExecutivesOnly).toList();
+
+              if (visible.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -49,14 +55,19 @@ class MemberAnnouncementsScreen extends ConsumerWidget {
                 );
               }
 
-              final pinned = announcements.where((a) => a.isPinned).toList();
-              final others = announcements.where((a) => !a.isPinned).toList();
+              final pinned = visible.where((a) => a.isPinned).toList();
+              final others = visible.where((a) => !a.isPinned).toList();
 
               return RefreshIndicator(
                 onRefresh: () async =>
                     ref.invalidate(announcementsStreamProvider(orgId)),
                 child: ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    MediaQuery.paddingOf(context).bottom + 24,
+                  ),
                   children: [
                     ...pinned.map(
                       (a) => _MemberAnnouncementCard(

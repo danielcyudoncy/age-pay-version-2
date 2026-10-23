@@ -98,5 +98,15 @@ class MeetingModel {
       (minutesText?.trim().isNotEmpty ?? false) ||
       (minutesFileUrl?.isNotEmpty ?? false);
 
-  bool get isExecutivesOnly => targetAudience == 'executives';
+  bool get isExecutivesOnly {
+    final audience = targetAudience.trim().toLowerCase();
+    if (audience == 'executives' || audience == 'executive') return true;
+    final lowerTitle = title.trim().toLowerCase();
+    if (lowerTitle.contains('executive meeting') ||
+        lowerTitle.contains('executives only') ||
+        lowerTitle.startsWith('executive')) {
+      return true;
+    }
+    return false;
+  }
 }

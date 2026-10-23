@@ -72,6 +72,7 @@ class LevyCreationNotifier extends StateNotifier<LevyCreationState> {
     required DateTime dueDate,
     required String createdBy,
     String? targetGroup,
+    String? organizationId,
     List<String> memberIds = const [],
   }) async {
     state = state.copyWith(isLoading: true, error: null, isSuccess: false);
@@ -79,6 +80,7 @@ class LevyCreationNotifier extends StateNotifier<LevyCreationState> {
     try {
       final levy = LevyModel(
         id: '',
+        organizationId: organizationId ?? '',
         title: title,
         description: description,
         type: type,
@@ -97,6 +99,7 @@ class LevyCreationNotifier extends StateNotifier<LevyCreationState> {
       final createdAt = Timestamp.now();
       final obligations = memberIds.map((memberId) {
         return {
+          'organizationId': organizationId ?? '',
           'memberId': memberId,
           'levyId': levyId,
           'type': type.name,

@@ -77,7 +77,12 @@ class _AnnualReviewTabState extends ConsumerState<_AnnualReviewTab> {
         ref.invalidate(membersStreamProvider);
       },
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          MediaQuery.paddingOf(context).bottom + 24,
+        ),
         children: [
           _buildYearSelector(context, selectedYear),
           const SizedBox(height: 16),
@@ -655,7 +660,12 @@ class _MemberAttendanceDetailSheet extends StatelessWidget {
                     child: Text('No meeting records found for this year'),
                   )
                 : ListView.separated(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      16,
+                      16,
+                      MediaQuery.paddingOf(context).bottom + 24,
+                    ),
                     itemCount: summary.records.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
@@ -825,7 +835,12 @@ class _RollCallTabState extends ConsumerState<_RollCallTab> {
         }
       },
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          MediaQuery.paddingOf(context).bottom + 24,
+        ),
         children: [
           Text(
             'Select Meeting',

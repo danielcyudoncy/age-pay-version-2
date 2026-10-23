@@ -22,8 +22,28 @@ class AnnouncementModel {
   final DateTime? announcementDate;
   final List<String> attachments;
   final String createdBy;
+  final String targetAudience;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  bool get isExecutivesOnly {
+    final audience = targetAudience.trim().toLowerCase();
+    if (audience == 'executives' || audience == 'executive') return true;
+    final lowerTitle = title.trim().toLowerCase();
+    if (lowerTitle.contains('executive meeting') ||
+        lowerTitle.contains('executives only') ||
+        lowerTitle.contains('🏛️ executive') ||
+        lowerTitle.contains('executive committee')) {
+      return true;
+    }
+    final lowerBody = body.trim().toLowerCase();
+    if (lowerBody.contains('executive meeting session') ||
+        lowerBody.contains('all executive officers') ||
+        lowerBody.contains('for all executive members')) {
+      return true;
+    }
+    return false;
+  }
 
   const AnnouncementModel({
     required this.id,
@@ -37,6 +57,7 @@ class AnnouncementModel {
     this.announcementDate,
     this.attachments = const [],
     required this.createdBy,
+    this.targetAudience = 'all',
     required this.createdAt,
     required this.updatedAt,
   });
@@ -62,6 +83,7 @@ class AnnouncementModel {
           : null,
       attachments: List<String>.from(data['attachments'] ?? []),
       createdBy: data['createdBy'] ?? '',
+      targetAudience: data['targetAudience'] ?? 'all',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
@@ -81,6 +103,7 @@ class AnnouncementModel {
           : null,
       'attachments': attachments,
       'createdBy': createdBy,
+      'targetAudience': targetAudience,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -98,6 +121,7 @@ class AnnouncementModel {
     DateTime? announcementDate,
     List<String>? attachments,
     String? createdBy,
+    String? targetAudience,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -113,6 +137,7 @@ class AnnouncementModel {
       announcementDate: announcementDate ?? this.announcementDate,
       attachments: attachments ?? this.attachments,
       createdBy: createdBy ?? this.createdBy,
+      targetAudience: targetAudience ?? this.targetAudience,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

@@ -17,7 +17,12 @@ class SecretaryProfileScreen extends ConsumerWidget {
       body: user == null
           ? const Center(child: Text('Please sign in'))
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.paddingOf(context).bottom + 24,
+              ),
               children: [
                 Center(
                   child: CircleAvatar(

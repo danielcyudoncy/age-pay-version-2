@@ -71,6 +71,10 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
 
   void addNotification(NotificationModel notification) {
     if (state.any((n) => n.id == notification.id)) return;
+    if (_repository != null &&
+        !_repository.isNotificationForUser(notification, _userId, _role)) {
+      return;
+    }
     state = [notification, ...state];
   }
 

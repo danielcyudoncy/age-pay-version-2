@@ -112,7 +112,12 @@ class _MembersManagementScreenState extends ConsumerState<MembersManagementScree
                   : _filtered.isEmpty
                   ? Center(child: Column(children: [Icon(Icons.people_outline, size: 48, color: Colors.grey.shade400), const SizedBox(height: 12), const Text('No members found')]))
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        0,
+                        16,
+                        MediaQuery.paddingOf(context).bottom + 24,
+                      ),
                       itemCount: _filtered.length,
                       itemBuilder: (context, index) {
                         final member = _filtered[index];

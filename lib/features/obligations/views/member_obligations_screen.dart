@@ -61,7 +61,12 @@ class MemberObligationsScreen extends ConsumerWidget {
               ),
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    16,
+                    MediaQuery.paddingOf(context).bottom + 24,
+                  ),
                   itemCount: obligations.length,
                   itemBuilder: (context, index) {
                     final obligation = obligations[index];

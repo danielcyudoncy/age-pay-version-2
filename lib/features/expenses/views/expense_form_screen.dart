@@ -405,6 +405,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                       : Text(_isEditing ? 'Update Expense' : 'Save Expense'),
                 ),
               ),
+              SizedBox(height: MediaQuery.paddingOf(context).bottom + 24),
             ],
           ),
         ),

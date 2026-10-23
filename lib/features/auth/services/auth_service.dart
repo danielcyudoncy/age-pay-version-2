@@ -413,6 +413,7 @@ class AuthService {
       await obligationRepo.reconcileMemberObligations(
         memberId,
         userId: uid,
+        organizationId: organizationId,
         duesStanding: effectiveStanding,
         openingBalance: effectiveOpeningBalance,
       );

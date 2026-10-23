@@ -241,38 +241,41 @@ class _BankTransferScreenState extends ConsumerState<BankTransferScreen> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              MediaQuery.paddingOf(context).bottom + 12,
+            ),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               border: Border(top: BorderSide(color: Colors.grey.shade300)),
             ),
-            child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  FilledButton.icon(
-                    onPressed:
-                        state.isLoading ||
-                            selectedObligations.isEmpty ||
-                            _uploadedImageUrl == null
-                        ? null
-                        : _submitTransfer,
-                    icon: state.isLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.send),
-                    label: Text(
-                      state.isLoading ? 'Submitting...' : 'Submit Transfer',
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                FilledButton.icon(
+                  onPressed:
+                      state.isLoading ||
+                          selectedObligations.isEmpty ||
+                          _uploadedImageUrl == null
+                      ? null
+                      : _submitTransfer,
+                  icon: state.isLoading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.send),
+                  label: Text(
+                    state.isLoading ? 'Submitting...' : 'Submit Transfer',
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],

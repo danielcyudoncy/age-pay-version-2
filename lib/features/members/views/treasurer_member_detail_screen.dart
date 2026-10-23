@@ -67,7 +67,12 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
               );
 
               return ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  MediaQuery.paddingOf(context).bottom + 24,
+                ),
                 children: [
                   MemberInfoCard(
                     member: member,
@@ -659,6 +664,11 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                                       : member.id;
                                   final newObligation = ObligationModel(
                                     id: '',
+                                    organizationId: ref
+                                            .read(authProvider)
+                                            .valueOrNull
+                                            ?.organizationId ??
+                                        '',
                                     memberId: targetId,
                                     levyId: '',
                                     type: selectedType,
@@ -768,9 +778,15 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                 final targetId = member.userId.isNotEmpty
                     ? member.userId
                     : member.id;
+                final orgId =
+                    ref.read(authProvider).valueOrNull?.organizationId;
                 await ref
                     .read(obligationRepositoryProvider)
-                    .backfillObligationsForNewMember(targetId);
+                    .backfillObligationsForNewMember(
+                      targetId,
+                      organizationId:
+                          (orgId != null && orgId.isNotEmpty) ? orgId : null,
+                    );
 
                 ref.invalidate(memberObligationsProvider(targetId));
                 ref.invalidate(memberActiveObligationsProvider(targetId));

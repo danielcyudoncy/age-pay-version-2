@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/levies/controllers/levy_provider.dart';
+import 'package:cls/features/auth/controllers/auth_provider.dart';
 
 class CreateLevyScreen extends ConsumerStatefulWidget {
   final String creatorId;
@@ -80,6 +81,7 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
       return;
     }
 
+    final user = ref.read(authProvider).valueOrNull;
     ref
         .read(levyCreationProvider.notifier)
         .createLevy(
@@ -92,6 +94,7 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
           targetGroup: _groupController.text.trim().isEmpty
               ? null
               : _groupController.text.trim(),
+          organizationId: user?.organizationId,
           memberIds: widget.memberIds,
         );
   }
@@ -295,6 +298,7 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
                       : const Text('Create Levy & Generate Obligations'),
                 ),
               ),
+              SizedBox(height: MediaQuery.paddingOf(context).bottom + 24),
             ],
           ),
         ),

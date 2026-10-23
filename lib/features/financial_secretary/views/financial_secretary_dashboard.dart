@@ -155,7 +155,12 @@ class _HomeTab extends ConsumerWidget {
             ref.invalidate(membersStreamProvider);
           },
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              MediaQuery.paddingOf(context).bottom + 32,
+            ),
             children: [
               // User Header
               Row(
@@ -1045,7 +1050,12 @@ class _DebtorsTabState extends ConsumerState<_DebtorsTab> {
               child: arrears.isEmpty
                   ? const Center(child: Text('No debtors found.'))
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        12,
+                        16,
+                        MediaQuery.paddingOf(context).bottom + 32,
+                      ),
                       itemCount: arrears.length,
                       itemBuilder: (ctx, index) {
                         final item = arrears[index];

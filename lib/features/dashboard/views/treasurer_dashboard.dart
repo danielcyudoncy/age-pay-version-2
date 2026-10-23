@@ -246,7 +246,12 @@ class _HomeTab extends ConsumerWidget {
           ref.invalidate(treasurerDashboardProvider);
         },
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            MediaQuery.paddingOf(context).bottom + 24,
+          ),
           children: [
             // Welcome Header
             Container(

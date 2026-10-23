@@ -221,6 +221,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
           isPinned: true,
           announcementDate: _selectedDate!,
           createdBy: user.uid,
+          targetAudience: _targetAudience,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -229,21 +230,28 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
         await announcementRepo.createAnnouncement(announcement);
         ref.invalidate(announcementsStreamProvider(orgId));
 
-        // 2. Add to in-app Notifications inbox
+        // 2. Add to in-app Notifications inbox and persist to repository
+        final notification = NotificationModel(
+          id: 'meet_${DateTime.now().millisecondsSinceEpoch}',
+          organizationId: orgId,
+          targetRole: isExecutiveOnly ? 'executives' : null,
+          title: isExecutiveOnly
+              ? 'Executive Meeting Scheduled: $title'
+              : 'Meeting Scheduled: $title',
+          body: '$formattedDateTime at $venue',
+          type: 'meeting',
+          receivedAt: DateTime.now(),
+        );
+
+        try {
+          final notificationRepo = ref.read(notificationRepositoryProvider);
+          await notificationRepo.sendNotification(notification);
+        } catch (_) {}
+
         final notificationNotifier = ref.read(
           notificationListProvider.notifier,
         );
-        notificationNotifier.addNotification(
-          NotificationModel(
-            id: 'meet_${DateTime.now().millisecondsSinceEpoch}',
-            title: isExecutiveOnly
-                ? 'Executive Meeting Scheduled: $title'
-                : 'Meeting Scheduled: $title',
-            body: '$formattedDateTime at $venue',
-            type: 'meeting',
-            receivedAt: DateTime.now(),
-          ),
-        );
+        notificationNotifier.addNotification(notification);
       }
 
       ref.invalidate(meetingsStreamProvider);
@@ -557,8 +565,8 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                           ),
                   ),
                 ),
-                const SizedBox(height: 16),
               ],
+              SizedBox(height: MediaQuery.paddingOf(context).bottom + 24),
             ],
           ),
         ),

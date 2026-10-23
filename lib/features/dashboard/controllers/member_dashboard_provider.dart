@@ -61,8 +61,14 @@ final memberRegistrationFeeStatusProvider = Provider.autoDispose
 /// whenever they open or refresh their dashboard.
 final memberObligationReconciliationProvider =
     FutureProvider.autoDispose.family<int, String>((ref, memberId) async {
+      final user = ref.watch(authProvider).valueOrNull;
+      final orgId = user?.organizationId;
       final repo = ref.watch(obligationRepositoryProvider);
-      final count = await repo.reconcileMemberObligations(memberId);
+      final count = await repo.reconcileMemberObligations(
+        memberId,
+        userId: user?.uid,
+        organizationId: (orgId != null && orgId.isNotEmpty) ? orgId : null,
+      );
       if (count > 0) {
         ref.invalidate(allObligationsProvider);
       }
