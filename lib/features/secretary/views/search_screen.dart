@@ -49,7 +49,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           : _results.isEmpty
           ? Center(child: Text('Enter a query to search', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)))
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.paddingOf(context).bottom + 24,
+              ),
               itemCount: _results.length,
               itemBuilder: (context, index) {
                 final item = _results[index];

@@ -3,6 +3,7 @@ import '../../../core/constants/enums.dart';
 
 class ObligationModel {
   final String id;
+  final String organizationId;
   final String memberId;
   final String levyId;
   final ObligationType type;
@@ -18,6 +19,7 @@ class ObligationModel {
 
   const ObligationModel({
     required this.id,
+    this.organizationId = '',
     required this.memberId,
     required this.levyId,
     required this.type,
@@ -52,6 +54,7 @@ class ObligationModel {
 
     return ObligationModel(
       id: doc.id,
+      organizationId: data['organizationId'] ?? '',
       memberId: data['memberId'] ?? '',
       levyId: data['levyId'] ?? '',
       type: ObligationType.values.firstWhere(
@@ -74,6 +77,7 @@ class ObligationModel {
 
   Map<String, dynamic> toFirestore() {
     return {
+      'organizationId': organizationId,
       'memberId': memberId,
       'levyId': levyId,
       'type': type.name,
@@ -97,6 +101,7 @@ class ObligationModel {
 
   ObligationModel copyWith({
     String? id,
+    String? organizationId,
     String? memberId,
     String? levyId,
     ObligationType? type,
@@ -120,6 +125,7 @@ class ObligationModel {
 
     return ObligationModel(
       id: id ?? this.id,
+      organizationId: organizationId ?? this.organizationId,
       memberId: memberId ?? this.memberId,
       levyId: levyId ?? this.levyId,
       type: type ?? this.type,

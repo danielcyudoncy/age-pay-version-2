@@ -70,7 +70,12 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(announcementsStreamProvider(orgId)),
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.paddingOf(context).bottom + 24,
+              ),
               children: [
                 _MonthCalendar(
                   selectedDate: _selectedDate,

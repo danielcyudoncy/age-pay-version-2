@@ -1345,7 +1345,12 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
 
         // Bottom Action Bar
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            12,
+            16,
+            MediaQuery.paddingOf(context).bottom + 12,
+          ),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             border: Border(top: BorderSide(color: Colors.grey.shade200)),
@@ -1357,10 +1362,10 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
               ),
             ],
           ),
-          child: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1401,7 +1406,6 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
               ],
             ),
           ),
-        ),
       ],
     );
   }

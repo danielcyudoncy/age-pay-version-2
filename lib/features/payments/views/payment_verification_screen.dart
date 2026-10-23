@@ -122,7 +122,12 @@ class _PaymentVerificationScreenState
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    16,
+                    MediaQuery.paddingOf(context).bottom + 24,
+                  ),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final payment = filtered[index];

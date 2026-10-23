@@ -20,7 +20,12 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          MediaQuery.paddingOf(context).bottom + 32,
+        ),
         children: [
           _SectionHeader(title: 'Organization Account', icon: Icons.account_balance_outlined),
           const _OrganizationBankCard(),
@@ -160,6 +165,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
+          SizedBox(height: MediaQuery.paddingOf(context).bottom + 16),
         ],
       ),
     );

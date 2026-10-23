@@ -725,6 +725,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       onPressed: () => Navigator.of(context).pop(),
                       child: const Text('Already have an account? Sign In'),
                     ),
+                    SizedBox(height: MediaQuery.paddingOf(context).bottom + 16),
                   ],
                 ),
               ),

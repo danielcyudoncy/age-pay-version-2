@@ -48,7 +48,12 @@ class AdminDashboard extends ConsumerWidget {
           data: (data) {
             final theme = Theme.of(context);
             return ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.paddingOf(context).bottom + 24,
+              ),
               children: [
                 Text(
                   'Welcome, ${user?.displayName ?? 'Admin'}',

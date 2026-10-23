@@ -183,6 +183,13 @@ class NotificationRepository {
     }
   }
 
+  bool isNotificationForUser(
+    NotificationModel n,
+    String? userId,
+    UserRole? role,
+  ) =>
+      _isNotificationForUser(n, userId, role);
+
   bool _isNotificationForUser(
     NotificationModel n,
     String? userId,
@@ -192,9 +199,24 @@ class NotificationRepository {
       if (n.targetUserId != userId) return false;
     }
 
+    final lowerTitle = n.title.trim().toLowerCase();
+    final lowerBody = n.body.trim().toLowerCase();
+    final isExecutiveNotification = lowerTitle.contains('executive meeting') ||
+        lowerTitle.startsWith('executive') ||
+        lowerTitle.contains('🏛️ executive') ||
+        lowerBody.contains('executive meeting session') ||
+        lowerBody.contains('all executive officers');
+
+    if (isExecutiveNotification && (role == null || !role.isExecutive)) {
+      return false;
+    }
+
     if (n.targetRole != null && n.targetRole!.isNotEmpty) {
       final target = n.targetRole!.toLowerCase();
       if (role != null) {
+        if ((target == 'executives' || target == 'executive') && !role.isExecutive) {
+          return false;
+        }
         if (target == 'president' &&
             role != UserRole.president &&
             role != UserRole.vicePresident &&

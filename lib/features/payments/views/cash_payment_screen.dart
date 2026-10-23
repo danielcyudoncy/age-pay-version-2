@@ -380,6 +380,11 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
             ),
           ),
         ),
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: MediaQuery.paddingOf(context).bottom + 24,
+          ),
+        ),
       ],
     );
   }

@@ -49,7 +49,12 @@ class ReportsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Reports')),
       body: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          MediaQuery.paddingOf(context).bottom + 24,
+        ),
         itemCount: _reports.length,
         itemBuilder: (context, index) {
           final report = _reports[index];

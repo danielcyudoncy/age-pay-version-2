@@ -200,6 +200,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       },
                       child: const Text("Don't have an account? Register"),
                     ),
+                    SizedBox(height: MediaQuery.paddingOf(context).bottom + 16),
                   ],
                 ),
               ),

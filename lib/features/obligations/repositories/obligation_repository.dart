@@ -151,26 +151,33 @@ class ObligationRepository {
     }
   }
 
-  Future<void> backfillObligationsForNewMember(String memberId) async {
-    await reconcileMemberObligations(memberId);
+  Future<void> backfillObligationsForNewMember(
+    String memberId, {
+    String? organizationId,
+  }) async {
+    await reconcileMemberObligations(memberId, organizationId: organizationId);
   }
 
-  /// Option C (All Active): Reconciles and synchronizes all currently active/open
-  /// dues and levies for a member. If the member downloaded the app today while
-  /// there are already running obligations, this creates missing obligations
+  /// Option C (All Active): Reconciles and synchronizes active general dues
+  /// for a member within their organization. If the member downloaded the app today while
+  /// there are already running general dues, this creates missing obligations
   /// idempotently without duplicating any records.
+  /// Only general dues shared with everyone (type == monthlyDue, targetGroup == null or 'all')
+  /// within the member's organization are backfilled.
   /// If [duesStanding] is cleared, obligations are marked as settled (status: paid, balance: 0).
   Future<int> reconcileMemberObligations(
     String memberOrUserId, {
     String? userId,
+    String? organizationId,
     MemberDuesStanding? duesStanding,
     double? openingBalance,
   }) async {
     String targetMemberId = memberOrUserId;
     String? targetUserId = userId;
+    String? resolvedOrgId = organizationId;
 
     try {
-      if (userId == null) {
+      if (userId == null || resolvedOrgId == null || resolvedOrgId.isEmpty) {
         final memberByUid = await _firestore
             .collection('members')
             .where('userId', isEqualTo: memberOrUserId)
@@ -179,12 +186,15 @@ class ObligationRepository {
         if (memberByUid.docs.isNotEmpty) {
           targetMemberId = memberByUid.docs.first.id;
           targetUserId = memberOrUserId;
+          resolvedOrgId ??=
+              memberByUid.docs.first.data()['organizationId'] as String?;
         } else {
           final memberDoc =
               await _firestore.collection('members').doc(memberOrUserId).get();
           if (memberDoc.exists) {
             targetMemberId = memberDoc.id;
             targetUserId = memberDoc.data()?['userId'] as String?;
+            resolvedOrgId ??= memberDoc.data()?['organizationId'] as String?;
           }
         }
       }
@@ -192,12 +202,28 @@ class ObligationRepository {
       // Best-effort ID resolution fallback
     }
 
-    MemberDuesStanding resolvedStanding = duesStanding ?? MemberDuesStanding.newMember;
+    // Fallback: check users collection for organizationId if still missing
+    if (resolvedOrgId == null || resolvedOrgId.isEmpty) {
+      try {
+        final checkUid =
+            targetUserId ?? (memberOrUserId.isNotEmpty ? memberOrUserId : null);
+        if (checkUid != null) {
+          final uDoc = await _firestore.collection('users').doc(checkUid).get();
+          if (uDoc.exists) {
+            resolvedOrgId ??= uDoc.data()?['organizationId'] as String?;
+          }
+        }
+      } catch (_) {}
+    }
+
+    MemberDuesStanding resolvedStanding =
+        duesStanding ?? MemberDuesStanding.newMember;
     double? resolvedOpeningBalance = openingBalance;
 
     if (duesStanding == null) {
       try {
-        final checkUid = targetUserId ?? (memberOrUserId.isNotEmpty ? memberOrUserId : null);
+        final checkUid =
+            targetUserId ?? (memberOrUserId.isNotEmpty ? memberOrUserId : null);
         if (checkUid != null) {
           final uDoc = await _firestore.collection('users').doc(checkUid).get();
           if (uDoc.exists) {
@@ -208,7 +234,9 @@ class ObligationRepository {
                 orElse: () => MemberDuesStanding.newMember,
               );
             }
-            resolvedOpeningBalance ??= (uDoc.data()?['openingBalance'] as num?)?.toDouble();
+            resolvedOpeningBalance ??=
+                (uDoc.data()?['openingBalance'] as num?)?.toDouble();
+            resolvedOrgId ??= uDoc.data()?['organizationId'] as String?;
           }
         }
       } catch (_) {}
@@ -222,8 +250,13 @@ class ObligationRepository {
       if (memberOrUserId.isNotEmpty) memberOrUserId,
     };
 
-    // 1. Fetch existing obligations for this member across all known IDs
-    final existingObligationsSnap = await _collection.get();
+    // 1. Fetch existing obligations for this member, scoped by organizationId if available
+    Query obligationsQuery = _collection;
+    if (resolvedOrgId != null && resolvedOrgId.isNotEmpty) {
+      obligationsQuery =
+          obligationsQuery.where('organizationId', isEqualTo: resolvedOrgId);
+    }
+    final existingObligationsSnap = await obligationsQuery.get();
     final allObligations = existingObligationsSnap.docs
         .map((doc) => ObligationModel.fromFirestore(doc))
         .toList();
@@ -270,17 +303,34 @@ class ObligationRepository {
     final newObligations = <Map<String, dynamic>>[];
     final now = DateTime.now();
 
-    // 2. Source A: Active Levies from 'levies' collection
+    // 2. Source A: Active General Dues Levies from 'levies' collection
+    // Enforce: Only general monthly dues shared with all members in the organization
     try {
-      final leviesSnap = await _firestore.collection('levies').get();
-      final allLevies = leviesSnap.docs
-          .map((doc) => LevyModel.fromFirestore(doc))
-          .toList();
-      final activeLevies = allLevies.where((l) => l.isActive).toList();
+      Query leviesQuery =
+          _firestore.collection('levies').where('isActive', isEqualTo: true);
+      if (resolvedOrgId != null && resolvedOrgId.isNotEmpty) {
+        leviesQuery =
+            leviesQuery.where('organizationId', isEqualTo: resolvedOrgId);
+      }
+      final leviesSnap = await leviesQuery.get();
+      final allLevies =
+          leviesSnap.docs.map((doc) => LevyModel.fromFirestore(doc)).toList();
 
-      for (final levy in activeLevies) {
+      for (final levy in allLevies) {
+        // Enforce: ONLY general dues shared with everyone
+        final isGeneralDue = levy.type == ObligationType.monthlyDue;
+        final targetGroupLower = levy.targetGroup?.trim().toLowerCase();
+        final isSharedWithAll = targetGroupLower == null ||
+            targetGroupLower.isEmpty ||
+            targetGroupLower == 'all';
+
+        if (!isGeneralDue || !isSharedWithAll) {
+          continue;
+        }
+
         final normTitle = levy.title.trim().toLowerCase();
-        if (existingLevyIds.contains(levy.id) || existingTitles.contains(normTitle)) {
+        if (existingLevyIds.contains(levy.id) ||
+            existingTitles.contains(normTitle)) {
           continue;
         }
 
@@ -288,6 +338,8 @@ class ObligationRepository {
         existingTitles.add(normTitle);
 
         newObligations.add({
+          'organizationId': resolvedOrgId ??
+              (levy.organizationId.isNotEmpty ? levy.organizationId : ''),
           'memberId': targetMemberId,
           'userId': targetUserId ?? targetMemberId,
           'levyId': levy.id,
@@ -297,7 +349,9 @@ class ObligationRepository {
           'amount': levy.amountPerMember,
           'paidAmount': isCleared ? levy.amountPerMember : 0.0,
           'outstandingBalance': isCleared ? 0.0 : levy.amountPerMember,
-          'status': isCleared ? ObligationStatus.paid.name : ObligationStatus.unpaid.name,
+          'status': isCleared
+              ? ObligationStatus.paid.name
+              : ObligationStatus.unpaid.name,
           'dueDate': Timestamp.fromDate(levy.dueDate),
           'settledAt': isCleared ? Timestamp.fromDate(now) : null,
           'createdAt': Timestamp.fromDate(now),
@@ -308,9 +362,17 @@ class ObligationRepository {
       // Continue to Source B
     }
 
-    // 3. Source B: Active open dues categories from general obligations
+    // 3. Source B: Restrict to universal recurring organization dues (monthlyDue) only
+    // Do not clone ad-hoc or individual obligations from other members
     final groupedOther = <String, List<ObligationModel>>{};
     for (final o in allObligations) {
+      if (o.type != ObligationType.monthlyDue) continue;
+      if (resolvedOrgId != null &&
+          resolvedOrgId.isNotEmpty &&
+          o.organizationId.isNotEmpty &&
+          o.organizationId != resolvedOrgId) {
+        continue;
+      }
       final t = o.title.trim();
       if (t.isEmpty) continue;
       final normTitle = t.toLowerCase();
@@ -333,20 +395,25 @@ class ObligationRepository {
       }
 
       final template = group.first;
+      if (template.type != ObligationType.monthlyDue) continue;
+
       existingTitles.add(normTitle);
       if (template.levyId.isNotEmpty) existingLevyIds.add(template.levyId);
 
       newObligations.add({
+        'organizationId': resolvedOrgId ?? template.organizationId,
         'memberId': targetMemberId,
         'userId': targetUserId ?? targetMemberId,
         'levyId': template.levyId,
-        'type': template.type.name,
+        'type': ObligationType.monthlyDue.name,
         'title': template.title,
         'description': template.description,
         'amount': template.amount,
         'paidAmount': isCleared ? template.amount : 0.0,
         'outstandingBalance': isCleared ? 0.0 : template.amount,
-        'status': isCleared ? ObligationStatus.paid.name : ObligationStatus.unpaid.name,
+        'status': isCleared
+            ? ObligationStatus.paid.name
+            : ObligationStatus.unpaid.name,
         'dueDate': Timestamp.fromDate(template.dueDate),
         'settledAt': isCleared ? Timestamp.fromDate(now) : null,
         'createdAt': Timestamp.fromDate(now),
@@ -360,6 +427,7 @@ class ObligationRepository {
         resolvedOpeningBalance > 0 &&
         !existingTitles.contains('opening balance')) {
       newObligations.add({
+        'organizationId': resolvedOrgId ?? '',
         'memberId': targetMemberId,
         'userId': targetUserId ?? targetMemberId,
         'levyId': 'opening_balance',
@@ -392,10 +460,12 @@ class ObligationRepository {
   Future<void> clearMemberHistoricalObligations(
     String memberOrUserId, {
     String? userId,
+    String? organizationId,
   }) async {
     await reconcileMemberObligations(
       memberOrUserId,
       userId: userId,
+      organizationId: organizationId,
       duesStanding: MemberDuesStanding.cleared,
     );
   }

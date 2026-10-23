@@ -171,7 +171,12 @@ class ExpenseListScreen extends ConsumerWidget {
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.fromLTRB(
+                      12,
+                      12,
+                      12,
+                      MediaQuery.paddingOf(context).bottom + (canManage ? 80 : 24),
+                    ),
                     itemCount: filtered.length + (hasQueue ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (hasQueue && index == 0) {
@@ -268,7 +273,12 @@ class ExpenseListScreen extends ConsumerWidget {
           builder: (_, scrollController) {
             return ListView(
               controller: scrollController,
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                MediaQuery.paddingOf(context).bottom + 24,
+              ),
               children: [
                 Center(
                   child: Container(

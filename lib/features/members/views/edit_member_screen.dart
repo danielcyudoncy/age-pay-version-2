@@ -276,6 +276,7 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
                         ),
                 ),
               ),
+              SizedBox(height: MediaQuery.paddingOf(context).bottom + 24),
             ],
           ),
         ),

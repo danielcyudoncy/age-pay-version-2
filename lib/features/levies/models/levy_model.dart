@@ -3,6 +3,7 @@ import '../../../core/constants/enums.dart';
 
 class LevyModel {
   final String id;
+  final String organizationId;
   final String title;
   final String description;
   final ObligationType type;
@@ -16,6 +17,7 @@ class LevyModel {
 
   const LevyModel({
     required this.id,
+    this.organizationId = '',
     required this.title,
     required this.description,
     required this.type,
@@ -32,6 +34,7 @@ class LevyModel {
     final data = doc.data() as Map<String, dynamic>;
     return LevyModel(
       id: doc.id,
+      organizationId: data['organizationId'] ?? '',
       title: data['title'] ?? '',
       description: data['description'] ?? '',
       type: ObligationType.values.firstWhere(
@@ -50,6 +53,7 @@ class LevyModel {
 
   Map<String, dynamic> toFirestore() {
     return {
+      'organizationId': organizationId,
       'title': title,
       'description': description,
       'type': type.name,
@@ -71,6 +75,7 @@ class LevyModel {
 
   LevyModel copyWith({
     String? id,
+    String? organizationId,
     String? title,
     String? description,
     ObligationType? type,
@@ -84,6 +89,7 @@ class LevyModel {
   }) {
     return LevyModel(
       id: id ?? this.id,
+      organizationId: organizationId ?? this.organizationId,
       title: title ?? this.title,
       description: description ?? this.description,
       type: type ?? this.type,

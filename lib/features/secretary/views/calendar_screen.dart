@@ -64,7 +64,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(calendarEventsStreamProvider(orgId)),
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.paddingOf(context).bottom + 24,
+              ),
               children: [
                 _MonthCalendar(
                   selectedDate: _selectedDate,

@@ -210,7 +210,12 @@ class _HomeTab extends ConsumerWidget {
           ref.invalidate(presidentDashboardProvider);
         },
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            MediaQuery.paddingOf(context).bottom + 24,
+          ),
           children: [
             // Welcome Header
             Container(
@@ -1170,7 +1175,12 @@ class _PresidentMeetingsTab extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(meetingsStreamProvider),
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.paddingOf(context).bottom + 24,
+              ),
               children: [
                 Row(
                   children: [
@@ -1573,7 +1583,12 @@ class _PresidentMembersTabState extends ConsumerState<_PresidentMembersTab> {
                   onRefresh: () async =>
                       ref.invalidate(presidentMembersStreamProvider),
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      0,
+                      16,
+                      MediaQuery.paddingOf(context).bottom + 24,
+                    ),
                     itemCount: filtered.length,
                     itemBuilder: (context, index) {
                       final member = filtered[index];

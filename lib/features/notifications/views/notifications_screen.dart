@@ -76,7 +76,12 @@ class NotificationsScreen extends ConsumerWidget {
         child: notifications.isEmpty
             ? const EmptyState()
             : ListView.builder(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.fromLTRB(
+                  12,
+                  12,
+                  12,
+                  MediaQuery.paddingOf(context).bottom + 24,
+                ),
                 itemCount: notifications.length,
                 itemBuilder: (context, index) {
                   final notification = notifications[index];
@@ -207,7 +212,9 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
         top: 20,
         left: 20,
         right: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.paddingOf(context).bottom +
+            24,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
