@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/organization_model.dart';
 
 class OrganizationRepository {
@@ -48,12 +49,15 @@ class OrganizationRepository {
   }
 
   Stream<OrganizationModel?> streamOrganizationById(String id) {
+    if (FirebaseAuth.instance.currentUser == null || id.isEmpty) {
+      return const Stream.empty();
+    }
     return _collection.doc(id).snapshots().map((doc) {
       if (doc.exists && doc.data() != null) {
         return OrganizationModel.fromFirestore(doc);
       }
       return null;
-    });
+    }).handleError((_) => null);
   }
 
   Future<String> createOrganization(OrganizationModel organization) async {

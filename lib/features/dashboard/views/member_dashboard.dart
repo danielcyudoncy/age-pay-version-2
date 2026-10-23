@@ -78,7 +78,9 @@ class MemberDashboard extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await ref.read(authProvider.notifier).signOut();
+              try {
+                await ref.read(authProvider.notifier).signOut();
+              } catch (_) {}
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),

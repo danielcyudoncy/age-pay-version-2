@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/constants/enums.dart';
 import '../models/expense_model.dart';
 
@@ -12,6 +13,9 @@ class ExpenseRepository {
   CollectionReference get _collection => _firestore.collection(collection);
 
   Stream<List<ExpenseModel>> getExpenses() {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .orderBy('createdAt', descending: true)
         .snapshots()
@@ -19,10 +23,14 @@ class ExpenseRepository {
           (snapshot) => snapshot.docs
               .map((doc) => ExpenseModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((_) => <ExpenseModel>[]);
   }
 
   Stream<List<ExpenseModel>> getPendingExpenses() {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .where('status', isEqualTo: ExpenseStatus.pendingApproval.name)
         .snapshots()
@@ -34,10 +42,14 @@ class ExpenseRepository {
             list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
             return list;
           },
-        );
+        )
+        .handleError((_) => <ExpenseModel>[]);
   }
 
   Stream<List<ExpenseModel>> getApprovedExpenses() {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .where('status', isEqualTo: ExpenseStatus.approved.name)
         .snapshots()
@@ -49,13 +61,17 @@ class ExpenseRepository {
             list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
             return list;
           },
-        );
+        )
+        .handleError((_) => <ExpenseModel>[]);
   }
 
   Stream<List<ExpenseModel>> getExpensesByDateRange(
     DateTime start,
     DateTime end,
   ) {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .where('expenseDate', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
         .where('expenseDate', isLessThanOrEqualTo: Timestamp.fromDate(end))
@@ -65,7 +81,8 @@ class ExpenseRepository {
           (snapshot) => snapshot.docs
               .map((doc) => ExpenseModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((_) => <ExpenseModel>[]);
   }
 
   Future<ExpenseModel?> getExpenseById(String id) async {

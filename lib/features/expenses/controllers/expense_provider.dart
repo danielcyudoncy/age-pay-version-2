@@ -2,16 +2,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/enums.dart';
 import '../models/expense_model.dart';
 import '../repositories/expense_repository.dart';
+import '../../auth/controllers/auth_provider.dart';
 
 final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
   return ExpenseRepository();
 });
 
-final expensesStreamProvider = StreamProvider<List<ExpenseModel>>((ref) {
+final expensesStreamProvider = StreamProvider.autoDispose<List<ExpenseModel>>((ref) {
+  final user = ref.watch(authProvider).valueOrNull;
+  if (user == null) return const Stream.empty();
   return ref.watch(expenseRepositoryProvider).getExpenses();
 });
 
-final pendingExpensesStreamProvider = StreamProvider<List<ExpenseModel>>((ref) {
+final pendingExpensesStreamProvider = StreamProvider.autoDispose<List<ExpenseModel>>((ref) {
+  final user = ref.watch(authProvider).valueOrNull;
+  if (user == null) return const Stream.empty();
   return ref.watch(expenseRepositoryProvider).getPendingExpenses();
 });
 

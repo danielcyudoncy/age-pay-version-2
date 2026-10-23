@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/obligation_model.dart';
 import '../../levies/models/levy_model.dart';
 import '../../../core/constants/enums.dart';
@@ -13,6 +14,9 @@ class ObligationRepository {
   CollectionReference get _collection => _firestore.collection(collection);
 
   Stream<List<ObligationModel>> getAllObligations() {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .orderBy('createdAt', descending: true)
         .snapshots()
@@ -20,10 +24,14 @@ class ObligationRepository {
           (snapshot) => snapshot.docs
               .map((doc) => ObligationModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((_) => <ObligationModel>[]);
   }
 
   Stream<List<ObligationModel>> getMemberObligations(String memberId) {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .where('memberId', isEqualTo: memberId)
         .orderBy('createdAt', descending: true)
@@ -32,10 +40,14 @@ class ObligationRepository {
           (snapshot) => snapshot.docs
               .map((doc) => ObligationModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((_) => <ObligationModel>[]);
   }
 
   Stream<List<ObligationModel>> getMemberActiveObligations(String memberId) {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .where('memberId', isEqualTo: memberId)
         .where('status', whereIn: ['unpaid', 'partial'])
@@ -45,10 +57,14 @@ class ObligationRepository {
           (snapshot) => snapshot.docs
               .map((doc) => ObligationModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((_) => <ObligationModel>[]);
   }
 
   Stream<List<ObligationModel>> getLevyObligations(String levyId) {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .where('levyId', isEqualTo: levyId)
         .orderBy('createdAt', descending: false)
@@ -57,7 +73,8 @@ class ObligationRepository {
           (snapshot) => snapshot.docs
               .map((doc) => ObligationModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((_) => <ObligationModel>[]);
   }
 
   Future<ObligationModel?> getObligationById(String id) async {
