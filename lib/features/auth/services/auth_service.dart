@@ -333,6 +333,9 @@ class AuthService {
   }
 
   Stream<List<UserModel>> getPendingRegistrations(String organizationId) {
+    if (_auth.currentUser == null) {
+      return const Stream.empty();
+    }
     return _firestore
         .collection('users')
         .snapshots()
@@ -376,6 +379,7 @@ class AuthService {
 
     final batch = _firestore.batch();
     batch.update(_firestore.collection('users').doc(uid), {
+      'organizationId': organizationId,
       'status': AccountStatus.approved.name,
       'role': approvedRole.name,
       'isActive': true,
@@ -487,15 +491,22 @@ class AuthService {
   /// organization in this single-organization teaching app. It looks up the
   /// first secretary or admin and uses their organizationId so the member
   /// shares the same tenant as the announcements they should receive.
+  /// Returns the organizationId for a user by reusing the existing
+  /// organization in this single-organization teaching app.
   Future<String> getActiveOrganizationId() async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) return '';
 
-    final currentDoc = await _firestore.collection('users').doc(currentUser.uid).get();
+    final currentDoc =
+        await _firestore.collection('users').doc(currentUser.uid).get();
     if (currentDoc.exists) {
       final data = currentDoc.data()!;
       final orgId = data['organizationId'];
-      if (orgId is String && orgId.isNotEmpty) return orgId;
+      if (orgId is String && orgId.isNotEmpty && orgId != currentUser.uid) {
+        final orgDoc =
+            await _firestore.collection('organizations').doc(orgId).get();
+        if (orgDoc.exists) return orgId;
+      }
     }
 
     final snapshot = await _firestore
@@ -506,16 +517,33 @@ class AuthService {
           'superAdmin',
           'president',
           'vicePresident',
+          'treasurer',
         ])
-        .limit(1)
+        .limit(5)
         .get();
 
-    if (snapshot.docs.isNotEmpty) {
-      final data = snapshot.docs.first.data();
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
       final orgId = data['organizationId'];
-      if (orgId is String && orgId.isNotEmpty) return orgId;
-      return snapshot.docs.first.id;
+      if (orgId is String && orgId.isNotEmpty && orgId != doc.id) {
+        final orgDoc =
+            await _firestore.collection('organizations').doc(orgId).get();
+        if (orgDoc.exists) return orgId;
+      }
     }
+
+    // Direct check of organizations collection
+    try {
+      final orgsSnap = await _firestore
+          .collection('organizations')
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
+      if (orgsSnap.docs.isNotEmpty) {
+        return orgsSnap.docs.first.id;
+      }
+    } catch (_) {}
+
     return currentUser.uid;
   }
 
@@ -545,7 +573,21 @@ class AuthService {
       final doc = await _firestore.collection('users').doc(uid).get();
       if (doc.exists) {
         var user = UserModel.fromFirestore(doc);
-        if (user.organizationId.isEmpty || user.organizationId == uid) {
+
+        bool orgExists = false;
+        if (user.organizationId.isNotEmpty && user.organizationId != uid) {
+          try {
+            final orgDoc = await _firestore
+                .collection('organizations')
+                .doc(user.organizationId)
+                .get();
+            orgExists = orgDoc.exists;
+          } catch (_) {}
+        }
+
+        if (!orgExists ||
+            user.organizationId.isEmpty ||
+            user.organizationId == uid) {
           String? foundOrgId;
 
           // 1. Try branch where this user is president
@@ -555,7 +597,8 @@ class AuthService {
               .limit(1)
               .get();
           if (branchSnap.docs.isNotEmpty) {
-            foundOrgId = branchSnap.docs.first.data()['organizationId'] as String?;
+            foundOrgId =
+                branchSnap.docs.first.data()['organizationId'] as String?;
           }
 
           // 2. Try co-founder invitation where this user is presidentUid
@@ -566,12 +609,65 @@ class AuthService {
                 .limit(1)
                 .get();
             if (invSnap.docs.isNotEmpty) {
-              foundOrgId = invSnap.docs.first.data()['organizationId'] as String?;
+              foundOrgId =
+                  invSnap.docs.first.data()['organizationId'] as String?;
             }
           }
 
-          // 3. Try organizations collection by contactEmail
-          if ((foundOrgId == null || foundOrgId.isEmpty) && user.email.isNotEmpty) {
+          // 3. Try co-founder invitation where secretaryPhone matches
+          if ((foundOrgId == null || foundOrgId.isEmpty) &&
+              user.phoneNumber.isNotEmpty) {
+            final cleanPhone =
+                CoFounderInvitationRepository.normalizePhone(user.phoneNumber);
+            final invPhoneSnap = await _firestore
+                .collection('co_founder_invitations')
+                .where('secretaryPhone', isEqualTo: cleanPhone)
+                .limit(1)
+                .get();
+            if (invPhoneSnap.docs.isNotEmpty) {
+              foundOrgId =
+                  invPhoneSnap.docs.first.data()['organizationId'] as String?;
+            }
+          }
+
+          // 4. Try members collection where userId == uid
+          if (foundOrgId == null || foundOrgId.isEmpty) {
+            final memberSnap = await _firestore
+                .collection('members')
+                .where('userId', isEqualTo: uid)
+                .limit(1)
+                .get();
+            if (memberSnap.docs.isNotEmpty) {
+              final branchId =
+                  memberSnap.docs.first.data()['branchId'] as String?;
+              if (branchId != null && branchId.isNotEmpty) {
+                final bDoc = await _firestore
+                    .collection('branches')
+                    .doc(branchId)
+                    .get();
+                if (bDoc.exists) {
+                  foundOrgId = bDoc.data()?['organizationId'] as String?;
+                }
+              }
+            }
+          }
+
+          // 5. Try notifications collection where payload == uid
+          if (foundOrgId == null || foundOrgId.isEmpty) {
+            final notifSnap = await _firestore
+                .collection('notifications')
+                .where('payload', isEqualTo: uid)
+                .limit(1)
+                .get();
+            if (notifSnap.docs.isNotEmpty) {
+              foundOrgId =
+                  notifSnap.docs.first.data()['organizationId'] as String?;
+            }
+          }
+
+          // 6. Try organizations collection by contactEmail
+          if ((foundOrgId == null || foundOrgId.isEmpty) &&
+              user.email.isNotEmpty) {
             final orgSnap = await _firestore
                 .collection('organizations')
                 .where('contactEmail', isEqualTo: user.email)
@@ -579,6 +675,18 @@ class AuthService {
                 .get();
             if (orgSnap.docs.isNotEmpty) {
               foundOrgId = orgSnap.docs.first.id;
+            }
+          }
+
+          // 7. Fallback to latest organization in organizations collection
+          if (foundOrgId == null || foundOrgId.isEmpty) {
+            final orgListSnap = await _firestore
+                .collection('organizations')
+                .orderBy('createdAt', descending: true)
+                .limit(1)
+                .get();
+            if (orgListSnap.docs.isNotEmpty) {
+              foundOrgId = orgListSnap.docs.first.id;
             }
           }
 

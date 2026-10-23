@@ -58,10 +58,23 @@ final adminDashboardProvider = Provider<AsyncValue<AdminDashboardData>>((ref) {
 });
 
 final currentOrganizationProvider =
-    FutureProvider.autoDispose<OrganizationModel?>((ref) async {
+    StreamProvider.autoDispose<OrganizationModel?>((ref) async* {
       final orgId = await ref.watch(organizationIdProvider.future);
-      if (orgId.isEmpty) return null;
-      return ref
-          .watch(organizationRepositoryProvider)
-          .getOrganizationById(orgId);
+      final orgRepo = ref.watch(organizationRepositoryProvider);
+
+      if (orgId.isNotEmpty) {
+        final direct = await orgRepo.getOrganizationById(orgId);
+        if (direct != null) {
+          yield* orgRepo.streamOrganizationById(orgId);
+          return;
+        }
+      }
+
+      final fallbackOrgId =
+          await ref.watch(authServiceProvider).getActiveOrganizationId();
+      if (fallbackOrgId.isNotEmpty) {
+        yield* orgRepo.streamOrganizationById(fallbackOrgId);
+      } else {
+        yield null;
+      }
     });

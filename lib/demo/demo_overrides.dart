@@ -494,7 +494,7 @@ Future<void> seedDemoData() async {
   // Seed a member account
   final member = UserModel(
     uid: 'demo-member',
-    organizationId: 'demo-member',
+    organizationId: 'demo-org',
     email: 'member@demo.com',
     displayName: 'Demo Member',
     phoneNumber: '08011111111',
@@ -506,7 +506,7 @@ Future<void> seedDemoData() async {
   // Seed a treasurer account
   final treasurer = UserModel(
     uid: 'demo-treasurer',
-    organizationId: 'demo-treasurer',
+    organizationId: 'demo-org',
     email: 'treasurer@demo.com',
     displayName: 'Demo Treasurer',
     phoneNumber: '08022222222',
@@ -518,7 +518,7 @@ Future<void> seedDemoData() async {
   // Seed a president account
   final president = UserModel(
     uid: 'demo-president',
-    organizationId: 'demo-president',
+    organizationId: 'demo-org',
     email: 'president@demo.com',
     displayName: 'Demo President',
     phoneNumber: '08033333333',

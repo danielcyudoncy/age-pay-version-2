@@ -47,6 +47,15 @@ class OrganizationRepository {
     return null;
   }
 
+  Stream<OrganizationModel?> streamOrganizationById(String id) {
+    return _collection.doc(id).snapshots().map((doc) {
+      if (doc.exists && doc.data() != null) {
+        return OrganizationModel.fromFirestore(doc);
+      }
+      return null;
+    });
+  }
+
   Future<String> createOrganization(OrganizationModel organization) async {
     final docRef = _collection.doc();
     final newOrg = organization.copyWith(id: docRef.id);

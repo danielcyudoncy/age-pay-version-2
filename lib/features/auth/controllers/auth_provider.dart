@@ -13,12 +13,16 @@ final coFounderInvitationRepositoryProvider =
 });
 
 final pendingRegistrationsStreamProvider =
-    StreamProvider.family<List<UserModel>, String>((ref, organizationId) {
+    StreamProvider.autoDispose.family<List<UserModel>, String>((ref, organizationId) {
+  final user = ref.watch(authProvider).valueOrNull;
+  if (user == null) return const Stream.empty();
   return ref.watch(authServiceProvider).getPendingRegistrations(organizationId);
 });
 
 final userCoFounderInviteStreamProvider =
-    StreamProvider.family<CoFounderInvitationModel?, String>((ref, phone) {
+    StreamProvider.autoDispose.family<CoFounderInvitationModel?, String>((ref, phone) {
+  final user = ref.watch(authProvider).valueOrNull;
+  if (user == null || phone.isEmpty) return const Stream.empty();
   return ref
       .watch(coFounderInvitationRepositoryProvider)
       .streamPendingInvitationForPhone(phone);
@@ -32,7 +36,9 @@ final userCoFounderInviteStreamProvider =
 final organizationIdProvider = FutureProvider.autoDispose<String>((ref) async {
   final authState = ref.watch(authProvider);
   final user = authState.valueOrNull;
-  if (user != null && user.organizationId.isNotEmpty) {
+  if (user != null &&
+      user.organizationId.isNotEmpty &&
+      user.organizationId != user.uid) {
     return user.organizationId;
   }
   if (user == null) return '';
@@ -120,8 +126,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   }
 
   Future<void> signOut() async {
-    await _authService.signOut();
     state = const AsyncValue.data(null);
+    await _authService.signOut();
   }
 
   Future<void> refreshUser() async {
