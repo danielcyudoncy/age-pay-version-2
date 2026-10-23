@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/constants/enums.dart';
 import '../models/notification_model.dart';
 
@@ -39,6 +40,10 @@ class NotificationRepository {
     UserRole? role,
   }) {
     try {
+      if (FirebaseAuth.instance.currentUser == null) {
+        return const Stream.empty();
+      }
+
       final isExecutive = role == UserRole.president ||
           role == UserRole.vicePresident ||
           role == UserRole.superAdmin;

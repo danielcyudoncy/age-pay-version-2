@@ -20,8 +20,7 @@ import 'package:cls/features/expenses/views/expense_form_screen.dart';
 import 'package:cls/features/expenses/views/expense_list_screen.dart';
 import 'package:cls/features/reports/views/reports_screen.dart';
 import 'package:cls/features/dashboard/views/member_dashboard.dart';
-import 'package:cls/features/admin/controllers/admin_provider.dart';
-import 'package:cls/features/admin/widgets/edit_organization_bank_dialog.dart';
+import 'package:cls/features/admin/widgets/receiving_account_details_dialog.dart';
 import 'package:cls/features/payments/views/cash_payment_screen.dart';
 import 'package:cls/features/payments/views/payment_verification_screen.dart';
 import 'package:cls/features/payments/views/make_payment_screen.dart';
@@ -141,7 +140,15 @@ class _TreasurerDashboardState extends ConsumerState<TreasurerDashboard> {
                       icon: const Icon(Icons.logout),
                       tooltip: 'Sign Out',
                       onPressed: () async {
-                        await ref.read(authProvider.notifier).signOut();
+                        try {
+                          await ref.read(authProvider.notifier).signOut();
+                          ref.invalidate(allPaymentsStreamProvider);
+                          ref.invalidate(allObligationsProvider);
+                          ref.invalidate(activeLeviesProvider);
+                          ref.invalidate(expensesStreamProvider);
+                          ref.invalidate(membersStreamProvider);
+                          ref.invalidate(treasurerDashboardProvider);
+                        } catch (_) {}
                         if (context.mounted) {
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(
@@ -1447,11 +1454,8 @@ class _QuickActionsRow extends ConsumerWidget {
             QuickActionButton(
               icon: Icons.account_balance,
               label: 'Receiving Account',
-              onPressed: () async {
-                final org = await ref.read(currentOrganizationProvider.future);
-                if (org != null && context.mounted) {
-                  EditOrganizationBankDialog.show(context, organization: org);
-                }
+              onPressed: () {
+                ReceivingAccountDetailsDialog.show(context);
               },
             ),
           ],

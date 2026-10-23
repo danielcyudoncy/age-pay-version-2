@@ -8,28 +8,39 @@ service cloud.firestore {
     }
 
     function getUserRole(uid) {
-      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+      return exists(/databases/$(database)/documents/users/$(uid))
+        ? get(/databases/$(database)/documents/users/$(uid)).data.role
+        : '';
     }
 
     function isMember() {
-      return isAuthenticated() && getUserRole(request.auth.uid) == 'member';
+      return isAuthenticated() &&
+        (getUserRole(request.auth.uid) == 'member' ||
+         getUserRole(request.auth.uid) == 'Member');
     }
 
     function isTreasurer() {
       return isAuthenticated() &&
         (getUserRole(request.auth.uid) == 'treasurer' ||
+         getUserRole(request.auth.uid) == 'Treasurer' ||
          getUserRole(request.auth.uid) == 'viceTreasurer' ||
-         getUserRole(request.auth.uid) == 'financialSecretary');
+         getUserRole(request.auth.uid) == 'ViceTreasurer' ||
+         getUserRole(request.auth.uid) == 'financialSecretary' ||
+         getUserRole(request.auth.uid) == 'FinancialSecretary');
     }
 
     function isPresident() {
       return isAuthenticated() &&
         (getUserRole(request.auth.uid) == 'president' ||
-         getUserRole(request.auth.uid) == 'vicePresident');
+         getUserRole(request.auth.uid) == 'President' ||
+         getUserRole(request.auth.uid) == 'vicePresident' ||
+         getUserRole(request.auth.uid) == 'VicePresident');
     }
 
     function isSuperAdmin() {
-      return isAuthenticated() && getUserRole(request.auth.uid) == 'superAdmin';
+      return isAuthenticated() &&
+        (getUserRole(request.auth.uid) == 'superAdmin' ||
+         getUserRole(request.auth.uid) == 'SuperAdmin');
     }
 
     function isAdminOrTreasurer() {
@@ -39,7 +50,9 @@ service cloud.firestore {
     function isSecretary() {
       return isAuthenticated() &&
         (getUserRole(request.auth.uid) == 'secretary' ||
-         getUserRole(request.auth.uid) == 'viceSecretary');
+         getUserRole(request.auth.uid) == 'Secretary' ||
+         getUserRole(request.auth.uid) == 'viceSecretary' ||
+         getUserRole(request.auth.uid) == 'ViceSecretary');
     }
 
     function isOwner(userId) {
@@ -91,28 +104,41 @@ service cloud.firestore {
       allow create: if isAdminOrTreasurer() ||
         (isAuthenticated() && request.resource.data.userId == request.auth.uid);
       allow update: if isAdminOrTreasurer() ||
-        (resource.data.userId == request.auth.uid);
+        (isAuthenticated() && (resource.data.userId == request.auth.uid || resource.id == request.auth.uid));
       allow delete: if isSuperAdmin();
     }
 
     // ── Obligations collection ──────────────────────────
     match /obligations/{obligationId} {
       allow read: if isAuthenticated();
-      allow create: if isAdminOrTreasurer() ||
-        (isAuthenticated() &&
-         get(/databases/$(database)/documents/members/$(request.resource.data.memberId))
-           .data.userId == request.auth.uid);
-      allow update: if isAdminOrTreasurer() ||
-        (resource.data.memberId == request.auth.uid);
+      allow create: if isAuthenticated() && (
+        isAdminOrTreasurer() ||
+        request.resource.data.userId == request.auth.uid ||
+        request.resource.data.memberId == request.auth.uid ||
+        (exists(/databases/$(database)/documents/members/$(request.resource.data.memberId)) &&
+         get(/databases/$(database)/documents/members/$(request.resource.data.memberId)).data.userId == request.auth.uid)
+      );
+      allow update: if isAuthenticated() && (
+        isAdminOrTreasurer() ||
+        resource.data.userId == request.auth.uid ||
+        resource.data.memberId == request.auth.uid
+      );
       allow delete: if isAdminOrTreasurer();
     }
 
     // ── Payments collection ─────────────────────────────
     match /payments/{paymentId} {
       allow read: if isAuthenticated();
-      allow create: if (isAuthenticated() && request.resource.data.memberId == request.auth.uid) || isAdminOrTreasurer();
-      allow update: if isAdminOrTreasurer() ||
-        (resource.data.memberId == request.auth.uid);
+      allow create: if isAuthenticated() && (
+        isAdminOrTreasurer() ||
+        request.resource.data.memberId == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid
+      );
+      allow update: if isAuthenticated() && (
+        isAdminOrTreasurer() ||
+        resource.data.memberId == request.auth.uid ||
+        resource.data.userId == request.auth.uid
+      );
       allow delete: if isSuperAdmin();
     }
 

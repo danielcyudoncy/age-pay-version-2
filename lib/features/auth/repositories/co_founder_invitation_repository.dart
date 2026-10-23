@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/co_founder_invitation_model.dart';
 import '../../../core/constants/enums.dart';
 
@@ -50,6 +51,9 @@ class CoFounderInvitationRepository {
 
   Stream<CoFounderInvitationModel?> streamPendingInvitationForPhone(
       String rawPhone) {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return Stream.value(null);
+    }
     final cleanPhone = normalizePhone(rawPhone);
     if (cleanPhone.isEmpty) return Stream.value(null);
 

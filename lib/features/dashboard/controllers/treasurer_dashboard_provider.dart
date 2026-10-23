@@ -10,6 +10,7 @@ import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/levies/controllers/levy_provider.dart'
     hide obligationRepositoryProvider;
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
+import 'package:cls/features/auth/controllers/auth_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Repositories
@@ -23,12 +24,16 @@ final memberRepositoryProvider = Provider<MemberRepository>((ref) {
 // ---------------------------------------------------------------------------
 final allPaymentsStreamProvider =
     StreamProvider.autoDispose<List<PaymentModel>>((ref) {
+      final auth = ref.watch(authProvider);
+      if (auth.hasValue && auth.value == null) return const Stream.empty();
       return ref.watch(paymentRepositoryProvider).getAllPayments();
     });
 
 final membersStreamProvider = StreamProvider.autoDispose<List<MemberModel>>((
   ref,
 ) {
+  final auth = ref.watch(authProvider);
+  if (auth.hasValue && auth.value == null) return const Stream.empty();
   return ref.watch(memberRepositoryProvider).getMembers();
 });
 

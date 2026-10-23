@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/payment_model.dart';
 import '../../../core/constants/enums.dart';
 
@@ -12,6 +13,9 @@ class PaymentRepository {
   CollectionReference get _collection => _firestore.collection(collection);
 
   Stream<List<PaymentModel>> getMemberPayments(String memberId) {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .where('memberId', isEqualTo: memberId)
         .orderBy('createdAt', descending: true)
@@ -20,10 +24,14 @@ class PaymentRepository {
           (snapshot) => snapshot.docs
               .map((doc) => PaymentModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((_) => <PaymentModel>[]);
   }
 
   Stream<List<PaymentModel>> getPendingPayments() {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .where('status', isEqualTo: PaymentStatus.pending.name)
         .orderBy('createdAt', descending: true)
@@ -32,7 +40,8 @@ class PaymentRepository {
           (snapshot) => snapshot.docs
               .map((doc) => PaymentModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((_) => <PaymentModel>[]);
   }
 
   Future<PaymentModel?> getPaymentById(String id) async {
@@ -74,6 +83,9 @@ class PaymentRepository {
   }
 
   Stream<List<PaymentModel>> getAllPayments() {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .orderBy('createdAt', descending: true)
         .snapshots()
@@ -81,6 +93,7 @@ class PaymentRepository {
           (snapshot) => snapshot.docs
               .map((doc) => PaymentModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((_) => <PaymentModel>[]);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/meeting_rsvp_model.dart';
 
 class MeetingRsvpRepository {
@@ -14,6 +15,9 @@ class MeetingRsvpRepository {
   String docId(String meetingId, String memberId) => '${meetingId}_$memberId';
 
   Stream<List<MeetingRsvpModel>> getRsvpsForMeeting(String meetingId) {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .where('meetingId', isEqualTo: meetingId)
         .snapshots()
@@ -22,7 +26,8 @@ class MeetingRsvpRepository {
               snapshot.docs
                   .map((doc) => MeetingRsvpModel.fromFirestore(doc))
                   .toList(),
-        );
+        )
+        .handleError((_) => <MeetingRsvpModel>[]);
   }
 
   Future<MeetingRsvpModel?> getMemberRsvp(

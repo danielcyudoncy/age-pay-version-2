@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/meeting_model.dart';
 
@@ -16,6 +17,9 @@ class MeetingRepository {
   CollectionReference get _collection => _firestore.collection(collection);
 
   Stream<List<MeetingModel>> getMeetings() {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .orderBy('meetingDate', descending: true)
         .snapshots()
@@ -24,7 +28,8 @@ class MeetingRepository {
               snapshot.docs
                   .map((doc) => MeetingModel.fromFirestore(doc))
                   .toList(),
-        );
+        )
+        .handleError((_) => <MeetingModel>[]);
   }
 
   Future<String> createMeeting({

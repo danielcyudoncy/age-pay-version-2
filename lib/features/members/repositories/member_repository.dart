@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/member_model.dart';
 
 class MemberRepository {
@@ -11,6 +12,9 @@ class MemberRepository {
   CollectionReference get _collection => _firestore.collection(collection);
 
   Stream<List<MemberModel>> getMembers() {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .where('isActive', isEqualTo: true)
         .orderBy('createdAt', descending: false)
@@ -19,7 +23,8 @@ class MemberRepository {
           (snapshot) => snapshot.docs
               .map((doc) => MemberModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((_) => <MemberModel>[]);
   }
 
   Future<MemberModel?> getMemberById(String id) async {

@@ -56,7 +56,7 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
 
   void _subscribeToFirestore() {
     _firestoreSubscription?.cancel();
-    if (_repository == null) return;
+    if (_repository == null || _userId == null) return;
 
     _firestoreSubscription = _repository
         .streamNotifications(
@@ -116,12 +116,16 @@ final notificationListProvider =
       final authState = ref.watch(authProvider);
       final user = authState.valueOrNull;
 
+      if (user == null) {
+        return NotificationListNotifier(service);
+      }
+
       return NotificationListNotifier(
         service,
         repository: repository,
-        organizationId: user?.organizationId,
-        userId: user?.uid,
-        role: user?.role,
+        organizationId: user.organizationId,
+        userId: user.uid,
+        role: user.role,
       );
     });
 

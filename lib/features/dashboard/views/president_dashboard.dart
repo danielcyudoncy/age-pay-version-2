@@ -109,7 +109,9 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
             icon: const Icon(Icons.logout),
             tooltip: 'Sign Out',
             onPressed: () async {
-              await ref.read(authProvider.notifier).signOut();
+              try {
+                await ref.read(authProvider.notifier).signOut();
+              } catch (_) {}
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/levy_model.dart';
 
 class LevyRepository {
@@ -17,6 +18,9 @@ class LevyRepository {
   }
 
   Stream<List<LevyModel>> getAllLevies() {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection.snapshots().map(
       (snapshot) {
         final list = snapshot.docs
@@ -25,7 +29,7 @@ class LevyRepository {
         list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         return list;
       },
-    );
+    ).handleError((_) => <LevyModel>[]);
   }
 
   Future<LevyModel?> getLevyById(String id) async {
