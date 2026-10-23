@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/organization_model.dart';
 import '../controllers/admin_provider.dart';
 
@@ -97,6 +99,16 @@ class _EditOrganizationBankDialogState
             accountNumber: _accountNumberController.text.trim(),
             accountName: _accountNameController.text.trim(),
           );
+
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .update({'organizationId': widget.organization.id})
+            .ignore();
+      }
+
       ref.invalidate(currentOrganizationProvider);
 
       if (mounted) {

@@ -64,11 +64,34 @@ final currentOrganizationProvider =
 
       if (orgId.isNotEmpty) {
         final direct = await orgRepo.getOrganizationById(orgId);
-        if (direct != null) {
+        if (direct != null &&
+            direct.accountNumber != null &&
+            direct.accountNumber!.trim().isNotEmpty) {
           yield* orgRepo.streamOrganizationById(orgId);
           return;
         }
       }
+
+      // If current org has no bank account configured, find the configured one
+      try {
+        final allOrgs = await orgRepo.getOrganizations().first;
+        final configured = allOrgs.where(
+          (o) => o.accountNumber != null && o.accountNumber!.trim().isNotEmpty,
+        ).firstOrNull;
+
+        if (configured != null) {
+          yield* orgRepo.streamOrganizationById(configured.id);
+          return;
+        }
+
+        if (orgId.isNotEmpty) {
+          final direct = await orgRepo.getOrganizationById(orgId);
+          if (direct != null) {
+            yield* orgRepo.streamOrganizationById(orgId);
+            return;
+          }
+        }
+      } catch (_) {}
 
       final fallbackOrgId =
           await ref.watch(authServiceProvider).getActiveOrganizationId();

@@ -582,6 +582,30 @@ class AuthService {
                 .doc(user.organizationId)
                 .get();
             orgExists = orgDoc.exists;
+            if (orgExists) {
+              final data = orgDoc.data();
+              final hasAccount = data != null &&
+                  data['accountNumber'] != null &&
+                  data['accountNumber'].toString().trim().isNotEmpty;
+              if (!hasAccount) {
+                // If user's current org has no bank account, search for the configured org
+                final allOrgsSnap =
+                    await _firestore.collection('organizations').get();
+                for (final oDoc in allOrgsSnap.docs) {
+                  final oData = oDoc.data();
+                  final acc = oData['accountNumber'];
+                  if (acc is String && acc.trim().isNotEmpty) {
+                    user = user.copyWith(organizationId: oDoc.id);
+                    _firestore
+                        .collection('users')
+                        .doc(uid)
+                        .update({'organizationId': oDoc.id})
+                        .ignore();
+                    return user;
+                  }
+                }
+              }
+            }
           } catch (_) {}
         }
 
@@ -678,7 +702,23 @@ class AuthService {
             }
           }
 
-          // 7. Fallback to latest organization in organizations collection
+          // 7. Check if any organization has configured bank details
+          if (foundOrgId == null || foundOrgId.isEmpty) {
+            try {
+              final allOrgsSnap =
+                  await _firestore.collection('organizations').get();
+              for (final oDoc in allOrgsSnap.docs) {
+                final oData = oDoc.data();
+                final acc = oData['accountNumber'];
+                if (acc is String && acc.trim().isNotEmpty) {
+                  foundOrgId = oDoc.id;
+                  break;
+                }
+              }
+            } catch (_) {}
+          }
+
+          // 8. Fallback to latest organization in organizations collection
           if (foundOrgId == null || foundOrgId.isEmpty) {
             final orgListSnap = await _firestore
                 .collection('organizations')
