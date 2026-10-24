@@ -55,6 +55,14 @@ service cloud.firestore {
          getUserRole(request.auth.uid) == 'ViceSecretary');
     }
 
+    function isPRO() {
+      return isAuthenticated() &&
+        (getUserRole(request.auth.uid) == 'publicRelationsOfficer' ||
+         getUserRole(request.auth.uid) == 'PublicRelationsOfficer' ||
+         getUserRole(request.auth.uid) == 'pro' ||
+         getUserRole(request.auth.uid) == 'PRO');
+    }
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
@@ -176,21 +184,21 @@ service cloud.firestore {
     // ── Announcements collection ────────────────────────
     match /announcements/{announcementId} {
       allow read: if isAuthenticated();
-      allow create, update: if isSecretary() || isPresident() || isSuperAdmin();
-      allow delete: if isSecretary() || isPresident() || isSuperAdmin();
+      allow create, update: if isSecretary() || isPresident() || isPRO() || isSuperAdmin();
+      allow delete: if isSecretary() || isPresident() || isPRO() || isSuperAdmin();
     }
 
     // ── Documents collection ────────────────────────────
     match /documents/{documentId} {
       allow read: if isAuthenticated();
-      allow create, update: if isSecretary() || isSuperAdmin();
-      allow delete: if isSuperAdmin();
+      allow create, update: if isSecretary() || isPRO() || isSuperAdmin();
+      allow delete: if isSuperAdmin() || isPRO();
     }
 
     // ── Calendar Events collection ──────────────────────
     match /calendar_events/{eventId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isSecretary() || isSuperAdmin();
+      allow create, update, delete: if isSecretary() || isPRO() || isSuperAdmin();
     }
 
     // ── Attendance collection ───────────────────────────

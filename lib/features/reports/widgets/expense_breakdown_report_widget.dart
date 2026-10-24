@@ -115,35 +115,38 @@ class ExpenseBreakdownReportWidget extends StatelessWidget {
         const SizedBox(height: 16),
 
         // KPIs
-        Row(
-          children: [
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Total Spent',
-                value: _currency.format(grandTotal),
-                icon: Icons.payments_outlined,
-                color: Colors.red,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Total Spent',
+                  value: _currency.format(grandTotal),
+                  icon: Icons.payments_outlined,
+                  color: Colors.red,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Expenses Count',
-                value: '${filtered.length}',
-                icon: Icons.receipt_long,
-                color: Colors.blue,
+              const SizedBox(width: 8),
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Expenses Count',
+                  value: '${filtered.length}',
+                  icon: Icons.receipt_long,
+                  color: Colors.blue,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Categories',
-                value: '${categoryMap.length}',
-                icon: Icons.category_outlined,
-                color: Colors.purple,
+              const SizedBox(width: 8),
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Categories',
+                  value: '${categoryMap.length}',
+                  icon: Icons.category_outlined,
+                  color: Colors.purple,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 20),
 

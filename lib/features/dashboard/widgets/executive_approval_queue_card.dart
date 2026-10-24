@@ -318,9 +318,12 @@ class _ExecutiveApprovalQueueCardState
                                           color: Colors.amber.shade800,
                                         ),
                                         const SizedBox(width: 6),
-                                        Text(
-                                          'Assign Role: ${_roleLabel(role)}',
-                                          style: const TextStyle(fontSize: 13),
+                                        Expanded(
+                                          child: Text(
+                                            'Assign Role: ${_roleLabel(role)}',
+                                            style: const TextStyle(fontSize: 13),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -499,6 +502,8 @@ class _ExecutiveApprovalQueueCardState
         return 'Financial Secretary';
       case UserRole.auditor:
         return 'Auditor';
+      case UserRole.publicRelationsOfficer:
+        return 'Public Relations Officer';
       case UserRole.executiveMember:
         return 'Executive Member';
       case UserRole.committeeChair:

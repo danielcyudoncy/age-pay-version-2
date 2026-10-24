@@ -148,35 +148,38 @@ class LevyReportWidget extends StatelessWidget {
         const SizedBox(height: 16),
 
         // KPIs
-        Row(
-          children: [
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Total Target',
-                value: _currency.format(totalTarget),
-                icon: Icons.track_changes,
-                color: theme.colorScheme.primary,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Total Target',
+                  value: _currency.format(totalTarget),
+                  icon: Icons.track_changes,
+                  color: theme.colorScheme.primary,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Collected',
-                value: _currency.format(totalCollected),
-                icon: Icons.check_circle_outline,
-                color: Colors.green,
+              const SizedBox(width: 8),
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Collected',
+                  value: _currency.format(totalCollected),
+                  icon: Icons.check_circle_outline,
+                  color: Colors.green,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Outstanding',
-                value: _currency.format(totalOutstanding),
-                icon: Icons.pending_actions_outlined,
-                color: totalOutstanding > 0 ? Colors.orange : Colors.green,
+              const SizedBox(width: 8),
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Outstanding',
+                  value: _currency.format(totalOutstanding),
+                  icon: Icons.pending_actions_outlined,
+                  color: totalOutstanding > 0 ? Colors.orange : Colors.green,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 20),
 

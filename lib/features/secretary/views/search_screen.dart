@@ -112,10 +112,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       final controller = ref.read(searchControllerProvider);
       final authState = ref.read(authProvider);
       final user = authState.valueOrNull;
+      final orgId = user?.organizationId.isNotEmpty == true ? user!.organizationId : (user?.uid ?? '');
       final members = await controller.searchMembers(query);
       final meetings = await controller.searchMeetings(query);
-      final announcements = user != null ? await controller.searchAnnouncements(query, user.uid) : [];
-      final documents = user != null ? await controller.searchDocuments(query, user.uid) : [];
+      final announcements = user != null ? await controller.searchAnnouncements(query, orgId) : [];
+      final documents = user != null ? await controller.searchDocuments(query, orgId) : [];
       setState(() {
         _results = [...members, ...meetings, ...announcements, ...documents];
         _isLoading = false;

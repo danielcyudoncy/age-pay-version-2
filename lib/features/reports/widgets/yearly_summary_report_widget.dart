@@ -151,35 +151,38 @@ class YearlySummaryReportWidget extends StatelessWidget {
         const SizedBox(height: 16),
 
         // KPIs
-        Row(
-          children: [
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Total Income',
-                value: _currency.format(totalIncome),
-                icon: Icons.south_west,
-                color: Colors.green,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Total Income',
+                  value: _currency.format(totalIncome),
+                  icon: Icons.south_west,
+                  color: Colors.green,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Total Expenses',
-                value: _currency.format(totalExpenses),
-                icon: Icons.north_east,
-                color: Colors.red,
+              const SizedBox(width: 8),
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Total Expenses',
+                  value: _currency.format(totalExpenses),
+                  icon: Icons.north_east,
+                  color: Colors.red,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Unpaid Dues',
-                value: _currency.format(outstandingTotal),
-                icon: Icons.schedule,
-                color: outstandingTotal > 0 ? Colors.orange : Colors.green,
+              const SizedBox(width: 8),
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Unpaid Dues',
+                  value: _currency.format(outstandingTotal),
+                  icon: Icons.schedule,
+                  color: outstandingTotal > 0 ? Colors.orange : Colors.green,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 20),
 

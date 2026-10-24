@@ -60,14 +60,22 @@ class UserModel {
     final requestedRoleStr = data['requestedRole'] as String?;
     final UserRole? parsedReqRole = requestedRoleStr != null
         ? UserRole.values.firstWhere(
-            (r) => r.name.toLowerCase() == requestedRoleStr.trim().toLowerCase(),
+            (r) {
+              final val = requestedRoleStr.trim().toLowerCase();
+              return r.name.toLowerCase() == val ||
+                  ((val == 'pro' || val == 'public_relations_officer') &&
+                      r == UserRole.publicRelationsOfficer);
+            },
             orElse: () => UserRole.member,
           )
         : null;
 
     final rawRole = (data['role'] ?? 'member').toString().trim().toLowerCase();
     final parsedRole = UserRole.values.firstWhere(
-      (e) => e.name.toLowerCase() == rawRole,
+      (e) =>
+          e.name.toLowerCase() == rawRole ||
+          ((rawRole == 'pro' || rawRole == 'public_relations_officer') &&
+              e == UserRole.publicRelationsOfficer),
       orElse: () => UserRole.member,
     );
 
