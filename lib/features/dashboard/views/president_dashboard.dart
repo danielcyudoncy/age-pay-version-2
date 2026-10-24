@@ -7,7 +7,6 @@ import 'package:cls/core/constants/enums.dart';
 import 'package:cls/core/widgets/quick_action_button.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/auth/models/user_model.dart';
-import 'package:cls/features/auth/views/login_screen.dart';
 import 'package:cls/features/dashboard/controllers/president_dashboard_provider.dart';
 import 'package:cls/features/dashboard/views/member_dashboard.dart';
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
@@ -26,10 +25,10 @@ import 'package:cls/features/secretary/views/calendar_screen.dart';
 import 'package:cls/features/secretary/views/documents_screen.dart';
 import 'package:cls/features/settings/views/settings_screen.dart';
 import 'package:cls/features/dashboard/widgets/executive_approval_queue_card.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_tab_pop_scope.dart';
 import 'package:cls/features/expenses/widgets/expense_approval_queue_card.dart';
 import 'package:cls/features/provost/widgets/penalty_waiver_approval_queue_card.dart';
-import 'package:cls/features/notifications/controllers/notification_provider.dart';
-import 'package:cls/features/notifications/views/notifications_screen.dart';
 
 class PresidentDashboard extends ConsumerStatefulWidget {
   const PresidentDashboard({super.key});
@@ -65,64 +64,32 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
       const MemberDashboard(),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(_appBarTitle(_selectedIndex)),
-        ),
-        actions: [
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            icon: Badge(
-              isLabelVisible: ref.watch(unreadCountProvider) > 0,
-              label: Text('${ref.watch(unreadCountProvider)}'),
-              child: const Icon(Icons.notifications_outlined),
+    return DashboardTabPopScope(
+      selectedIndex: _selectedIndex,
+      onSelectTab: (index) => setState(() => _selectedIndex = index),
+      child: Scaffold(
+        appBar: AppBar(
+          title: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(_appBarTitle(_selectedIndex)),
+          ),
+          actions: [
+            DashboardAppBarActions(
+              user: user,
+              onRefresh: () async {
+                ref.invalidate(presidentAllPaymentsStreamProvider);
+                ref.invalidate(allObligationsProvider);
+                ref.invalidate(activeLeviesProvider);
+                ref.invalidate(presidentExpensesStreamProvider);
+                ref.invalidate(presidentMembersStreamProvider);
+                ref.invalidate(presidentDashboardProvider);
+                ref.invalidate(meetingsStreamProvider);
+                ref.invalidate(expensesStreamProvider);
+              },
             ),
-            tooltip: 'Notifications',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => NotificationsScreen(currentUser: user),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: () {
-              ref.invalidate(presidentAllPaymentsStreamProvider);
-              ref.invalidate(allObligationsProvider);
-              ref.invalidate(activeLeviesProvider);
-              ref.invalidate(presidentExpensesStreamProvider);
-              ref.invalidate(presidentMembersStreamProvider);
-              ref.invalidate(presidentDashboardProvider);
-              ref.invalidate(meetingsStreamProvider);
-              ref.invalidate(expensesStreamProvider);
-            },
-          ),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign Out',
-            onPressed: () async {
-              try {
-                await ref.read(authProvider.notifier).signOut();
-              } catch (_) {}
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
-            },
-          ),
-        ],
-      ),
+          ],
+        ),
       body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -156,7 +123,8 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   String _appBarTitle(int index) {

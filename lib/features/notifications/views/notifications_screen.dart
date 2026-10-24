@@ -31,6 +31,7 @@ class NotificationsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _ApprovalModal(
         applicantUid: applicantUid,

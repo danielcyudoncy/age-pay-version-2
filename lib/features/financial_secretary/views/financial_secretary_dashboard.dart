@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/core/widgets/quick_action_button.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/auth/models/user_model.dart';
-import 'package:cls/features/auth/views/login_screen.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_tab_pop_scope.dart';
 import 'package:cls/features/dashboard/views/member_dashboard.dart';
 import 'package:cls/features/payments/views/cash_payment_screen.dart';
 import 'package:cls/features/levies/views/create_levy_screen.dart';
@@ -57,35 +59,25 @@ class _FinancialSecretaryDashboardState
       const MemberDashboard(),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Financial Secretary'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh Data',
-            onPressed: () {
-              ref.invalidate(allPaymentsStreamProvider);
-              ref.invalidate(allObligationsProvider);
-              ref.invalidate(activeLeviesProvider);
-              ref.invalidate(membersStreamProvider);
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign Out',
-            onPressed: () async {
-              await ref.read(authProvider.notifier).signOut();
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
-            },
-          ),
-        ],
-      ),
+    return DashboardTabPopScope(
+      selectedIndex: _selectedIndex,
+      onSelectTab: (index) => setState(() => _selectedIndex = index),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Financial Secretary'),
+          actions: [
+            DashboardAppBarActions(
+              user: user,
+              onRefresh: () async {
+                ref.invalidate(allPaymentsStreamProvider);
+                ref.invalidate(allObligationsProvider);
+                ref.invalidate(activeLeviesProvider);
+                ref.invalidate(membersStreamProvider);
+                ref.invalidate(financialSecretaryDashboardProvider);
+              },
+            ),
+          ],
+        ),
       body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -119,7 +111,8 @@ class _FinancialSecretaryDashboardState
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -598,12 +591,19 @@ class _HomeTab extends ConsumerWidget {
   ) {
     showModalBottomSheet(
       context: context,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => SafeArea(
+        top: false,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            MediaQuery.of(ctx).padding.bottom + 20,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -621,14 +621,15 @@ class _HomeTab extends ConsumerWidget {
               const Divider(height: 24),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.payments, color: Colors.teal),
+                leading:
+                    const Icon(Icons.payments, color: AppTheme.brandGreen),
                 title: const Text('Cash in Hand (To Remit)'),
                 trailing: Text(
                   currency.format(data.cashCollected),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Colors.teal,
+                    color: AppTheme.brandGreen,
                   ),
                 ),
               ),
@@ -658,11 +659,19 @@ class _HomeTab extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
+                height: 48,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.brandGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   child: const Text('Done'),
                 ),
               ),

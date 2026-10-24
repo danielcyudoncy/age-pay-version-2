@@ -355,6 +355,7 @@ class _AnnualReviewTabState extends ConsumerState<_AnnualReviewTab> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _MemberAttendanceDetailSheet(
         summary: summary,

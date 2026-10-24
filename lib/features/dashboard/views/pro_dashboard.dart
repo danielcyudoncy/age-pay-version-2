@@ -2,10 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/core/widgets/quick_action_button.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/auth/models/user_model.dart';
-import 'package:cls/features/auth/views/login_screen.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_tab_pop_scope.dart';
 import 'package:cls/features/dashboard/views/member_dashboard.dart';
 import 'package:cls/features/secretary/controllers/secretary_dashboard_provider.dart';
 import 'package:cls/features/secretary/views/announcements_screen.dart';
@@ -13,11 +15,6 @@ import 'package:cls/features/secretary/models/calendar_event_model.dart';
 import 'package:cls/features/secretary/views/calendar_screen.dart';
 import 'package:cls/features/secretary/views/documents_screen.dart';
 import 'package:cls/features/secretary/views/search_screen.dart';
-import 'package:cls/features/settings/views/settings_screen.dart';
-import 'package:cls/features/settings/views/help_screen.dart';
-import 'package:cls/features/settings/views/about_screen.dart';
-import 'package:cls/features/notifications/controllers/notification_provider.dart';
-import 'package:cls/features/notifications/views/notifications_screen.dart';
 import 'package:cls/features/meetings/controllers/meeting_provider.dart';
 
 class ProDashboard extends ConsumerStatefulWidget {
@@ -68,159 +65,79 @@ class _ProDashboardState extends ConsumerState<ProDashboard> {
       const MemberDashboard(),
     ];
 
-    return Scaffold(
-      appBar: (_selectedIndex == 1 || _selectedIndex == 2 || _selectedIndex == 3 || _selectedIndex == 4)
-          ? null
-          : AppBar(
-              title: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(_appBarTitle(_selectedIndex)),
-              ),
-              actions: [
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: Badge(
-                    isLabelVisible: ref.watch(unreadCountProvider) > 0,
-                    label: Text('${ref.watch(unreadCountProvider)}'),
-                    child: const Icon(Icons.notifications_outlined),
+    return DashboardTabPopScope(
+      selectedIndex: _selectedIndex,
+      onSelectTab: (index) => setState(() => _selectedIndex = index),
+      child: Scaffold(
+        appBar: (_selectedIndex == 1 || _selectedIndex == 2 || _selectedIndex == 3 || _selectedIndex == 4)
+            ? null
+            : AppBar(
+                title: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(_appBarTitle(_selectedIndex)),
+                ),
+                actions: [
+                  DashboardAppBarActions(
+                    user: user,
+                    extraActions: [
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.search, color: AppTheme.brandGreen),
+                        tooltip: 'Search directory',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SearchScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                    onRefresh: () async {
+                      final orgId = user.organizationId;
+                      ref.invalidate(announcementsStreamProvider(orgId));
+                      ref.invalidate(allCalendarEventsProvider(orgId));
+                      ref.invalidate(meetingsStreamProvider);
+                      ref.invalidate(documentsStreamProvider(orgId));
+                      ref.invalidate(membersStreamProvider);
+                    },
                   ),
-                  tooltip: 'Notifications',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => NotificationsScreen(currentUser: user),
-                      ),
-                    );
-                  },
-                ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.search),
-                  tooltip: 'Search directory',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SearchScreen(),
-                      ),
-                    );
-                  },
-                ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (value) async {
-                    if (value == 'settings') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SettingsScreen(),
-                        ),
-                      );
-                    } else if (value == 'help') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const HelpScreen(),
-                        ),
-                      );
-                    } else if (value == 'about') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AboutScreen(),
-                        ),
-                      );
-                    } else if (value == 'logout') {
-                      await ref.read(authProvider.notifier).signOut();
-                      if (context.mounted) {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (_) => const LoginScreen(),
-                          ),
-                          (route) => false,
-                        );
-                      }
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'settings',
-                      child: Row(
-                        children: [
-                          Icon(Icons.settings_outlined, size: 20),
-                          SizedBox(width: 8),
-                          Text('Settings'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'help',
-                      child: Row(
-                        children: [
-                          Icon(Icons.help_outline, size: 20),
-                          SizedBox(width: 8),
-                          Text('Help & Guides'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'about',
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline, size: 20),
-                          SizedBox(width: 8),
-                          Text('About AgePay'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuDivider(),
-                    const PopupMenuItem(
-                      value: 'logout',
-                      child: Row(
-                        children: [
-                          Icon(Icons.logout, size: 20, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Sign Out', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
+        body: IndexedStack(index: _selectedIndex, children: pages),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: 'Overview',
             ),
-      body: IndexedStack(index: _selectedIndex, children: pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Overview',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.campaign_outlined),
-            selectedIcon: Icon(Icons.campaign),
-            label: 'Broadcasts',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.event_outlined),
-            selectedIcon: Icon(Icons.event),
-            label: 'Calendar',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.perm_media_outlined),
-            selectedIcon: Icon(Icons.perm_media),
-            label: 'Media Hub',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'My Dues',
-          ),
-        ],
+            NavigationDestination(
+              icon: Icon(Icons.campaign_outlined),
+              selectedIcon: Icon(Icons.campaign),
+              label: 'Broadcasts',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.event_outlined),
+              selectedIcon: Icon(Icons.event),
+              label: 'Calendar',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.perm_media_outlined),
+              selectedIcon: Icon(Icons.perm_media),
+              label: 'Media Hub',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.account_balance_wallet_outlined),
+              selectedIcon: Icon(Icons.account_balance_wallet),
+              label: 'My Dues',
+            ),
+          ],
+        ),
       ),
     );
   }

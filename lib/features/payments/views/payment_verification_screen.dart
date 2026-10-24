@@ -208,6 +208,7 @@ class _PaymentVerificationScreenState
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -219,7 +220,12 @@ class _PaymentVerificationScreenState
         builder: (context, scrollController) {
           return SingleChildScrollView(
             controller: scrollController,
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.fromLTRB(
+              24,
+              24,
+              24,
+              MediaQuery.of(context).padding.bottom + 24,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
