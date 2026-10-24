@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/core/widgets/quick_action_button.dart';
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/auth/models/user_model.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_tab_pop_scope.dart';
 import 'package:cls/features/dashboard/views/member_dashboard.dart';
 import 'package:cls/features/meetings/controllers/meeting_provider.dart';
 import 'package:cls/features/meetings/models/meeting_model.dart';
@@ -64,48 +67,84 @@ class _SecretaryDashboardState extends ConsumerState<SecretaryDashboard> {
       _MoreTab(user: user),
     ];
 
-    return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: pages),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.people_outline),
-            activeIcon: Icon(Icons.people),
-            label: 'Members',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.event_outlined),
-            activeIcon: Icon(Icons.event),
-            label: 'Meetings',
-          ),
-          BottomNavigationBarItem(
-            icon: Badge(
-              isLabelVisible: announcementsCount > 0,
-              label: Text(announcementsCount.toString()),
-              child: const Icon(Icons.campaign_outlined),
+    return DashboardTabPopScope(
+      selectedIndex: _selectedIndex,
+      onSelectTab: _onItemTapped,
+      child: Scaffold(
+        appBar: _selectedIndex == 0
+            ? AppBar(
+                title: const Text('Secretary Dashboard'),
+                actions: [
+                  DashboardAppBarActions(
+                    user: user,
+                    extraActions: [
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.search, color: AppTheme.brandGreen),
+                        tooltip: 'Search directory',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SearchScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                    onRefresh: () async {
+                      ref.invalidate(membersStreamProvider);
+                      ref.invalidate(meetingsStreamProvider);
+                      ref.invalidate(announcementsStreamProvider(orgId));
+                      ref.invalidate(documentsStreamProvider(orgId));
+                      ref.invalidate(calendarEventsStreamProvider(orgId));
+                    },
+                  ),
+                ],
+              )
+            : null,
+        body: IndexedStack(index: _selectedIndex, children: pages),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed,
+          items: [
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Home',
             ),
-            activeIcon: Badge(
-              isLabelVisible: announcementsCount > 0,
-              label: Text(announcementsCount.toString()),
-              child: const Icon(Icons.campaign),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.people_outline),
+              activeIcon: Icon(Icons.people),
+              label: 'Members',
             ),
-            label: 'Announcements',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            activeIcon: Icon(Icons.account_balance_wallet),
-            label: 'My Account',
-          ),
-          const BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: 'More'),
-        ],
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.event_outlined),
+              activeIcon: Icon(Icons.event),
+              label: 'Meetings',
+            ),
+            BottomNavigationBarItem(
+              icon: Badge(
+                isLabelVisible: announcementsCount > 0,
+                label: Text(announcementsCount.toString()),
+                child: const Icon(Icons.campaign_outlined),
+              ),
+              activeIcon: Badge(
+                isLabelVisible: announcementsCount > 0,
+                label: Text(announcementsCount.toString()),
+                child: const Icon(Icons.campaign),
+              ),
+              label: 'Announcements',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.account_balance_wallet_outlined),
+              activeIcon: Icon(Icons.account_balance_wallet),
+              label: 'My Account',
+            ),
+            const BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: 'More'),
+          ],
+        ),
       ),
     );
   }
@@ -159,7 +198,7 @@ class _HomeTab extends ConsumerWidget {
       child: ListView(
         padding: EdgeInsets.fromLTRB(
           16,
-          36,
+          16,
           16,
           MediaQuery.paddingOf(context).bottom + 24,
         ),

@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/core/widgets/quick_action_button.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/auth/models/user_model.dart';
-import 'package:cls/features/auth/views/login_screen.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_tab_pop_scope.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
 import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dart'
     show memberTotalOutstandingProvider, memberObligationReconciliationProvider;
@@ -25,8 +27,6 @@ import 'package:cls/features/payments/views/cash_payment_screen.dart';
 import 'package:cls/features/payments/views/payment_verification_screen.dart';
 import 'package:cls/features/payments/views/make_payment_screen.dart';
 import 'package:cls/features/payments/models/payment_model.dart';
-import 'package:cls/features/notifications/controllers/notification_provider.dart';
-import 'package:cls/features/notifications/views/notifications_screen.dart';
 
 class TreasurerDashboard extends ConsumerStatefulWidget {
   const TreasurerDashboard({super.key});
@@ -81,86 +81,50 @@ class _TreasurerDashboardState extends ConsumerState<TreasurerDashboard> {
           const MemberDashboard(),
         ];
 
-        return Scaffold(
-          appBar: (_selectedIndex == 1 || _selectedIndex == 4)
-              ? null
-              : AppBar(
-                  title: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(_appBarTitle(_selectedIndex)),
-                  ),
-                  actions: [
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: Badge(
-                        isLabelVisible: ref.watch(unreadCountProvider) > 0,
-                        label: Text('${ref.watch(unreadCountProvider)}'),
-                        child: const Icon(Icons.notifications_outlined),
-                      ),
-                      tooltip: 'Notifications',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                NotificationsScreen(currentUser: user),
+        return DashboardTabPopScope(
+          selectedIndex: _selectedIndex,
+          onSelectTab: (index) => setState(() => _selectedIndex = index),
+          child: Scaffold(
+            appBar: (_selectedIndex == 1 || _selectedIndex == 4)
+                ? null
+                : AppBar(
+                    title: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(_appBarTitle(_selectedIndex)),
+                    ),
+                    actions: [
+                      DashboardAppBarActions(
+                        user: user,
+                        extraActions: [
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(
+                              Icons.assessment_outlined,
+                              color: AppTheme.brandGreen,
+                            ),
+                            tooltip: 'Financial Reports',
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ReportsScreen(),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.assessment_outlined),
-                      tooltip: 'Financial Reports',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ReportsScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.refresh),
-                      tooltip: 'Refresh',
-                      onPressed: () {
-                        ref.invalidate(allPaymentsStreamProvider);
-                        ref.invalidate(allObligationsProvider);
-                        ref.invalidate(activeLeviesProvider);
-                        ref.invalidate(expensesStreamProvider);
-                        ref.invalidate(membersStreamProvider);
-                        ref.invalidate(treasurerDashboardProvider);
-                      },
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.logout),
-                      tooltip: 'Sign Out',
-                      onPressed: () async {
-                        try {
-                          await ref.read(authProvider.notifier).signOut();
+                        ],
+                        onRefresh: () async {
                           ref.invalidate(allPaymentsStreamProvider);
                           ref.invalidate(allObligationsProvider);
                           ref.invalidate(activeLeviesProvider);
                           ref.invalidate(expensesStreamProvider);
                           ref.invalidate(membersStreamProvider);
                           ref.invalidate(treasurerDashboardProvider);
-                        } catch (_) {}
-                        if (context.mounted) {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                              builder: (_) => const LoginScreen(),
-                            ),
-                            (route) => false,
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                ),
+                        },
+                      ),
+                    ],
+                  ),
           body: IndexedStack(index: _selectedIndex, children: pages),
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: _selectedIndex,
@@ -194,7 +158,8 @@ class _TreasurerDashboardState extends ConsumerState<TreasurerDashboard> {
               ),
             ],
           ),
-        );
+        ),
+      );
       },
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),

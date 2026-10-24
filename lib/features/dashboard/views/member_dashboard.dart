@@ -20,7 +20,8 @@ import 'package:cls/features/meetings/controllers/meeting_rsvp_provider.dart';
 import 'package:cls/features/meetings/views/meeting_detail_screen.dart';
 import 'package:cls/features/reports/views/reports_screen.dart';
 import 'package:cls/features/expenses/views/expense_list_screen.dart';
-import 'package:cls/features/auth/views/login_screen.dart';
+import 'package:cls/core/theme/app_theme.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
 
 class MemberDashboard extends ConsumerWidget {
   const MemberDashboard({super.key});
@@ -56,37 +57,40 @@ class MemberDashboard extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.assessment_outlined),
-            tooltip: 'Financial Reports & Purse',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ReportsScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MemberProfileScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              try {
-                await ref.read(authProvider.notifier).signOut();
-              } catch (_) {}
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
+          DashboardAppBarActions(
+            user: user,
+            extraActions: [
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.assessment_outlined, color: AppTheme.brandGreen),
+                tooltip: 'Financial Reports & Purse',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ReportsScreen()),
+                  );
+                },
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.person_outline, color: AppTheme.brandGreen),
+                tooltip: 'My Profile',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MemberProfileScreen()),
+                  );
+                },
+              ),
+            ],
+            onRefresh: () async {
+              if (memberId != null) {
+                ref.invalidate(memberTotalPaidProvider(memberId));
+                ref.invalidate(memberTotalOutstandingProvider(memberId));
+                ref.invalidate(memberActiveLeviesProvider(memberId));
+                ref.invalidate(memberRecentPaymentsProvider(memberId));
               }
+              ref.invalidate(authProvider);
             },
           ),
         ],

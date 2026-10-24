@@ -5,7 +5,7 @@ import 'package:cls/features/admin/controllers/admin_provider.dart';
 import 'package:cls/features/admin/views/organization_management_screen.dart';
 import 'package:cls/features/admin/widgets/admin_metric_card.dart';
 import 'package:cls/features/admin/widgets/quick_action_card.dart';
-import 'package:cls/features/auth/views/login_screen.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
 
 class AdminDashboard extends ConsumerWidget {
   const AdminDashboard({super.key});
@@ -20,21 +20,11 @@ class AdminDashboard extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            tooltip: 'My Personal Dues',
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await ref.read(authProvider.notifier).signOut();
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
+          DashboardAppBarActions(
+            user: user,
+            onRefresh: () async {
+              ref.invalidate(organizationsStreamProvider);
+              ref.invalidate(adminDashboardProvider);
             },
           ),
         ],
