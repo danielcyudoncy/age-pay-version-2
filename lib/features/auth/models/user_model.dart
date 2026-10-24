@@ -18,6 +18,7 @@ class UserModel {
   final String? coFounderPhone;
   final MemberDuesStanding duesStanding;
   final double? openingBalance;
+  final UserRole? nationalRole;
 
   const UserModel({
     required this.uid,
@@ -36,6 +37,7 @@ class UserModel {
     this.coFounderPhone,
     this.duesStanding = MemberDuesStanding.newMember,
     this.openingBalance,
+    this.nationalRole,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -91,6 +93,21 @@ class UserModel {
           )
         : MemberDuesStanding.newMember;
 
+    final nationalRoleStr = data['nationalRole'] as String?;
+    final UserRole? parsedNationalRole = nationalRoleStr != null
+        ? UserRole.values.firstWhere(
+            (r) {
+              final val = nationalRoleStr.trim().toLowerCase();
+              return r.name.toLowerCase() == val ||
+                  ((val == 'pro' || val == 'public_relations_officer') &&
+                      r == UserRole.publicRelationsOfficer) ||
+                  ((val == 'provost' || val == 'chief_provost' || val == 'chief provost') &&
+                      r == UserRole.provost);
+            },
+            orElse: () => UserRole.member,
+          )
+        : null;
+
     return UserModel(
       uid: uid,
       organizationId: data['organizationId'] ?? uid,
@@ -108,6 +125,7 @@ class UserModel {
       coFounderPhone: data['coFounderPhone'],
       duesStanding: parsedStanding,
       openingBalance: (data['openingBalance'] as num?)?.toDouble(),
+      nationalRole: parsedNationalRole,
     );
   }
 
@@ -126,6 +144,7 @@ class UserModel {
       if (branchId != null) 'branchId': branchId,
       if (branchName != null) 'branchName': branchName,
       if (requestedRole != null) 'requestedRole': requestedRole!.name,
+      if (nationalRole != null) 'nationalRole': nationalRole!.name,
       if (coFounderName != null) 'coFounderName': coFounderName,
       if (coFounderPhone != null) 'coFounderPhone': coFounderPhone,
     };
@@ -154,6 +173,7 @@ class UserModel {
     String? coFounderPhone,
     MemberDuesStanding? duesStanding,
     double? openingBalance,
+    UserRole? nationalRole,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -172,8 +192,13 @@ class UserModel {
       coFounderPhone: coFounderPhone ?? this.coFounderPhone,
       duesStanding: duesStanding ?? this.duesStanding,
       openingBalance: openingBalance ?? this.openingBalance,
+      nationalRole: nationalRole ?? this.nationalRole,
     );
   }
 
-  bool get isExecutive => role.isExecutive;
+  bool get isExecutive =>
+      role.isExecutive || (nationalRole != null && nationalRole!.isExecutive);
+
+  bool get isNationalExecutive =>
+      nationalRole != null && nationalRole!.isExecutive;
 }

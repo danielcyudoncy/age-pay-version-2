@@ -16,6 +16,7 @@ import '../../auth/views/login_screen.dart';
 import '../../auth/views/organization_picker_screen.dart';
 import '../../auth/views/pending_approval_screen.dart';
 import '../../auth/views/co_founder_verification_dialog.dart';
+import '../../national/controllers/national_provider.dart';
 
 class HomeRouter extends ConsumerWidget {
   const HomeRouter({super.key});
@@ -62,8 +63,14 @@ class HomeRouter extends ConsumerWidget {
           return const OrganizationPickerScreen();
         }
 
+        final activeScope = ref.watch(activeExecutiveScopeProvider);
+        final effectiveRole =
+            (activeScope == ExecutiveScope.national && user.nationalRole != null)
+                ? user.nationalRole!
+                : user.role;
+
         Widget dashboard;
-        switch (user.role) {
+        switch (effectiveRole) {
           case UserRole.member:
             dashboard = const MemberDashboard();
             break;

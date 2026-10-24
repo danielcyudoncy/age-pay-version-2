@@ -73,6 +73,8 @@ class LevyCreationNotifier extends StateNotifier<LevyCreationState> {
     required String createdBy,
     String? targetGroup,
     String? organizationId,
+    String scope = 'branch',
+    String? branchId,
     List<String> memberIds = const [],
   }) async {
     state = state.copyWith(isLoading: true, error: null, isSuccess: false);
@@ -88,6 +90,8 @@ class LevyCreationNotifier extends StateNotifier<LevyCreationState> {
         dueDate: dueDate,
         createdBy: createdBy,
         targetGroup: targetGroup,
+        scope: scope,
+        branchId: branchId,
         isActive: true,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -112,6 +116,9 @@ class LevyCreationNotifier extends StateNotifier<LevyCreationState> {
           'dueDate': Timestamp.fromDate(dueDate),
           'createdAt': createdAt,
           'updatedAt': createdAt,
+          'scope': scope,
+          // ignore: use_null_aware_elements
+          if (branchId != null) 'branchId': branchId,
         };
       }).toList();
 

@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
+import 'package:cls/core/theme/app_theme.dart';
+import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/national/widgets/assign_national_office_dialog.dart';
 
 class EditMemberScreen extends ConsumerStatefulWidget {
   final MemberModel member;
@@ -256,6 +259,63 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
                   ),
                 ),
               const SizedBox(height: 24),
+              Builder(
+                builder: (context) {
+                  final currentUser = ref.watch(authProvider).valueOrNull;
+                  final canAssignNational = currentUser?.role == UserRole.president ||
+                      currentUser?.role == UserRole.superAdmin;
+                  if (!canAssignNational) return const SizedBox.shrink();
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.stars_rounded, color: AppTheme.brandGreen),
+                        label: Text(
+                          widget.member.nationalRole != null
+                              ? 'Edit National Office (${widget.member.nationalRole!.displayName})'
+                              : 'Assign to National Office',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.brandGreen,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppTheme.brandGreen),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final targetUser = UserModel(
+                            uid: widget.member.userId.isNotEmpty
+                                ? widget.member.userId
+                                : widget.member.id,
+                            organizationId: currentUser?.organizationId ?? '',
+                            email: widget.member.email,
+                            displayName: widget.member.fullName,
+                            phoneNumber: widget.member.phoneNumber,
+                            role: widget.member.role ?? UserRole.member,
+                            createdAt: widget.member.createdAt,
+                            branchId: widget.member.branchId,
+                            branchName: widget.member.branchName,
+                            nationalRole: widget.member.nationalRole,
+                          );
+                          final changed = await AssignNationalOfficeDialog.show(
+                            context,
+                            targetUser,
+                          );
+                          if (changed == true && context.mounted) {
+                            Navigator.of(context).pop(true);
+                          }
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
               SizedBox(
                 width: double.infinity,
                 height: 48,

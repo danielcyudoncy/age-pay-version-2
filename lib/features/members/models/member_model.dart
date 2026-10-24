@@ -16,6 +16,8 @@ class MemberModel {
   final String? profilePhotoUrl;
   final MemberDuesStanding duesStanding;
   final double? openingBalance;
+  final UserRole? role;
+  final UserRole? nationalRole;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -34,6 +36,8 @@ class MemberModel {
     this.profilePhotoUrl,
     this.duesStanding = MemberDuesStanding.newMember,
     this.openingBalance,
+    this.role,
+    this.nationalRole,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -47,6 +51,22 @@ class MemberModel {
             orElse: () => MemberDuesStanding.newMember,
           )
         : MemberDuesStanding.newMember;
+
+    final roleStr = data['role'] as String?;
+    final UserRole? parsedRole = roleStr != null
+        ? UserRole.values.firstWhere(
+            (r) => r.name.toLowerCase() == roleStr.trim().toLowerCase(),
+            orElse: () => UserRole.member,
+          )
+        : null;
+
+    final nationalRoleStr = data['nationalRole'] as String?;
+    final UserRole? parsedNationalRole = nationalRoleStr != null
+        ? UserRole.values.firstWhere(
+            (r) => r.name.toLowerCase() == nationalRoleStr.trim().toLowerCase(),
+            orElse: () => UserRole.member,
+          )
+        : null;
 
     return MemberModel(
       id: doc.id,
@@ -63,6 +83,8 @@ class MemberModel {
       profilePhotoUrl: data['profilePhotoUrl'],
       duesStanding: parsedStanding,
       openingBalance: (data['openingBalance'] as num?)?.toDouble(),
+      role: parsedRole,
+      nationalRole: parsedNationalRole,
       createdAt: _parseDate(data['createdAt']),
       updatedAt: _parseDate(data['updatedAt']),
     );
@@ -82,6 +104,8 @@ class MemberModel {
       if (openingBalance != null) 'openingBalance': openingBalance,
       if (branchId != null) 'branchId': branchId,
       if (branchName != null) 'branchName': branchName,
+      if (role != null) 'role': role!.name,
+      if (nationalRole != null) 'nationalRole': nationalRole!.name,
       'profilePhotoUrl': profilePhotoUrl,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -109,6 +133,8 @@ class MemberModel {
     String? profilePhotoUrl,
     MemberDuesStanding? duesStanding,
     double? openingBalance,
+    UserRole? role,
+    UserRole? nationalRole,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -127,6 +153,8 @@ class MemberModel {
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
       duesStanding: duesStanding ?? this.duesStanding,
       openingBalance: openingBalance ?? this.openingBalance,
+      role: role ?? this.role,
+      nationalRole: nationalRole ?? this.nationalRole,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
