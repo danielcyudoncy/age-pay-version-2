@@ -34,8 +34,6 @@ class _WaiverAuditLedgerScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pardon & Waiver Audit Ledger'),
-        backgroundColor: Colors.teal.shade900,
-        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [

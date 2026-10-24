@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/enums.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../meetings/models/meeting_model.dart';
@@ -115,8 +116,6 @@ class _MeetingDecorumScreenState extends ConsumerState<MeetingDecorumScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Meeting Decorum Roll-Call'),
-        backgroundColor: Colors.indigo.shade900,
-        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
@@ -124,8 +123,8 @@ class _MeetingDecorumScreenState extends ConsumerState<MeetingDecorumScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: Colors.indigo.shade900,
+            decoration: const BoxDecoration(
+              color: AppTheme.brandGreen,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,14 +244,15 @@ class _MeetingDecorumScreenState extends ConsumerState<MeetingDecorumScreen> {
                         children: [
                           CircleAvatar(
                             radius: 18,
-                            backgroundColor: Colors.indigo.shade100,
+                            backgroundColor:
+                                AppTheme.brandGreen.withValues(alpha: 0.12),
                             child: Text(
                               member.fullName.isNotEmpty
                                   ? member.fullName[0].toUpperCase()
                                   : '?',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.indigo.shade900,
+                                color: AppTheme.brandGreen,
                               ),
                             ),
                           ),

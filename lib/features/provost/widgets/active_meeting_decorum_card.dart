@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/theme/app_theme.dart';
 import '../controllers/provost_provider.dart';
 import '../views/meeting_decorum_screen.dart';
 import 'issue_penalty_sheet.dart';
@@ -75,10 +76,10 @@ class ActiveMeetingDecorumCard extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [
-            Colors.indigo.shade900,
-            Colors.blue.shade900,
+            AppTheme.brandGreen,
+            Color.fromARGB(255, 18, 80, 32),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -86,7 +87,7 @@ class ActiveMeetingDecorumCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.indigo.shade900.withValues(alpha: 0.3),
+            color: AppTheme.brandGreen.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

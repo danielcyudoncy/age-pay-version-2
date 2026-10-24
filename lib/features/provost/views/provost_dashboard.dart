@@ -3,11 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/enums.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../auth/models/user_model.dart';
 import '../../auth/views/login_screen.dart';
 import '../../dashboard/views/member_dashboard.dart';
 import '../../members/models/member_model.dart';
+import '../../notifications/controllers/notification_provider.dart';
+import '../../notifications/views/notifications_screen.dart';
 import '../../obligations/models/obligation_model.dart';
 import '../../secretary/controllers/secretary_dashboard_provider.dart';
 import '../../settings/views/about_screen.dart';
@@ -98,18 +101,51 @@ class _ProvostDashboardState extends ConsumerState<ProvostDashboard> {
       appBar: (_selectedIndex == 2 || _selectedIndex == 3)
           ? null
           : AppBar(
-              backgroundColor: Colors.indigo.shade900,
-              foregroundColor: Colors.white,
               title: FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text(_appBarTitle(_selectedIndex)),
               ),
               actions: [
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: Badge(
+                    isLabelVisible: ref.watch(unreadCountProvider) > 0,
+                    label: Text('${ref.watch(unreadCountProvider)}'),
+                    child: const Icon(Icons.notifications_outlined,
+                        color: AppTheme.brandGreen),
+                  ),
+                  tooltip: 'Notifications',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NotificationsScreen(currentUser: user),
+                      ),
+                    );
+                  },
+                ),
                 PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert),
+                  icon: const Icon(Icons.more_vert, color: AppTheme.brandGreen),
+                  tooltip: 'Menu',
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   onSelected: (value) async {
                     switch (value) {
+                      case 'refresh':
+                        ref.invalidate(provostPenaltiesStreamProvider);
+                        ref.invalidate(provostWaiversStreamProvider);
+                        ref.invalidate(pendingWaiversStreamProvider);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Dashboard refreshed'),
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        }
+                        break;
                       case 'settings':
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -164,45 +200,60 @@ class _ProvostDashboardState extends ConsumerState<ProvostDashboard> {
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    const PopupMenuItem<String>(
+                      value: 'refresh',
+                      child: Row(
+                        children: [
+                          Icon(Icons.refresh, size: 20, color: AppTheme.brandGreen),
+                          SizedBox(width: 12),
+                          Text('Refresh'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
                       value: 'settings',
                       child: Row(
                         children: [
-                          Icon(Icons.settings, size: 20),
-                          SizedBox(width: 8),
+                          Icon(Icons.settings_outlined, size: 20, color: AppTheme.brandGreen),
+                          SizedBox(width: 12),
                           Text('Settings'),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    const PopupMenuItem<String>(
                       value: 'help',
                       child: Row(
                         children: [
-                          Icon(Icons.help_outline, size: 20),
-                          SizedBox(width: 8),
+                          Icon(Icons.help_outline, size: 20, color: AppTheme.brandGreen),
+                          SizedBox(width: 12),
                           Text('Help & Support'),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    const PopupMenuItem<String>(
                       value: 'about',
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline, size: 20),
-                          SizedBox(width: 8),
+                          Icon(Icons.info_outline, size: 20, color: AppTheme.brandGreen),
+                          SizedBox(width: 12),
                           Text('About AgePay'),
                         ],
                       ),
                     ),
                     const PopupMenuDivider(),
-                    const PopupMenuItem(
+                    PopupMenuItem<String>(
                       value: 'logout',
                       child: Row(
                         children: [
-                          Icon(Icons.logout, size: 20, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Sign Out',
-                              style: TextStyle(color: Colors.red)),
+                          Icon(Icons.logout, size: 20, color: Colors.red.shade700),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Sign Out',
+                            style: TextStyle(
+                              color: Colors.red.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -284,9 +335,9 @@ class _ProvostHomeTab extends ConsumerWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.indigo.shade900,
-                borderRadius: const BorderRadius.only(
+              decoration: const BoxDecoration(
+                color: AppTheme.brandGreen,
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
                 ),
@@ -299,8 +350,8 @@ class _ProvostHomeTab extends ConsumerWidget {
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: Colors.amberAccent,
-                        child: Icon(Icons.gavel_rounded,
-                            color: Colors.indigo.shade900, size: 22),
+                        child: const Icon(Icons.gavel_rounded,
+                            color: AppTheme.brandGreen, size: 22),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -755,13 +806,13 @@ class _NoActiveMeetingTab extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.indigo.shade50,
+                color: AppTheme.brandGreen.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.event_busy_outlined,
                 size: 48,
-                color: Colors.indigo.shade800,
+                color: AppTheme.brandGreen,
               ),
             ),
             const SizedBox(height: 16),
@@ -781,7 +832,7 @@ class _NoActiveMeetingTab extends StatelessWidget {
               icon: const Icon(Icons.arrow_back),
               label: const Text('Back to Provost Dashboard'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo.shade900,
+                backgroundColor: AppTheme.brandGreen,
                 foregroundColor: Colors.white,
               ),
             ),
