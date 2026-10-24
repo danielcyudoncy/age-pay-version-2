@@ -5,6 +5,7 @@ import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/levies/models/levy_model.dart';
 import 'package:cls/features/obligations/models/obligation_model.dart';
 import 'package:cls/features/national/models/branch_compliance_report.dart';
+import 'package:cls/features/national/models/national_contribution_record.dart';
 
 void main() {
   group('BranchComplianceReport', () {
@@ -199,6 +200,31 @@ void main() {
 
       final copy = obligation.copyWith(scope: 'branch');
       expect(copy.scope, 'branch');
+    });
+  });
+
+  group('NationalContributionRecord', () {
+    final now = DateTime(2024, 6, 1);
+
+    test('initializes and holds contribution attributes correctly', () {
+      final record = NationalContributionRecord(
+        paymentId: 'pay_123',
+        memberId: 'm_1',
+        memberName: 'Dr. Emmanuel Okafor',
+        branchId: 'br_lagos',
+        branchName: 'Lagos Branch',
+        levyId: 'levy_nat_1',
+        levyTitle: '2026 National Convention Levy',
+        amount: 25000.0,
+        paidAt: now,
+        method: PaymentMethod.bankTransfer,
+      );
+
+      expect(record.paymentId, 'pay_123');
+      expect(record.memberName, 'Dr. Emmanuel Okafor');
+      expect(record.branchName, 'Lagos Branch');
+      expect(record.amount, 25000.0);
+      expect(record.method, PaymentMethod.bankTransfer);
     });
   });
 }

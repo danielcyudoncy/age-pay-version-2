@@ -6,7 +6,7 @@ import '../../auth/controllers/auth_provider.dart';
 import '../../auth/models/user_model.dart';
 import '../../auth/views/login_screen.dart';
 import '../../national/controllers/national_provider.dart';
-import '../../national/views/national_leaderboard_screen.dart';
+import '../../national/views/national_hub_screen.dart';
 import '../../notifications/controllers/notification_provider.dart';
 import '../../notifications/views/notifications_screen.dart';
 import '../../settings/views/about_screen.dart';
@@ -134,10 +134,17 @@ class DashboardAppBarActions extends ConsumerWidget {
                   }
                 }
                 break;
+              case 'national_hub':
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const NationalHubScreen(initialTabIndex: 0),
+                  ),
+                );
+                break;
               case 'leaderboard':
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => const NationalLeaderboardScreen(),
+                    builder: (_) => const NationalHubScreen(initialTabIndex: 2),
                   ),
                 );
                 break;
@@ -230,6 +237,16 @@ class DashboardAppBarActions extends ConsumerWidget {
                   ],
                 ),
               ),
+            const PopupMenuItem<String>(
+              value: 'national_hub',
+              child: Row(
+                children: [
+                  Icon(Icons.public, size: 20, color: AppTheme.brandGreen),
+                  SizedBox(width: 12),
+                  Text('National Assembly & Ledger'),
+                ],
+              ),
+            ),
             if (hasNationalRole ||
                 targetUser?.role == UserRole.superAdmin ||
                 targetUser?.role == UserRole.president ||

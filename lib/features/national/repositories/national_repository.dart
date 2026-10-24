@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/constants/enums.dart';
 import '../../admin/models/branch_model.dart';
+import '../../auth/models/user_model.dart';
+import '../../payments/models/payment_model.dart';
 import '../models/branch_compliance_report.dart';
+import '../models/national_contribution_record.dart';
 
 class NationalRepository {
   final FirebaseFirestore _firestore;
@@ -237,5 +240,139 @@ class NationalRepository {
 
       return reports;
     });
+  }
+
+  /// Public transparency stream of individual contributions to National levies/dues.
+  /// Visible to all members in the organization.
+  Stream<List<NationalContributionRecord>> getNationalContributionsStream(
+    String organizationId, {
+    String? levyId,
+  }) {
+    return _firestore
+        .collection('payments')
+        .where('organizationId', isEqualTo: organizationId)
+        .where('status', isEqualTo: 'approved')
+        .snapshots()
+        .asyncMap((paymentsSnap) async {
+      if (paymentsSnap.docs.isEmpty) return <NationalContributionRecord>[];
+
+      // Fetch national obligations
+      Query obligationsQuery = _firestore
+          .collection('obligations')
+          .where('organizationId', isEqualTo: organizationId);
+
+      if (levyId != null && levyId.isNotEmpty) {
+        obligationsQuery = obligationsQuery.where('levyId', isEqualTo: levyId);
+      } else {
+        obligationsQuery =
+            obligationsQuery.where('scope', isEqualTo: 'national');
+      }
+
+      final obligationsSnap = await obligationsQuery.get();
+      if (obligationsSnap.docs.isEmpty) return <NationalContributionRecord>[];
+
+      // obligationId -> Map details
+      final nationalObligationsMap = <String, Map<String, dynamic>>{};
+      for (final doc in obligationsSnap.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        nationalObligationsMap[doc.id] = data;
+      }
+
+      // Fetch users to resolve member branch names
+      final usersSnap = await _firestore
+          .collection('users')
+          .where('organizationId', isEqualTo: organizationId)
+          .get();
+
+      final userBranchMap = <String, String>{};
+      final userDisplayNameMap = <String, String>{};
+      for (final doc in usersSnap.docs) {
+        final data = doc.data();
+        userBranchMap[doc.id] =
+            data['branchName'] as String? ?? 'General Member';
+        userDisplayNameMap[doc.id] =
+            data['displayName'] as String? ?? 'Member';
+      }
+
+      final records = <NationalContributionRecord>[];
+
+      for (final payDoc in paymentsSnap.docs) {
+        final payment = PaymentModel.fromFirestore(payDoc);
+        final payerName = payment.memberName ??
+            userDisplayNameMap[payment.memberId] ??
+            'Member';
+        final branchName = userBranchMap[payment.memberId] ?? 'General Member';
+
+        for (final alloc in payment.allocations) {
+          if (nationalObligationsMap.containsKey(alloc.obligationId)) {
+            final obData = nationalObligationsMap[alloc.obligationId]!;
+            final levyTitle =
+                obData['title'] as String? ?? 'National Obligation';
+            final obLevyId = obData['levyId'] as String? ?? '';
+            final branchId = obData['branchId'] as String?;
+
+            records.add(
+              NationalContributionRecord(
+                paymentId: payment.id,
+                memberId: payment.memberId,
+                memberName: payerName,
+                branchId: branchId,
+                branchName: branchName,
+                levyId: obLevyId,
+                levyTitle: levyTitle,
+                amount: alloc.amount,
+                paidAt: payment.createdAt,
+                method: payment.method,
+              ),
+            );
+          }
+        }
+      }
+
+      // Sort newest contributions first
+      records.sort((a, b) => b.paidAt.compareTo(a.paidAt));
+      return records;
+    });
+  }
+
+  /// Streams all active members belonging to the organization (National Assembly roll).
+  Stream<List<UserModel>> getNationalMembersStream(String organizationId) {
+    return _firestore
+        .collection('users')
+        .where('organizationId', isEqualTo: organizationId)
+        .where('isActive', isEqualTo: true)
+        .snapshots()
+        .map((snap) {
+      final members =
+          snap.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+
+      // Sort: National Officers first, then branch officers, then alphabetically
+      members.sort((a, b) {
+        final aScore = _roleWeight(a);
+        final bScore = _roleWeight(b);
+        if (aScore != bScore) return bScore.compareTo(aScore);
+        return a.displayName.toLowerCase().compareTo(
+              b.displayName.toLowerCase(),
+            );
+      });
+
+      return members;
+    });
+  }
+
+  int _roleWeight(UserModel user) {
+    if (user.nationalRole == UserRole.president) return 100;
+    if (user.nationalRole == UserRole.secretary) return 90;
+    if (user.nationalRole == UserRole.financialSecretary) return 85;
+    if (user.nationalRole == UserRole.treasurer) return 80;
+    if (user.nationalRole != null) return 75;
+    if (user.role == UserRole.president) return 60;
+    if (user.role == UserRole.secretary) return 55;
+    if (user.role == UserRole.financialSecretary) return 50;
+    if (user.role == UserRole.treasurer) return 45;
+    if (user.role == UserRole.superAdmin) {
+      return 40;
+    }
+    return 10;
   }
 }
