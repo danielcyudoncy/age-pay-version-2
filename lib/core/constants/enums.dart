@@ -8,6 +8,7 @@ enum UserRole {
   viceTreasurer,
   financialSecretary,
   auditor,
+  publicRelationsOfficer,
   executiveMember,
   committeeChair,
   member,
@@ -15,6 +16,37 @@ enum UserRole {
 
 extension UserRoleExtension on UserRole {
   bool get isExecutive => this != UserRole.member;
+
+  String get displayName {
+    switch (this) {
+      case UserRole.superAdmin:
+        return 'Super Admin';
+      case UserRole.president:
+        return 'President';
+      case UserRole.vicePresident:
+        return 'Vice President';
+      case UserRole.secretary:
+        return 'Secretary';
+      case UserRole.viceSecretary:
+        return 'Vice Secretary';
+      case UserRole.treasurer:
+        return 'Treasurer';
+      case UserRole.viceTreasurer:
+        return 'Vice Treasurer';
+      case UserRole.financialSecretary:
+        return 'Financial Secretary';
+      case UserRole.auditor:
+        return 'Auditor';
+      case UserRole.publicRelationsOfficer:
+        return 'Public Relations Officer';
+      case UserRole.executiveMember:
+        return 'Executive Member';
+      case UserRole.committeeChair:
+        return 'Committee Chair';
+      case UserRole.member:
+        return 'Member';
+    }
+  }
 }
 
 enum ObligationType {

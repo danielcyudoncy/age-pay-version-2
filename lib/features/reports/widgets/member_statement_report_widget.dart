@@ -136,35 +136,38 @@ class MemberStatementReportWidget extends StatelessWidget {
         const SizedBox(height: 16),
 
         // KPIs
-        Row(
-          children: [
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Total Obligations',
-                value: _currency.format(totalObligations),
-                icon: Icons.assignment_outlined,
-                color: theme.colorScheme.primary,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Total Obligations',
+                  value: _currency.format(totalObligations),
+                  icon: Icons.assignment_outlined,
+                  color: theme.colorScheme.primary,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Total Paid',
-                value: _currency.format(totalPaid),
-                icon: Icons.check_circle_outline,
-                color: Colors.green,
+              const SizedBox(width: 8),
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Total Paid',
+                  value: _currency.format(totalPaid),
+                  icon: Icons.check_circle_outline,
+                  color: Colors.green,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Outstanding Balance',
-                value: _currency.format(totalOutstanding),
-                icon: Icons.pending_actions_outlined,
-                color: totalOutstanding > 0 ? Colors.orange : Colors.green,
+              const SizedBox(width: 8),
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Outstanding Balance',
+                  value: _currency.format(totalOutstanding),
+                  icon: Icons.pending_actions_outlined,
+                  color: totalOutstanding > 0 ? Colors.orange : Colors.green,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 20),
 

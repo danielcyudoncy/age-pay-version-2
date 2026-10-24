@@ -237,35 +237,38 @@ class FinancialSummaryReportWidget extends StatelessWidget {
         const SizedBox(height: 16),
 
         // KPIs
-        Row(
-          children: [
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Collection',
-                value: _currency.format(totalCollections),
-                icon: Icons.account_balance_wallet_outlined,
-                color: Colors.green,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Collection',
+                  value: _currency.format(totalCollections),
+                  icon: Icons.account_balance_wallet_outlined,
+                  color: Colors.green,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Expenses',
-                value: _currency.format(totalExpenses),
-                icon: Icons.shopping_bag_outlined,
-                color: Colors.red,
+              const SizedBox(width: 8),
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Expenses',
+                  value: _currency.format(totalExpenses),
+                  icon: Icons.shopping_bag_outlined,
+                  color: Colors.red,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ReportKpiCard(
-                title: 'Unpaid Dues',
-                value: _currency.format(totalOutstanding),
-                icon: Icons.warning_amber_rounded,
-                color: totalOutstanding > 0 ? Colors.orange : Colors.green,
+              const SizedBox(width: 8),
+              Expanded(
+                child: ReportKpiCard(
+                  title: 'Unpaid Dues',
+                  value: _currency.format(totalOutstanding),
+                  icon: Icons.warning_amber_rounded,
+                  color: totalOutstanding > 0 ? Colors.orange : Colors.green,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 20),
 

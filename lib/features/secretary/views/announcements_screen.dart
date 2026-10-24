@@ -44,24 +44,6 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
       ),
       body: announcementsAsync.when(
         data: (announcements) {
-          if (announcements.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.campaign_outlined, size: 64, color: Colors.grey.shade400),
-                  const SizedBox(height: 16),
-                  const Text('No announcements yet', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Tap a date on the calendar, then + to add one.',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                ],
-              ),
-            );
-          }
-
           final announcementDates = announcements
               .where((a) => a.announcementDate != null)
               .map((a) => DateFormat('yyyy-MM-dd').format(a.announcementDate!))
@@ -116,14 +98,34 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                ...announcements.map(
-                  (a) => _AnnouncementCard(
-                    announcement: a,
-                    dateFormat: dateFormat,
-                    onEdit: () => _showEditDialog(context, a, user),
-                    onDelete: () => _deleteAnnouncement(a.id, orgId),
+                if (announcements.isEmpty)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          Icon(Icons.campaign_outlined, size: 48, color: Colors.grey.shade400),
+                          const SizedBox(height: 12),
+                          const Text('No announcements yet', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Tap a date on the calendar, then tap Add or + above.',
+                            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  ...announcements.map(
+                    (a) => _AnnouncementCard(
+                      announcement: a,
+                      dateFormat: dateFormat,
+                      onEdit: () => _showEditDialog(context, a, user),
+                      onDelete: () => _deleteAnnouncement(a.id, orgId),
+                    ),
                   ),
-                ),
               ],
             ),
           );
@@ -202,22 +204,35 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
             ElevatedButton(
               onPressed: () async {
                 if (titleController.text.trim().isEmpty) return;
-                final controller = ref.read(announcementControllerProvider);
-                final announcement = AnnouncementModel(
-                  id: '',
-                  organizationId: user.organizationId,
-                  title: titleController.text.trim(),
-                  body: bodyController.text.trim(),
-                  category: selectedCategory,
-                  isPinned: isPinned,
-                  announcementDate: announcementDate,
-                  createdBy: user.uid,
-                  createdAt: DateTime.now(),
-                  updatedAt: DateTime.now(),
-                );
-                await controller.createAnnouncement(announcement);
-                if (ctx.mounted) Navigator.pop(ctx);
-                ref.invalidate(announcementsStreamProvider(user.uid));
+                try {
+                  final controller = ref.read(announcementControllerProvider);
+                  final announcement = AnnouncementModel(
+                    id: '',
+                    organizationId: user.organizationId,
+                    title: titleController.text.trim(),
+                    body: bodyController.text.trim(),
+                    category: selectedCategory,
+                    isPinned: isPinned,
+                    announcementDate: announcementDate,
+                    createdBy: user.uid,
+                    createdAt: DateTime.now(),
+                    updatedAt: DateTime.now(),
+                  );
+                  await controller.createAnnouncement(announcement);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  ref.invalidate(announcementsStreamProvider(user.organizationId));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Announcement created successfully')),
+                    );
+                  }
+                } catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(backgroundColor: Colors.red, content: Text('Failed to create announcement: $e')),
+                    );
+                  }
+                }
               },
               child: const Text('Create'),
             ),
@@ -282,17 +297,25 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
             ElevatedButton(
               onPressed: () async {
                 if (titleController.text.trim().isEmpty) return;
-                final controller = ref.read(announcementControllerProvider);
-                final updated = announcement.copyWith(
-                  title: titleController.text.trim(),
-                  body: bodyController.text.trim(),
-                  category: selectedCategory,
-                  isPinned: isPinned,
-                  announcementDate: announcementDate,
-                );
-                await controller.updateAnnouncement(updated);
-                if (ctx.mounted) Navigator.pop(ctx);
-                ref.invalidate(announcementsStreamProvider(user.uid));
+                try {
+                  final controller = ref.read(announcementControllerProvider);
+                  final updated = announcement.copyWith(
+                    title: titleController.text.trim(),
+                    body: bodyController.text.trim(),
+                    category: selectedCategory,
+                    isPinned: isPinned,
+                    announcementDate: announcementDate,
+                  );
+                  await controller.updateAnnouncement(updated);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  ref.invalidate(announcementsStreamProvider(user.organizationId));
+                } catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(backgroundColor: Colors.red, content: Text('Failed to update announcement: $e')),
+                    );
+                  }
+                }
               },
               child: const Text('Save'),
             ),
@@ -303,9 +326,17 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
   }
 
   Future<void> _deleteAnnouncement(String id, String orgId) async {
-    final controller = ref.read(announcementControllerProvider);
-    await controller.deleteAnnouncement(id);
-    ref.invalidate(announcementsStreamProvider(orgId));
+    try {
+      final controller = ref.read(announcementControllerProvider);
+      await controller.deleteAnnouncement(id);
+      ref.invalidate(announcementsStreamProvider(orgId));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.red, content: Text('Failed to delete announcement: $e')),
+        );
+      }
+    }
   }
 }
 
@@ -378,7 +409,7 @@ class _MonthCalendar extends StatelessWidget {
     final now = DateTime.now();
     final firstDayOfMonth = DateTime(selectedDate.year, selectedDate.month, 1);
     final daysInMonth = DateTime(selectedDate.year, selectedDate.month + 1, 0).day;
-    final startWeekday = firstDayOfMonth.weekday % 7;
+    final startWeekday = (firstDayOfMonth.weekday - 1);
 
     return Card(
       child: Padding(
@@ -423,8 +454,8 @@ class _MonthCalendar extends StatelessWidget {
                   _DayCell(
                     date: DateTime(selectedDate.year, selectedDate.month, day),
                     isSelected:
-                        selectedDate.year == now.year &&
-                        selectedDate.month == now.month &&
+                        selectedDate.year == selectedDate.year &&
+                        selectedDate.month == selectedDate.month &&
                         selectedDate.day == day,
                     isToday: now.year == selectedDate.year && now.month == selectedDate.month && now.day == day,
                     hasAnnouncement: announcementDates.contains(

@@ -25,7 +25,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final user = authState.valueOrNull;
-    final orgId = user?.uid ?? '';
+    final orgId = user?.organizationId.isNotEmpty == true ? user!.organizationId : (user?.uid ?? '');
     final documentsAsync = ref.watch(documentsStreamProvider(orgId));
 
     return Scaffold(
@@ -165,10 +165,11 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
             ElevatedButton(
               onPressed: () async {
                 if (titleController.text.trim().isEmpty || pickedFile == null) return;
+                final targetOrgId = user.organizationId.isNotEmpty ? user.organizationId : user.uid;
                 final controller = ref.read(documentControllerProvider);
                 final doc = DocumentModel(
                   id: '',
-                  organizationId: user.uid,
+                  organizationId: targetOrgId,
                   title: titleController.text.trim(),
                   description: descriptionController.text.trim(),
                   category: _selectedCategory,
@@ -180,11 +181,24 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
                   uploadedAt: DateTime.now(),
                   updatedAt: DateTime.now(),
                 );
-                final docId = await controller.createDocument(doc);
-                final result = await controller.uploadFile(docId, pickedFile!, pickedFileName);
-                await controller.updateDocument(doc.copyWith(id: docId, fileUrl: result['url']!));
-                if (ctx.mounted) Navigator.pop(ctx);
-                ref.invalidate(documentsStreamProvider(user.uid));
+                try {
+                  final docId = await controller.createDocument(doc);
+                  final result = await controller.uploadFile(docId, pickedFile!, pickedFileName);
+                  await controller.updateDocument(doc.copyWith(id: docId, fileUrl: result['url']!));
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  ref.invalidate(documentsStreamProvider(targetOrgId));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Document uploaded successfully')),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to upload document: $e')),
+                    );
+                  }
+                }
               },
               child: const Text('Upload'),
             ),

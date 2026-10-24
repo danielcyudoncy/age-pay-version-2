@@ -7,6 +7,7 @@ class ReportKpiCard extends StatelessWidget {
   final IconData icon;
   final Color? color;
   final double? titleFontSize;
+  final int titleMaxLines;
 
   const ReportKpiCard({
     super.key,
@@ -16,6 +17,7 @@ class ReportKpiCard extends StatelessWidget {
     required this.icon,
     this.color,
     this.titleFontSize,
+    this.titleMaxLines = 2,
   });
 
   @override
@@ -37,33 +39,37 @@ class ReportKpiCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 28),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 1),
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(icon, size: 14, color: accentColor),
                   ),
-                  child: Icon(icon, size: 14, color: accentColor),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
+                  const SizedBox(width: 6),
+                  Expanded(
                     child: Text(
                       title,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
-                        fontSize: titleFontSize ?? 10,
+                        fontSize: titleFontSize ?? 11,
+                        height: 1.2,
                       ),
-                      maxLines: 1,
+                      maxLines: titleMaxLines,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 8),
             FittedBox(

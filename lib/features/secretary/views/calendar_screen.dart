@@ -9,6 +9,8 @@ import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/secretary/controllers/calendar_event_provider.dart';
 import 'package:cls/features/secretary/controllers/secretary_dashboard_provider.dart';
 import 'package:cls/features/secretary/models/calendar_event_model.dart';
+import 'package:cls/features/secretary/controllers/announcement_provider.dart';
+import 'package:cls/features/meetings/controllers/meeting_provider.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -26,15 +28,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         user.role == UserRole.president ||
         user.role == UserRole.vicePresident ||
         user.role == UserRole.secretary ||
-        user.role == UserRole.viceSecretary;
+        user.role == UserRole.viceSecretary ||
+        user.role == UserRole.publicRelationsOfficer;
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final user = authState.valueOrNull;
-    final orgId = user?.uid ?? '';
-    final eventsAsync = ref.watch(calendarEventsStreamProvider(orgId));
+    final orgId = user?.organizationId.isNotEmpty == true ? user!.organizationId : (user?.uid ?? '');
+    final eventsAsync = ref.watch(allCalendarEventsProvider(orgId));
     final dateFormat = DateFormat('MMM dd, yyyy \u2022 HH:mm');
     final canManage = _canManageEvents(user);
 
@@ -56,13 +59,25 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             return DateFormat('yyyy-MM-dd').format(e.startDate) == selectedDateStr;
           }).toList()..sort((a, b) => a.startDate.compareTo(b.startDate));
 
-          final upcoming = events.where((e) => !e.startDate.isBefore(now)).toList()
+          bool isPast(CalendarEventModel e) {
+            if (e.allDay) {
+              final endOfDay = DateTime(e.endDate.year, e.endDate.month, e.endDate.day, 23, 59, 59);
+              return endOfDay.isBefore(now);
+            }
+            return e.endDate.isBefore(now);
+          }
+
+          final upcoming = events.where((e) => !isPast(e)).toList()
             ..sort((a, b) => a.startDate.compareTo(b.startDate));
-          final past = events.where((e) => e.startDate.isBefore(now)).toList()
+          final past = events.where((e) => isPast(e)).toList()
             ..sort((a, b) => b.startDate.compareTo(a.startDate));
 
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(calendarEventsStreamProvider(orgId)),
+            onRefresh: () async {
+              ref.invalidate(calendarEventsStreamProvider(orgId));
+              ref.invalidate(announcementsStreamProvider(orgId));
+              ref.invalidate(meetingsStreamProvider);
+            },
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 16,
@@ -96,6 +111,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ...selectedDayEvents.map((e) => _EventCard(
                     event: e,
                     dateFormat: dateFormat,
+                    onTap: () => _showEventDetails(context, e, user, canManage),
                     onEdit: canManage ? () => _showEditDialog(context, user, e) : null,
                     onDelete: canManage ? () => _confirmDelete(context, e) : null,
                   )),
@@ -113,6 +129,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ...upcoming.map((e) => _EventCard(
                     event: e,
                     dateFormat: dateFormat,
+                    onTap: () => _showEventDetails(context, e, user, canManage),
                     onEdit: canManage ? () => _showEditDialog(context, user, e) : null,
                     onDelete: canManage ? () => _confirmDelete(context, e) : null,
                   )),
@@ -130,6 +147,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ...past.map((e) => _EventCard(
                     event: e,
                     dateFormat: dateFormat,
+                    onTap: () => _showEventDetails(context, e, user, canManage),
                     onEdit: canManage ? () => _showEditDialog(context, user, e) : null,
                     onDelete: canManage ? () => _confirmDelete(context, e) : null,
                   )),
@@ -145,7 +163,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               const SizedBox(height: 16),
               Text('Error: $error', style: const TextStyle(color: Colors.red)),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: () => ref.invalidate(calendarEventsStreamProvider(orgId)), child: const Text('Retry')),
+              ElevatedButton(
+                onPressed: () {
+                  ref.invalidate(calendarEventsStreamProvider(orgId));
+                  ref.invalidate(announcementsStreamProvider(orgId));
+                  ref.invalidate(meetingsStreamProvider);
+                },
+                child: const Text('Retry'),
+              ),
             ],
           ),
         ),
@@ -159,8 +184,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final descriptionController = TextEditingController();
     final locationController = TextEditingController();
     CalendarEventType selectedType = CalendarEventType.communityEvent;
-    DateTime startDate = initialDate ?? DateTime.now();
-    DateTime endDate = (initialDate ?? DateTime.now()).add(const Duration(hours: 2));
+    DateTime startDate = initialDate != null
+        ? DateTime(initialDate.year, initialDate.month, initialDate.day, 9, 0)
+        : DateTime.now();
+    DateTime endDate = startDate.add(const Duration(hours: 2));
 
     showDialog(
       context: context,
@@ -239,10 +266,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('End date must be after start date')));
                   return;
                 }
+                final targetOrgId = user.organizationId.isNotEmpty ? user.organizationId : user.uid;
                 final controller = ref.read(calendarEventControllerProvider);
                 final event = CalendarEventModel(
                   id: '',
-                  organizationId: user.uid,
+                  organizationId: targetOrgId,
                   title: titleController.text.trim(),
                   description: descriptionController.text.trim(),
                   type: selectedType,
@@ -253,9 +281,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   createdAt: DateTime.now(),
                   updatedAt: DateTime.now(),
                 );
-                await controller.createEvent(event);
-                if (ctx.mounted) Navigator.pop(ctx);
-                ref.invalidate(calendarEventsStreamProvider(user.uid));
+                try {
+                  await controller.createEvent(event);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  ref.invalidate(calendarEventsStreamProvider(targetOrgId));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Event scheduled successfully')),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to schedule event: $e')),
+                    );
+                  }
+                }
               },
               child: const Text('Create'),
             ),
@@ -351,19 +392,67 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('End date must be after start date')));
                   return;
                 }
-                final controller = ref.read(calendarEventControllerProvider);
-                final updatedEvent = event.copyWith(
-                  title: titleController.text.trim(),
-                  description: descriptionController.text.trim(),
-                  type: selectedType,
-                  startDate: startDate,
-                  endDate: endDate,
-                  location: locationController.text.trim().isEmpty ? null : locationController.text.trim(),
-                  updatedAt: DateTime.now(),
-                );
-                await controller.updateEvent(updatedEvent);
-                if (ctx.mounted) Navigator.pop(ctx);
-                ref.invalidate(calendarEventsStreamProvider(user.uid));
+                final targetOrgId = user.organizationId.isNotEmpty ? user.organizationId : user.uid;
+                try {
+                  if (event.id.startsWith('announcement_')) {
+                    final announcementId = event.id.replaceFirst('announcement_', '');
+                    final controller = ref.read(announcementControllerProvider);
+                    final announcements = ref.read(announcementsStreamProvider(targetOrgId)).valueOrNull ?? [];
+                    final existing = announcements.where((a) => a.id == announcementId).firstOrNull;
+                    if (existing != null) {
+                      await controller.updateAnnouncement(
+                        existing.copyWith(
+                          title: titleController.text.trim(),
+                          body: descriptionController.text.trim(),
+                          announcementDate: startDate,
+                          updatedAt: DateTime.now(),
+                        ),
+                      );
+                      ref.invalidate(announcementsStreamProvider(targetOrgId));
+                    }
+                  } else if (event.id.startsWith('meeting_')) {
+                    final meetingId = event.id.replaceFirst('meeting_', '');
+                    final controller = ref.read(meetingControllerProvider);
+                    final meetings = ref.read(meetingsStreamProvider).valueOrNull ?? [];
+                    final existing = meetings.where((m) => m.id == meetingId).firstOrNull;
+                    if (existing != null) {
+                      await controller.updateMeeting(
+                        existing.copyWith(
+                          title: titleController.text.trim(),
+                          venue: locationController.text.trim(),
+                          meetingDate: startDate,
+                          updatedAt: DateTime.now(),
+                        ),
+                      );
+                      ref.invalidate(meetingsStreamProvider);
+                    }
+                  } else {
+                    final controller = ref.read(calendarEventControllerProvider);
+                    final updatedEvent = event.copyWith(
+                      title: titleController.text.trim(),
+                      description: descriptionController.text.trim(),
+                      type: selectedType,
+                      startDate: startDate,
+                      endDate: endDate,
+                      location: locationController.text.trim().isEmpty ? null : locationController.text.trim(),
+                      updatedAt: DateTime.now(),
+                    );
+                    await controller.updateEvent(updatedEvent);
+                    ref.invalidate(calendarEventsStreamProvider(event.organizationId.isNotEmpty ? event.organizationId : targetOrgId));
+                  }
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Event updated successfully')),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to update event: $e')),
+                    );
+                  }
+                }
               },
               child: const Text('Save'),
             ),
@@ -386,12 +475,183 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       ),
     );
     if (confirmed != true) return;
-    final controller = ref.read(calendarEventControllerProvider);
-    await controller.deleteEvent(event.id);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('"${event.title}" deleted')));
-      ref.invalidate(calendarEventsStreamProvider(event.organizationId));
+    try {
+      if (event.id.startsWith('announcement_')) {
+        final announcementId = event.id.replaceFirst('announcement_', '');
+        await ref.read(announcementControllerProvider).deleteAnnouncement(announcementId);
+        ref.invalidate(announcementsStreamProvider(event.organizationId));
+      } else if (event.id.startsWith('meeting_')) {
+        final meetingId = event.id.replaceFirst('meeting_', '');
+        await ref.read(meetingControllerProvider).deleteMeeting(meetingId);
+        ref.invalidate(meetingsStreamProvider);
+      } else {
+        final controller = ref.read(calendarEventControllerProvider);
+        await controller.deleteEvent(event.id);
+        ref.invalidate(calendarEventsStreamProvider(event.organizationId));
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('"${event.title}" deleted')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete event: $e')));
+      }
     }
+  }
+
+  void _showEventDetails(BuildContext context, CalendarEventModel event, UserModel? user, bool canManage) {
+    final dateFormat = DateFormat('EEEE, MMM dd, yyyy \u2022 HH:mm');
+    String source = 'Calendar Event';
+    Color sourceColor = Theme.of(context).colorScheme.primary;
+    IconData sourceIcon = Icons.calendar_today;
+
+    if (event.id.startsWith('announcement_')) {
+      source = 'Broadcast Announcement';
+      sourceColor = Colors.orange.shade800;
+      sourceIcon = Icons.campaign;
+    } else if (event.id.startsWith('meeting_')) {
+      source = 'General Meeting';
+      sourceColor = Colors.purple;
+      sourceIcon = Icons.groups;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 16, 0),
+        contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: sourceColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(sourceIcon, size: 14, color: sourceColor),
+                  const SizedBox(width: 6),
+                  Text(
+                    source,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: sourceColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Spacer(),
+            IconButton(
+              icon: const Icon(Icons.close, size: 20),
+              visualDensity: VisualDensity.compact,
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                event.title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.access_time, size: 18, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      dateFormat.format(event.startDate),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+              if (event.location != null && event.location!.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.location_on, size: 18, color: Colors.redAccent),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        event.location!,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              if (event.description.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+                Text(
+                  'Description / Agenda',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    event.description,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          if (canManage) ...[
+            TextButton.icon(
+              icon: const Icon(Icons.edit, size: 16),
+              label: const Text('Edit'),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _showEditDialog(context, user, event);
+              },
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.delete, size: 16, color: Colors.red),
+              label: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _confirmDelete(context, event);
+              },
+            ),
+          ],
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -408,7 +668,7 @@ class _MonthCalendar extends StatelessWidget {
     final now = DateTime.now();
     final firstDayOfMonth = DateTime(selectedDate.year, selectedDate.month, 1);
     final daysInMonth = DateTime(selectedDate.year, selectedDate.month + 1, 0).day;
-    final startWeekday = firstDayOfMonth.weekday % 7;
+    final startWeekday = (firstDayOfMonth.weekday - 1);
 
     final eventDates = events.map((e) => DateFormat('yyyy-MM-dd').format(e.startDate)).toSet();
 
@@ -454,7 +714,7 @@ class _MonthCalendar extends StatelessWidget {
                 for (int day = 1; day <= daysInMonth; day++)
                   _DayCell(
                     date: DateTime(selectedDate.year, selectedDate.month, day),
-                    isSelected: selectedDate.year == now.year && selectedDate.month == now.month && selectedDate.day == day,
+                    isSelected: selectedDate.year == selectedDate.year && selectedDate.month == selectedDate.month && selectedDate.day == day,
                     isToday: now.year == selectedDate.year && now.month == selectedDate.month && now.day == day,
                     hasEvent: eventDates.contains(DateFormat('yyyy-MM-dd').format(DateTime(selectedDate.year, selectedDate.month, day))),
                     onTap: () => onDaySelected(DateTime(selectedDate.year, selectedDate.month, day)),
@@ -531,21 +791,36 @@ class _EventCard extends StatelessWidget {
   final DateFormat dateFormat;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onTap;
 
-  const _EventCard({required this.event, required this.dateFormat, this.onEdit, this.onDelete});
+  const _EventCard({
+    required this.event,
+    required this.dateFormat,
+    this.onEdit,
+    this.onDelete,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final canManage = onEdit != null || onDelete != null;
+    String sourceTag = '';
+    if (event.id.startsWith('announcement_')) {
+      sourceTag = 'BROADCAST \u2022 ';
+    } else if (event.id.startsWith('meeting_')) {
+      sourceTag = 'MEETING \u2022 ';
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
+        onTap: onTap,
         leading: CircleAvatar(
           backgroundColor: _typeColor(event.type).withValues(alpha: 0.12),
           child: Icon(_typeIcon(event.type), color: _typeColor(event.type), size: 20),
         ),
         title: Text(event.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text('${event.type.name.toUpperCase()} \u2022 ${dateFormat.format(event.startDate)}'),
+        subtitle: Text('$sourceTag${event.type.name.toUpperCase()} \u2022 ${dateFormat.format(event.startDate)}'),
         trailing: canManage
             ? PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert, size: 20),
