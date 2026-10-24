@@ -192,6 +192,7 @@ class MemberStatementReportWidget extends StatelessWidget {
         else
           ...obligations.map((o) {
             final isFullyPaid = o.outstandingBalance <= 0;
+            final isWaived = o.isWaived;
             return Card(
               margin: const EdgeInsets.only(bottom: 10),
               elevation: 0.5,
@@ -210,8 +211,16 @@ class MemberStatementReportWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
-                          isFullyPaid ? Icons.check_circle : Icons.hourglass_top,
-                          color: isFullyPaid ? Colors.green : Colors.orange,
+                          isWaived
+                              ? Icons.verified
+                              : isFullyPaid
+                                  ? Icons.check_circle
+                                  : Icons.hourglass_top,
+                          color: isWaived
+                              ? Colors.teal
+                              : isFullyPaid
+                                  ? Colors.green
+                                  : Colors.orange,
                           size: 16,
                         ),
                         const SizedBox(width: 8),
@@ -228,15 +237,28 @@ class MemberStatementReportWidget extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: (isFullyPaid ? Colors.green : Colors.orange).withValues(alpha: 0.12),
+                            color: (isWaived
+                                    ? Colors.teal
+                                    : isFullyPaid
+                                        ? Colors.green
+                                        : Colors.orange)
+                                .withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            isFullyPaid ? 'Settled' : 'Unpaid',
+                            isWaived
+                                ? 'Pardoned'
+                                : isFullyPaid
+                                    ? 'Settled'
+                                    : 'Unpaid',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: isFullyPaid ? Colors.green.shade800 : Colors.orange.shade800,
+                              color: isWaived
+                                  ? Colors.teal.shade800
+                                  : isFullyPaid
+                                      ? Colors.green.shade800
+                                      : Colors.orange.shade800,
                             ),
                           ),
                         ),
@@ -280,6 +302,17 @@ class MemberStatementReportWidget extends StatelessWidget {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
+                    if (isWaived && o.waiverReason != null && o.waiverReason!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Pardon Note: ${o.waiverReason}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.teal.shade800,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

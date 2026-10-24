@@ -47,6 +47,7 @@ The following collections are immutable:
 * ledger
 * refunds
 * audit_logs
+* penalty_waivers
 
 Records are never edited or deleted after completion.
 
@@ -711,6 +712,8 @@ Organization
 ├── Notifications
 │
 ├── Reports
+│
+├── Penalty Waivers
 │
 └── Invitations
 ```

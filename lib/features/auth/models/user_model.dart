@@ -64,7 +64,9 @@ class UserModel {
               final val = requestedRoleStr.trim().toLowerCase();
               return r.name.toLowerCase() == val ||
                   ((val == 'pro' || val == 'public_relations_officer') &&
-                      r == UserRole.publicRelationsOfficer);
+                      r == UserRole.publicRelationsOfficer) ||
+                  ((val == 'provost' || val == 'chief_provost' || val == 'chief provost') &&
+                      r == UserRole.provost);
             },
             orElse: () => UserRole.member,
           )
@@ -75,7 +77,9 @@ class UserModel {
       (e) =>
           e.name.toLowerCase() == rawRole ||
           ((rawRole == 'pro' || rawRole == 'public_relations_officer') &&
-              e == UserRole.publicRelationsOfficer),
+              e == UserRole.publicRelationsOfficer) ||
+          ((rawRole == 'provost' || rawRole == 'chief_provost' || rawRole == 'chief provost') &&
+              e == UserRole.provost),
       orElse: () => UserRole.member,
     );
 
