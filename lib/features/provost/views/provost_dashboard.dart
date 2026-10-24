@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/enums.dart';
@@ -29,6 +30,7 @@ class ProvostDashboard extends ConsumerStatefulWidget {
 
 class _ProvostDashboardState extends ConsumerState<ProvostDashboard> {
   int _selectedIndex = 0;
+  DateTime? _lastBackPressTime;
 
   void _onNavigate(int index) {
     setState(() => _selectedIndex = index);
@@ -69,7 +71,30 @@ class _ProvostDashboardState extends ConsumerState<ProvostDashboard> {
       const MemberDashboard(),
     ];
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_selectedIndex != 0) {
+          setState(() => _selectedIndex = 0);
+          return;
+        }
+
+        final now = DateTime.now();
+        if (_lastBackPressTime == null ||
+            now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+          _lastBackPressTime = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Press back again to exit'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
       appBar: (_selectedIndex == 2 || _selectedIndex == 3)
           ? null
           : AppBar(
@@ -212,7 +237,8 @@ class _ProvostDashboardState extends ConsumerState<ProvostDashboard> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 }
 

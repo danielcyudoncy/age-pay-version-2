@@ -1,5 +1,6 @@
 // features/dashboard/views/home_router.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../../core/constants/enums.dart';
@@ -61,36 +62,83 @@ class HomeRouter extends ConsumerWidget {
           return const OrganizationPickerScreen();
         }
 
+        Widget dashboard;
         switch (user.role) {
           case UserRole.member:
-            return const MemberDashboard();
+            dashboard = const MemberDashboard();
+            break;
           case UserRole.treasurer:
           case UserRole.viceTreasurer:
-            return const TreasurerDashboard();
+            dashboard = const TreasurerDashboard();
+            break;
           case UserRole.president:
           case UserRole.vicePresident:
-            return const PresidentDashboard();
+            dashboard = const PresidentDashboard();
+            break;
           case UserRole.secretary:
           case UserRole.viceSecretary:
-            return const SecretaryDashboard();
+            dashboard = const SecretaryDashboard();
+            break;
           case UserRole.superAdmin:
-            return const AdminDashboard();
+            dashboard = const AdminDashboard();
+            break;
           case UserRole.financialSecretary:
-            return const FinancialSecretaryDashboard();
+            dashboard = const FinancialSecretaryDashboard();
+            break;
           case UserRole.publicRelationsOfficer:
-            return const ProDashboard();
+            dashboard = const ProDashboard();
+            break;
           case UserRole.provost:
             return const ProvostDashboard();
           case UserRole.auditor:
           case UserRole.executiveMember:
           case UserRole.committeeChair:
-            return const MemberDashboard();
+            dashboard = const MemberDashboard();
+            break;
         }
+
+        return _RootBackExitWrapper(child: dashboard);
       },
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (_, _) =>
           const Scaffold(body: Center(child: Text('Something went wrong'))),
+    );
+  }
+}
+
+class _RootBackExitWrapper extends StatefulWidget {
+  final Widget child;
+  const _RootBackExitWrapper({required this.child});
+
+  @override
+  State<_RootBackExitWrapper> createState() => _RootBackExitWrapperState();
+}
+
+class _RootBackExitWrapperState extends State<_RootBackExitWrapper> {
+  DateTime? _lastBackPressTime;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        final now = DateTime.now();
+        if (_lastBackPressTime == null ||
+            now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+          _lastBackPressTime = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Press back again to exit'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: widget.child,
     );
   }
 }
