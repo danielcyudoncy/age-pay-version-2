@@ -68,28 +68,30 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
       selectedIndex: _selectedIndex,
       onSelectTab: (index) => setState(() => _selectedIndex = index),
       child: Scaffold(
-        appBar: AppBar(
-          title: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(_appBarTitle(_selectedIndex)),
-          ),
-          actions: [
-            DashboardAppBarActions(
-              user: user,
-              onRefresh: () async {
-                ref.invalidate(presidentAllPaymentsStreamProvider);
-                ref.invalidate(allObligationsProvider);
-                ref.invalidate(activeLeviesProvider);
-                ref.invalidate(presidentExpensesStreamProvider);
-                ref.invalidate(presidentMembersStreamProvider);
-                ref.invalidate(presidentDashboardProvider);
-                ref.invalidate(meetingsStreamProvider);
-                ref.invalidate(expensesStreamProvider);
-              },
-            ),
-          ],
-        ),
+        appBar: (_selectedIndex == 1 || _selectedIndex == 4)
+            ? null
+            : AppBar(
+                title: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(_appBarTitle(_selectedIndex)),
+                ),
+                actions: [
+                  DashboardAppBarActions(
+                    user: user,
+                    onRefresh: () async {
+                      ref.invalidate(presidentAllPaymentsStreamProvider);
+                      ref.invalidate(allObligationsProvider);
+                      ref.invalidate(activeLeviesProvider);
+                      ref.invalidate(presidentExpensesStreamProvider);
+                      ref.invalidate(presidentMembersStreamProvider);
+                      ref.invalidate(presidentDashboardProvider);
+                      ref.invalidate(meetingsStreamProvider);
+                      ref.invalidate(expensesStreamProvider);
+                    },
+                  ),
+                ],
+              ),
       body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

@@ -38,6 +38,21 @@ class _FinancialSecretaryDashboardState
     extends ConsumerState<FinancialSecretaryDashboard> {
   int _selectedIndex = 0;
 
+  String _appBarTitle(int index) {
+    switch (index) {
+      case 0:
+        return 'Financial Secretary';
+      case 1:
+        return 'Collections';
+      case 2:
+        return 'Debtors & Arrears';
+      case 3:
+        return 'Levies Management';
+      default:
+        return 'Financial Secretary';
+    }
+  }
+
   void _onNavigate(int index) {
     setState(() => _selectedIndex = index);
   }
@@ -63,21 +78,27 @@ class _FinancialSecretaryDashboardState
       selectedIndex: _selectedIndex,
       onSelectTab: (index) => setState(() => _selectedIndex = index),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Financial Secretary'),
-          actions: [
-            DashboardAppBarActions(
-              user: user,
-              onRefresh: () async {
-                ref.invalidate(allPaymentsStreamProvider);
-                ref.invalidate(allObligationsProvider);
-                ref.invalidate(activeLeviesProvider);
-                ref.invalidate(membersStreamProvider);
-                ref.invalidate(financialSecretaryDashboardProvider);
-              },
-            ),
-          ],
-        ),
+        appBar: _selectedIndex == 4
+            ? null
+            : AppBar(
+                title: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(_appBarTitle(_selectedIndex)),
+                ),
+                actions: [
+                  DashboardAppBarActions(
+                    user: user,
+                    onRefresh: () async {
+                      ref.invalidate(allPaymentsStreamProvider);
+                      ref.invalidate(allObligationsProvider);
+                      ref.invalidate(activeLeviesProvider);
+                      ref.invalidate(membersStreamProvider);
+                      ref.invalidate(financialSecretaryDashboardProvider);
+                    },
+                  ),
+                ],
+              ),
       body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
