@@ -16,6 +16,13 @@ class ObligationModel {
   final DateTime dueDate;
   final DateTime createdAt;
   final DateTime? settledAt;
+  final String? meetingId;
+  final PenaltyInfractionType? infractionType;
+  final bool isWaived;
+  final String? waiverReason;
+  final String? waivedBy;
+  final DateTime? waivedAt;
+  final PenaltyWaiverStatus? waiverStatus;
 
   const ObligationModel({
     required this.id,
@@ -32,12 +39,22 @@ class ObligationModel {
     required this.dueDate,
     required this.createdAt,
     this.settledAt,
+    this.meetingId,
+    this.infractionType,
+    this.isWaived = false,
+    this.waiverReason,
+    this.waivedBy,
+    this.waivedAt,
+    this.waiverStatus,
   });
+
+  bool get isPaid => status == ObligationStatus.paid || outstandingBalance <= 0;
 
   factory ObligationModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     final totalAmount = (data['amount'] as num?)?.toDouble() ?? 0.0;
     final paidAmount = (data['paidAmount'] as num?)?.toDouble() ?? 0.0;
+    final isWaived = data['isWaived'] == true;
     final status = ObligationStatus.values.firstWhere(
       (e) => e.name == (data['status'] ?? 'unpaid'),
       orElse: () => ObligationStatus.unpaid,
@@ -46,11 +63,27 @@ class ObligationModel {
     final calculatedOutstanding =
         (totalAmount - paidAmount).clamp(0.0, double.infinity);
     final outstandingBalance =
-        (status == ObligationStatus.paid || paidAmount >= totalAmount)
+        (isWaived || status == ObligationStatus.paid || paidAmount >= totalAmount)
             ? 0.0
             : (rawOutstanding != null && rawOutstanding <= calculatedOutstanding
                 ? rawOutstanding
                 : calculatedOutstanding);
+
+    final infractionStr = data['infractionType'] as String?;
+    final PenaltyInfractionType? infractionType = infractionStr != null
+        ? PenaltyInfractionType.values.firstWhere(
+            (e) => e.name == infractionStr,
+            orElse: () => PenaltyInfractionType.custom,
+          )
+        : null;
+
+    final waiverStatusStr = data['waiverStatus'] as String?;
+    final PenaltyWaiverStatus? waiverStatus = waiverStatusStr != null
+        ? PenaltyWaiverStatus.values.firstWhere(
+            (e) => e.name == waiverStatusStr,
+            orElse: () => PenaltyWaiverStatus.pendingApproval,
+          )
+        : null;
 
     return ObligationModel(
       id: doc.id,
@@ -72,6 +105,13 @@ class ObligationModel {
       settledAt: data['settledAt'] != null
           ? _parseDate(data['settledAt'])
           : null,
+      meetingId: data['meetingId'] as String?,
+      infractionType: infractionType,
+      isWaived: isWaived,
+      waiverReason: data['waiverReason'] as String?,
+      waivedBy: data['waivedBy'] as String?,
+      waivedAt: data['waivedAt'] != null ? _parseDate(data['waivedAt']) : null,
+      waiverStatus: waiverStatus,
     );
   }
 
@@ -85,11 +125,18 @@ class ObligationModel {
       'description': description,
       'amount': amount,
       'paidAmount': paidAmount,
-      'outstandingBalance': outstandingBalance,
+      'outstandingBalance': isWaived ? 0.0 : outstandingBalance,
       'status': status.name,
       'dueDate': Timestamp.fromDate(dueDate),
       'createdAt': Timestamp.fromDate(createdAt),
       'settledAt': settledAt != null ? Timestamp.fromDate(settledAt!) : null,
+      'meetingId': meetingId,
+      'infractionType': infractionType?.name,
+      'isWaived': isWaived,
+      'waiverReason': waiverReason,
+      'waivedBy': waivedBy,
+      'waivedAt': waivedAt != null ? Timestamp.fromDate(waivedAt!) : null,
+      'waiverStatus': waiverStatus?.name,
     };
   }
 
@@ -114,12 +161,20 @@ class ObligationModel {
     DateTime? dueDate,
     DateTime? createdAt,
     DateTime? settledAt,
+    String? meetingId,
+    PenaltyInfractionType? infractionType,
+    bool? isWaived,
+    String? waiverReason,
+    String? waivedBy,
+    DateTime? waivedAt,
+    PenaltyWaiverStatus? waiverStatus,
   }) {
     final newStatus = status ?? this.status;
     final newPaid = paidAmount ?? this.paidAmount;
     final newAmount = amount ?? this.amount;
+    final newWaived = isWaived ?? this.isWaived;
     final resolvedOutstanding = outstandingBalance ??
-        ((newStatus == ObligationStatus.paid || newPaid >= newAmount)
+        ((newWaived || newStatus == ObligationStatus.paid || newPaid >= newAmount)
             ? 0.0
             : this.outstandingBalance);
 
@@ -138,6 +193,13 @@ class ObligationModel {
       dueDate: dueDate ?? this.dueDate,
       createdAt: createdAt ?? this.createdAt,
       settledAt: settledAt ?? this.settledAt,
+      meetingId: meetingId ?? this.meetingId,
+      infractionType: infractionType ?? this.infractionType,
+      isWaived: newWaived,
+      waiverReason: waiverReason ?? this.waiverReason,
+      waivedBy: waivedBy ?? this.waivedBy,
+      waivedAt: waivedAt ?? this.waivedAt,
+      waiverStatus: waiverStatus ?? this.waiverStatus,
     );
   }
 }

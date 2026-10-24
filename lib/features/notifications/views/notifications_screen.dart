@@ -138,6 +138,8 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
         return 'Auditor';
       case UserRole.publicRelationsOfficer:
         return 'Public Relations Officer';
+      case UserRole.provost:
+        return 'Provost';
       case UserRole.executiveMember:
         return 'Executive Member';
       case UserRole.committeeChair:

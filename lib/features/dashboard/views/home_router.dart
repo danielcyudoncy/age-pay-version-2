@@ -10,6 +10,7 @@ import 'package:cls/features/admin/views/admin_dashboard.dart';
 import 'package:cls/features/secretary/views/secretary_dashboard.dart';
 import 'package:cls/features/financial_secretary/views/financial_secretary_dashboard.dart';
 import 'package:cls/features/dashboard/views/pro_dashboard.dart';
+import 'package:cls/features/provost/views/provost_dashboard.dart';
 import '../../auth/views/login_screen.dart';
 import '../../auth/views/organization_picker_screen.dart';
 import '../../auth/views/pending_approval_screen.dart';
@@ -78,6 +79,8 @@ class HomeRouter extends ConsumerWidget {
             return const FinancialSecretaryDashboard();
           case UserRole.publicRelationsOfficer:
             return const ProDashboard();
+          case UserRole.provost:
+            return const ProvostDashboard();
           case UserRole.auditor:
           case UserRole.executiveMember:
           case UserRole.committeeChair:

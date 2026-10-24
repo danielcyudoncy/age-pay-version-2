@@ -27,6 +27,7 @@ import 'package:cls/features/secretary/views/documents_screen.dart';
 import 'package:cls/features/settings/views/settings_screen.dart';
 import 'package:cls/features/dashboard/widgets/executive_approval_queue_card.dart';
 import 'package:cls/features/expenses/widgets/expense_approval_queue_card.dart';
+import 'package:cls/features/provost/widgets/penalty_waiver_approval_queue_card.dart';
 import 'package:cls/features/notifications/controllers/notification_provider.dart';
 import 'package:cls/features/notifications/views/notifications_screen.dart';
 
@@ -299,6 +300,9 @@ class _HomeTab extends ConsumerWidget {
 
             // Pending Expense Approvals (Multi-Executive Sign-Off)
             ExpenseApprovalQueueCard(organizationId: user.organizationId),
+
+            // Pending Penalty Pardon Approvals (Disciplinary Provost Waivers)
+            PenaltyWaiverApprovalQueueCard(organizationId: user.organizationId),
 
             // Executive Quick Actions
             Text(

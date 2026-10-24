@@ -92,6 +92,10 @@ class NotificationService {
         await subscribeToTopic('executive_updates');
         await subscribeToTopic('all_events');
         break;
+      case UserRole.provost:
+        await subscribeToTopic('executive_updates');
+        await subscribeToTopic('member_activity');
+        break;
       case UserRole.vicePresident:
       case UserRole.secretary:
       case UserRole.viceSecretary:

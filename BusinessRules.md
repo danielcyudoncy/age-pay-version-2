@@ -150,12 +150,39 @@ Default roles include:
 * Secretary
 * Treasurer
 * Financial Secretary
+* Provost (Disciplinary Officer)
+* Public Relations Officer
 * Auditor
 * Executive Member
 * Committee Chair
 * Member
 
 Organizations may create custom roles.
+
+---
+
+## Disciplinary Penalties & Provost Decorum Rules
+
+The Provost enforces organizational discipline, meeting decorum, and sanctions.
+
+### Infraction Presets
+The system supports pre-configured, editable infraction penalties:
+* Late Coming (Default: ₦1,000)
+* Unexcused Absence (Default: ₦2,000)
+* Phone Ringing / Meeting Disturbance (Default: ₦500)
+* Improper Attire / No Prescribed Uniform (Default: ₦1,000)
+* Custom Sanction (Editable title and amount)
+
+### Meeting Decorum Integration
+* When a meeting is scheduled or in progress, the Provost has access to an Active Meeting Decorum card and live roll-call interface to issue infractions linked directly to the meeting minutes.
+
+### Financial Integrity & Pardon/Waiver Workflow
+* Penalties create financial obligations billed to the member's statement.
+* Financial records are immutable: Penalties can **never** be deleted or silently erased.
+* **Pardon / Waiver Authority**: If a member presents a valid medical excuse or emergency justification, the Provost can request a waiver.
+* **President Countersignature Required**: Every waiver request must be countersigned and approved by the President before the fine is excused.
+* On President approval, the penalty balance is zeroed out and stamped `[Pardoned / Waived]`.
+* An immutable audit record is preserved in the `penalty_waivers` ledger tracking requester, reason, reviewer, and decision timestamp.
 
 ---
 

@@ -63,6 +63,14 @@ service cloud.firestore {
          getUserRole(request.auth.uid) == 'PRO');
     }
 
+    function isProvost() {
+      return isAuthenticated() &&
+        (getUserRole(request.auth.uid) == 'provost' ||
+         getUserRole(request.auth.uid) == 'Provost' ||
+         getUserRole(request.auth.uid) == 'chief_provost' ||
+         getUserRole(request.auth.uid) == 'Chief Provost');
+    }
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
@@ -121,6 +129,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && (
         isAdminOrTreasurer() ||
+        isProvost() ||
         request.resource.data.userId == request.auth.uid ||
         request.resource.data.memberId == request.auth.uid ||
         (exists(/databases/$(database)/documents/members/$(request.resource.data.memberId)) &&
@@ -128,10 +137,19 @@ service cloud.firestore {
       );
       allow update: if isAuthenticated() && (
         isAdminOrTreasurer() ||
+        isProvost() ||
         resource.data.userId == request.auth.uid ||
         resource.data.memberId == request.auth.uid
       );
       allow delete: if isAdminOrTreasurer();
+    }
+
+    // ── Penalty Waivers collection ──────────────────────
+    match /penalty_waivers/{waiverId} {
+      allow read: if isAuthenticated();
+      allow create: if isProvost() || isPresident() || isSuperAdmin();
+      allow update: if isPresident() || isSuperAdmin();
+      allow delete: if isSuperAdmin();
     }
 
     // ── Payments collection ─────────────────────────────
