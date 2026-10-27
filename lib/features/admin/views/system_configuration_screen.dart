@@ -68,7 +68,16 @@ class _SystemConfigurationScreenState
     final settingsAsync = ref.watch(systemSettingsStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('System Configuration')),
+      appBar: AppBar(
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'System Configuration',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ),
       body: settingsAsync.when(
         data: (settings) {
           _initValues(settings);
@@ -743,10 +752,13 @@ class _SystemConfigurationScreenState
         children: [
           Icon(icon, size: 18, color: color),
           const SizedBox(width: 8),
-          Text(
-            title,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
+          Expanded(
+            child: Text(
+              title,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -759,16 +771,21 @@ class _SystemConfigurationScreenState
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: theme.colorScheme.onSurfaceVariant,
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
+        const SizedBox(width: 8),
         Text(
           value,
           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

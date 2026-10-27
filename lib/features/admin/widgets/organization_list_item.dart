@@ -229,65 +229,69 @@ class OrganizationListItem extends ConsumerWidget {
                     color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
                   ),
                 ),
-                child: Wrap(
-                  spacing: 14,
-                  runSpacing: 4,
+                child: Column(
                   children: [
-                    if (organization.contactEmail.isNotEmpty)
+                    if (organization.contactEmail.isNotEmpty || organization.contactPhone.isNotEmpty)
                       Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.email_outlined,
-                            size: 13,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              organization.contactEmail,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: theme.colorScheme.onSurfaceVariant,
+                          if (organization.contactEmail.isNotEmpty)
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.email_outlined,
+                                    size: 13,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Expanded(
+                                    child: Text(
+                                      organization.contactEmail,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    if (organization.contactPhone.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.phone_outlined,
-                            size: 13,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              organization.contactPhone,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
+                          if (organization.contactPhone.isNotEmpty) ...[
+                            if (organization.contactEmail.isNotEmpty) const SizedBox(width: 8),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.phone_outlined,
+                                  size: 13,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  organization.contactPhone,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
+                          ],
                         ],
                       ),
-                    if (organization.address.isNotEmpty)
+                    if (organization.address.isNotEmpty) ...[
+                      if (organization.contactEmail.isNotEmpty || organization.contactPhone.isNotEmpty)
+                        const SizedBox(height: 6),
                       Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.location_on_outlined,
                             size: 13,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
-                          const SizedBox(width: 4),
-                          Flexible(
+                          const SizedBox(width: 5),
+                          Expanded(
                             child: Text(
                               organization.address,
                               overflow: TextOverflow.ellipsis,
@@ -299,6 +303,7 @@ class OrganizationListItem extends ConsumerWidget {
                           ),
                         ],
                       ),
+                    ],
                   ],
                 ),
               ),

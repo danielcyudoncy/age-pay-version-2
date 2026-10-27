@@ -39,9 +39,13 @@ class _ReassignBranchDialogState extends ConsumerState<ReassignBranchDialog> {
 
     return AlertDialog(
       actionsOverflowButtonSpacing: 8,
-      title: const Text(
-        'Reassign Organization / Branch',
-        overflow: TextOverflow.ellipsis,
+      title: const FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'Reassign Organization / Branch',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
       ),
       content: SizedBox(
         width: double.maxFinite,

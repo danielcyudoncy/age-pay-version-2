@@ -33,9 +33,13 @@ class _EditUserRoleDialogState extends State<EditUserRoleDialog> {
 
     return AlertDialog(
       actionsOverflowButtonSpacing: 8,
-      title: const Text(
-        'Edit User Role & Permissions',
-        overflow: TextOverflow.ellipsis,
+      title: const FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'Edit User Role & Permissions',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
       ),
       content: SizedBox(
         width: double.maxFinite,

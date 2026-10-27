@@ -46,7 +46,14 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Users & Access Governance'),
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Users & Access Governance',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -361,6 +368,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                                 fontWeight: FontWeight.bold,
                                 color: _getRoleColor(user.role),
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
 
@@ -380,6 +388,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                                   fontWeight: FontWeight.bold,
                                   color: Colors.indigo.shade700,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                         ],
@@ -579,59 +588,102 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                   color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
                 ),
               ),
-              child: Wrap(
-                spacing: 14,
-                runSpacing: 4,
+              child: Column(
                 children: [
-                  if (user.email.isNotEmpty)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.email_outlined, size: 13, color: theme.colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 4),
-                        Text(
-                          user.email,
-                          style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                  if (user.phoneNumber.isNotEmpty)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.phone_outlined, size: 13, color: theme.colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 4),
-                        Text(
-                          user.phoneNumber,
-                          style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
                   Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.location_city_outlined, size: 13, color: theme.colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      Text(
-                        user.branchName != null && user.branchName!.isNotEmpty
-                            ? user.branchName!
-                            : 'No branch assigned',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: theme.colorScheme.onSurfaceVariant,
+                      if (user.email.isNotEmpty)
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.email_outlined,
+                                size: 13,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  user.email,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                      if (user.phoneNumber.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.phone_outlined,
+                              size: 13,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              user.phoneNumber,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
+                  const SizedBox(height: 6),
                   Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.calendar_today_outlined, size: 13, color: theme.colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Joined: ${DateFormat('dd MMM yyyy').format(user.createdAt)}',
-                        style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.location_city_outlined,
+                              size: 13,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                user.branchName != null && user.branchName!.isNotEmpty
+                                    ? user.branchName!
+                                    : 'No branch assigned',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            size: 13,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            DateFormat('dd MMM yyyy').format(user.createdAt),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

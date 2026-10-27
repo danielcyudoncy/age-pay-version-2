@@ -49,10 +49,14 @@ class AdminDashboard extends ConsumerWidget {
                 MediaQuery.paddingOf(context).bottom + 24,
               ),
               children: [
-                Text(
-                  'Welcome, ${user?.displayName ?? 'Admin'}',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Welcome, ${user?.displayName ?? 'Admin'}',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

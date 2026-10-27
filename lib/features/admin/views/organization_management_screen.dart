@@ -306,7 +306,14 @@ class _OrganizationManagementScreenState
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Add Branch to ${org.name}'),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Add Branch to ${org.name}',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
