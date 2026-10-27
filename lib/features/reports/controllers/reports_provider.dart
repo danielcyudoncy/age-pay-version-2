@@ -10,6 +10,9 @@ import '../../payments/models/payment_model.dart';
 import '../../payments/repositories/payment_repository.dart';
 import '../../expenses/models/expense_model.dart';
 import '../../expenses/repositories/expense_repository.dart';
+import '../../auth/controllers/auth_provider.dart';
+import '../../national/controllers/national_provider.dart';
+import '../../../core/constants/enums.dart';
 import '../services/pdf_service.dart';
 
 enum ReportType {
@@ -48,7 +51,28 @@ final reportsExpenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
 
 final reportsMembersStreamProvider =
     StreamProvider.autoDispose<List<MemberModel>>((ref) {
-      return ref.watch(reportsMemberRepositoryProvider).getMembers();
+      final user = ref.watch(authProvider).valueOrNull;
+      final activeScope = ref.watch(activeExecutiveScopeProvider);
+      final isNationalScope = activeScope == ExecutiveScope.national &&
+          (user?.nationalRole != null || user?.role == UserRole.superAdmin);
+
+      return ref.watch(reportsMemberRepositoryProvider).getMembers().map((members) {
+        if (isNationalScope) {
+          return members
+              .where((m) =>
+                  m.isEnrolledInNational ||
+                  m.nationalRole != null ||
+                  m.branchId == 'national')
+              .toList();
+        }
+        if (user?.role == UserRole.superAdmin) {
+          return members;
+        }
+        if (user?.branchId != null && user!.branchId!.isNotEmpty) {
+          return members.where((m) => m.branchId == user.branchId).toList();
+        }
+        return members;
+      });
     });
 
 final reportsAllLeviesStreamProvider =

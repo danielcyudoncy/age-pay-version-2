@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
-import 'package:cls/core/widgets/quick_action_button.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/dashboard/controllers/president_dashboard_provider.dart';
@@ -29,6 +28,8 @@ import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
 import 'package:cls/features/dashboard/widgets/dashboard_tab_pop_scope.dart';
 import 'package:cls/features/expenses/widgets/expense_approval_queue_card.dart';
 import 'package:cls/features/provost/widgets/penalty_waiver_approval_queue_card.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
+import 'package:cls/features/national/views/national_hub_screen.dart';
 
 class PresidentDashboard extends ConsumerStatefulWidget {
   const PresidentDashboard({super.key});
@@ -47,86 +48,107 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final user = authState.valueOrNull;
 
-    if (user == null) {
-      return const Scaffold(body: Center(child: Text('Please sign in')));
-    }
-
-    final pages = <Widget>[
-      _HomeTab(user: user, onNavigate: _onNavigate),
-      ExpenseListScreen(
-        currentUserId: user.uid,
-        organizationId: user.organizationId,
+    return authState.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
       ),
-      const _PresidentMeetingsTab(),
-      const _PresidentMembersTab(),
-      const MemberDashboard(),
-    ];
-
-    return DashboardTabPopScope(
-      selectedIndex: _selectedIndex,
-      onSelectTab: (index) => setState(() => _selectedIndex = index),
-      child: Scaffold(
-        appBar: (_selectedIndex == 1 || _selectedIndex == 4)
-            ? null
-            : AppBar(
-                title: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(_appBarTitle(_selectedIndex)),
-                ),
-                actions: [
-                  DashboardAppBarActions(
-                    user: user,
-                    onRefresh: () async {
-                      ref.invalidate(presidentAllPaymentsStreamProvider);
-                      ref.invalidate(allObligationsProvider);
-                      ref.invalidate(activeLeviesProvider);
-                      ref.invalidate(presidentExpensesStreamProvider);
-                      ref.invalidate(presidentMembersStreamProvider);
-                      ref.invalidate(presidentDashboardProvider);
-                      ref.invalidate(meetingsStreamProvider);
-                      ref.invalidate(expensesStreamProvider);
-                    },
-                  ),
-                ],
+      error: (error, _) => Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Error: $error'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(authProvider),
+                child: const Text('Retry'),
               ),
-      body: IndexedStack(index: _selectedIndex, children: pages),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Overview',
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long_outlined),
-            activeIcon: Icon(Icons.receipt_long),
-            label: 'Expenses',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.event_outlined),
-            activeIcon: Icon(Icons.event),
-            label: 'Meetings',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people_outline),
-            activeIcon: Icon(Icons.people),
-            label: 'Members',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'My Dues',
-          ),
-        ],
+        ),
       ),
-    ),
-  );
+      data: (user) {
+        if (user == null) {
+          return const Scaffold(body: Center(child: Text('Please sign in')));
+        }
+
+        final pages = <Widget>[
+          _HomeTab(user: user, onNavigate: _onNavigate),
+          ExpenseListScreen(
+            currentUserId: user.uid,
+            organizationId: user.organizationId,
+          ),
+          const _PresidentMeetingsTab(),
+          const _PresidentMembersTab(),
+          const MemberDashboard(),
+        ];
+
+        return DashboardTabPopScope(
+          selectedIndex: _selectedIndex,
+          onSelectTab: (index) => setState(() => _selectedIndex = index),
+          child: Scaffold(
+            appBar: (_selectedIndex == 1 || _selectedIndex == 4)
+                ? null
+                : AppBar(
+                    title: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(_appBarTitle(_selectedIndex)),
+                    ),
+                    actions: [
+                      DashboardAppBarActions(
+                        user: user,
+                        onRefresh: () async {
+                          ref.invalidate(presidentAllPaymentsStreamProvider);
+                          ref.invalidate(allObligationsProvider);
+                          ref.invalidate(activeLeviesProvider);
+                          ref.invalidate(presidentExpensesStreamProvider);
+                          ref.invalidate(presidentMembersStreamProvider);
+                          ref.invalidate(presidentDashboardProvider);
+                          ref.invalidate(meetingsStreamProvider);
+                          ref.invalidate(expensesStreamProvider);
+                        },
+                      ),
+                    ],
+                  ),
+            body: IndexedStack(index: _selectedIndex, children: pages),
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: _selectedIndex,
+              onTap: (index) => setState(() => _selectedIndex = index),
+              type: BottomNavigationBarType.fixed,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.dashboard_outlined),
+                  activeIcon: Icon(Icons.dashboard),
+                  label: 'Overview',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.receipt_long_outlined),
+                  activeIcon: Icon(Icons.receipt_long),
+                  label: 'Expenses',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.event_outlined),
+                  activeIcon: Icon(Icons.event),
+                  label: 'Meetings',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.people_outline),
+                  activeIcon: Icon(Icons.people),
+                  label: 'Members',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person_outline),
+                  activeIcon: Icon(Icons.person),
+                  label: 'My Dues',
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   String _appBarTitle(int index) {
@@ -166,6 +188,9 @@ class _HomeTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardAsync = ref.watch(presidentDashboardProvider);
+    final activeScope = ref.watch(activeExecutiveScopeProvider);
+    final isNationalScope = activeScope == ExecutiveScope.national &&
+        (user.nationalRole != null || user.role == UserRole.superAdmin);
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
     final dateFormat = DateFormat('MMM dd, yyyy');
     final theme = Theme.of(context);
@@ -220,12 +245,17 @@ class _HomeTab extends ConsumerWidget {
                       children: [
                         Text(
                           '${_greeting()}, ${user.displayName.isNotEmpty ? user.displayName : 'President'}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -239,7 +269,11 @@ class _HomeTab extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                'Chief Executive',
+                                isNationalScope
+                                    ? 'National Chief Executive'
+                                    : (user.branchName != null && user.branchName!.isNotEmpty
+                                        ? '${user.branchName} Executive'
+                                        : 'Branch Executive'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -247,7 +281,6 @@ class _HomeTab extends ConsumerWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
                             Text(
                               DateFormat('EEEE, MMM d').format(DateTime.now()),
                               style: TextStyle(
@@ -274,112 +307,18 @@ class _HomeTab extends ConsumerWidget {
             // Pending Penalty Pardon Approvals (Disciplinary Provost Waivers)
             PenaltyWaiverApprovalQueueCard(organizationId: user.organizationId),
 
-            // Executive Quick Actions
-            Text(
-              'Executive Quick Actions',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: QuickActionButton(
-                    icon: Icons.receipt_long,
-                    label: 'Expenses',
-                    iconSize: 16,
-                    fontSize: 11,
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-                    onPressed: () => onNavigate(1),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: QuickActionButton(
-                    icon: Icons.event,
-                    label: 'Meetings',
-                    iconSize: 16,
-                    fontSize: 11,
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-                    onPressed: () => onNavigate(2),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: QuickActionButton(
-                    icon: Icons.people,
-                    label: 'Members',
-                    iconSize: 16,
-                    fontSize: 11,
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-                    onPressed: () => onNavigate(3),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: QuickActionButton(
-                    icon: Icons.insert_chart_outlined,
-                    label: 'Reports',
-                    iconSize: 16,
-                    fontSize: 11,
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ReportsScreen()),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: QuickActionButton(
-                    icon: Icons.fact_check_outlined,
-                    label: 'Attendance',
-                    iconSize: 16,
-                    fontSize: 11,
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AttendanceScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: QuickActionButton(
-                    icon: Icons.campaign_outlined,
-                    label: 'Notices',
-                    iconSize: 16,
-                    fontSize: 11,
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AnnouncementsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+            // Executive Quick Actions Dropdown
+            _ExecutiveQuickActionsDropdown(
+              isNationalScope: isNationalScope,
+              onNavigate: onNavigate,
             ),
             const SizedBox(height: 24),
 
             // Treasury Overview Cards
             Text(
-              'Treasury & Membership Health',
+              isNationalScope
+                  ? 'National Treasury & Federation Health'
+                  : 'Treasury & Membership Health',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -443,6 +382,296 @@ class _HomeTab extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+// ----------------------------------------------------------------------------
+// EXECUTIVE QUICK ACTIONS DROPDOWN
+// ----------------------------------------------------------------------------
+class _ExecutiveQuickActionsDropdown extends StatelessWidget {
+  final bool isNationalScope;
+  final ValueChanged<int> onNavigate;
+
+  const _ExecutiveQuickActionsDropdown({
+    required this.isNationalScope,
+    required this.onNavigate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: 0,
+      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: PopupMenuButton<String>(
+        tooltip: 'Executive Quick Actions',
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        position: PopupMenuPosition.under,
+        onSelected: (action) => _handleAction(context, action),
+        itemBuilder: (context) => _buildMenuItems(context),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.bolt,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Executive Quick Actions',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Jump to reports, attendance, notices & tools',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Select',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_drop_down,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<PopupMenuEntry<String>> _buildMenuItems(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return [
+      _buildMenuItem(
+        value: 'reports',
+        icon: Icons.insert_chart_outlined,
+        label: 'Reports',
+        subtitle: 'Financial & executive statements',
+        colorScheme: colorScheme,
+      ),
+      _buildMenuItem(
+        value: 'attendance',
+        icon: Icons.fact_check_outlined,
+        label: 'Attendance',
+        subtitle: 'Meeting check-ins & roll call',
+        colorScheme: colorScheme,
+      ),
+      _buildMenuItem(
+        value: 'notices',
+        icon: Icons.campaign_outlined,
+        label: 'Notices',
+        subtitle: 'Broadcast general announcements',
+        colorScheme: colorScheme,
+      ),
+      const PopupMenuDivider(),
+      _buildMenuItem(
+        value: 'expenses',
+        icon: Icons.receipt_long_outlined,
+        label: 'Expenses',
+        subtitle: 'Review & manage disbursements',
+        colorScheme: colorScheme,
+      ),
+      _buildMenuItem(
+        value: 'meetings',
+        icon: Icons.event_outlined,
+        label: 'Meetings',
+        subtitle: 'Agendas, minutes & schedules',
+        colorScheme: colorScheme,
+      ),
+      _buildMenuItem(
+        value: 'members',
+        icon: Icons.people_outline,
+        label: 'Members',
+        subtitle: 'Member roster & directories',
+        colorScheme: colorScheme,
+      ),
+      if (isNationalScope) ...[
+        const PopupMenuDivider(),
+        _buildMenuItem(
+          value: 'compliance',
+          icon: Icons.leaderboard_outlined,
+          label: 'Branch Compliance',
+          subtitle: 'Branch submissions & rankings',
+          colorScheme: colorScheme,
+        ),
+        _buildMenuItem(
+          value: 'assembly_roll',
+          icon: Icons.groups_outlined,
+          label: 'Assembly Roll',
+          subtitle: 'Accreditation & delegates',
+          colorScheme: colorScheme,
+        ),
+        _buildMenuItem(
+          value: 'national_levies',
+          icon: Icons.public_outlined,
+          label: 'National Levies',
+          subtitle: 'Federation levies & projects',
+          colorScheme: colorScheme,
+        ),
+      ],
+    ];
+  }
+
+  PopupMenuItem<String> _buildMenuItem({
+    required String value,
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required ColorScheme colorScheme,
+  }) {
+    return PopupMenuItem<String>(
+      value: value,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 18, color: colorScheme.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleAction(BuildContext context, String action) {
+    switch (action) {
+      case 'reports':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ReportsScreen()),
+        );
+        break;
+      case 'attendance':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AttendanceScreen()),
+        );
+        break;
+      case 'notices':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AnnouncementsScreen()),
+        );
+        break;
+      case 'expenses':
+        onNavigate(1);
+        break;
+      case 'meetings':
+        onNavigate(2);
+        break;
+      case 'members':
+        onNavigate(3);
+        break;
+      case 'compliance':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const NationalHubScreen(initialTabIndex: 2),
+          ),
+        );
+        break;
+      case 'assembly_roll':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const NationalHubScreen(initialTabIndex: 1),
+          ),
+        );
+        break;
+      case 'national_levies':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const NationalHubScreen(initialTabIndex: 0),
+          ),
+        );
+        break;
+    }
   }
 }
 

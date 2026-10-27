@@ -10,6 +10,20 @@ import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart'
     show membersStreamProvider;
+import 'package:cls/features/auth/models/user_model.dart';
+import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/auth/services/auth_service.dart';
+
+class _MockAuthService implements AuthService {
+  final UserModel? user;
+  _MockAuthService(this.user);
+
+  @override
+  Future<UserModel?> getCurrentUser() async => user;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class _MockObligationRepository implements ObligationRepository {
   List<ObligationModel> _obligations = [];
@@ -50,6 +64,16 @@ class _MockObligationRepository implements ObligationRepository {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  final testUser = UserModel(
+    uid: 't1',
+    organizationId: 't1',
+    email: 'treasurer@test.com',
+    displayName: 'Test Treasurer',
+    phoneNumber: '08000000000',
+    role: UserRole.treasurer,
+    createdAt: DateTime.now(),
+  );
 
   final testDate = DateTime(2026, 6, 30);
 
@@ -142,9 +166,16 @@ void main() {
     Widget buildScreen(List<ObligationModel> obligations) {
       final mockRepo = _MockObligationRepository();
       mockRepo.setObligations(obligations);
+      final mockAuthService = _MockAuthService(testUser);
 
       return ProviderScope(
         overrides: [
+          authServiceProvider.overrideWith((ref) => mockAuthService),
+          authProvider.overrideWith((ref) {
+            final notifier = AuthNotifier(ref.watch(authServiceProvider));
+            notifier.state = AsyncValue.data(testUser);
+            return notifier;
+          }),
           obligationRepositoryProvider.overrideWith((ref) => mockRepo),
         ],
         child: MaterialApp(
@@ -225,9 +256,16 @@ void main() {
     Widget buildScreen(List<ObligationModel> obligations) {
       final mockRepo = _MockObligationRepository();
       mockRepo.setObligations(obligations);
+      final mockAuthService = _MockAuthService(testUser);
 
       return ProviderScope(
         overrides: [
+          authServiceProvider.overrideWith((ref) => mockAuthService),
+          authProvider.overrideWith((ref) {
+            final notifier = AuthNotifier(ref.watch(authServiceProvider));
+            notifier.state = AsyncValue.data(testUser);
+            return notifier;
+          }),
           obligationRepositoryProvider.overrideWith((ref) => mockRepo),
           membersStreamProvider.overrideWith((ref) => Stream.value(testMembers)),
         ],

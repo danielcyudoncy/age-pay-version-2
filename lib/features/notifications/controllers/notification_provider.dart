@@ -22,6 +22,8 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
   final String? _organizationId;
   final String? _userId;
   final dynamic _role;
+  final String? _branchId;
+  final bool _isNationalExecutive;
 
   NotificationListNotifier(
     NotificationService service, {
@@ -29,10 +31,14 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
     String? organizationId,
     String? userId,
     dynamic role,
+    String? branchId,
+    bool isNationalExecutive = false,
   })  : _repository = repository,
         _organizationId = organizationId,
         _userId = userId,
         _role = role,
+        _branchId = branchId,
+        _isNationalExecutive = isNationalExecutive,
         super([]) {
     // 1. Foreground push message listener
     _subscription = service.onForegroundMessage.listen((message) {
@@ -47,6 +53,7 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
         receivedAt: DateTime.now(),
         imageUrl: message.notification?.android?.imageUrl,
         organizationId: organizationId ?? '',
+        targetBranchId: message.data['targetBranchId'],
       );
       addNotification(notification);
     });
@@ -63,6 +70,8 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
           organizationId: _organizationId ?? '',
           userId: _userId,
           role: _role,
+          branchId: _branchId,
+          isNationalExecutive: _isNationalExecutive,
         )
         .listen((firestoreNotifications) {
           state = firestoreNotifications;
@@ -130,6 +139,8 @@ final notificationListProvider =
         organizationId: user.organizationId,
         userId: user.uid,
         role: user.role,
+        branchId: user.branchId,
+        isNationalExecutive: user.isNationalExecutive,
       );
     });
 

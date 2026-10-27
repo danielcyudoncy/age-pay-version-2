@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/enums.dart';
 import '../../admin/models/branch_model.dart';
+import '../../auth/controllers/auth_provider.dart';
 import '../../auth/models/user_model.dart';
 import '../models/branch_compliance_report.dart';
 import '../models/national_contribution_record.dart';
@@ -12,6 +13,11 @@ final nationalRepositoryProvider = Provider<NationalRepository>((ref) {
 
 /// Tracks whether a dual-role executive is actively viewing their local Branch or National Body
 final activeExecutiveScopeProvider = StateProvider<ExecutiveScope>((ref) {
+  final user = ref.watch(authProvider).valueOrNull;
+  if (user != null &&
+      (user.nationalRole != null || user.role == UserRole.superAdmin)) {
+    return ExecutiveScope.national;
+  }
   return ExecutiveScope.branch;
 });
 

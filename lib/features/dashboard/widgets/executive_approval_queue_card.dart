@@ -21,6 +21,7 @@ class _ExecutiveApprovalQueueCardState
     extends ConsumerState<ExecutiveApprovalQueueCard> {
   final Set<String> _processingIds = {};
   final Map<String, UserRole> _assignedRoles = {};
+  final Map<String, UserRole?> _assignedNationalRoles = {};
   final Map<String, MemberDuesStanding> _assignedStandings = {};
   final Map<String, double> _openingBalances = {};
 
@@ -31,6 +32,7 @@ class _ExecutiveApprovalQueueCardState
       final assignedRole = _assignedRoles[applicant.uid] ??
           applicant.requestedRole ??
           UserRole.member;
+      final assignedNationalRole = _assignedNationalRoles[applicant.uid];
       final assignedStanding = _assignedStandings[applicant.uid] ??
           applicant.duesStanding;
       final openingBalance = _openingBalances[applicant.uid] ??
@@ -40,15 +42,19 @@ class _ExecutiveApprovalQueueCardState
         uid: applicant.uid,
         organizationId: widget.organizationId,
         assignedRole: assignedRole,
+        assignedNationalRole: assignedNationalRole,
         duesStanding: assignedStanding,
         openingBalance: openingBalance,
       );
       if (mounted) {
+        final natText = assignedNationalRole != null
+            ? ' + National ${_roleLabel(assignedNationalRole)}'
+            : '';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green.shade700,
             content: Text(
-              '${applicant.displayName} approved as ${_roleLabel(assignedRole)} (${_standingLabel(assignedStanding)}).',
+              '${applicant.displayName} approved as ${_roleLabel(assignedRole)}$natText (${_standingLabel(assignedStanding)}).',
             ),
           ),
         );
@@ -123,6 +129,11 @@ class _ExecutiveApprovalQueueCardState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final currentUser = ref.watch(authProvider).valueOrNull;
+    final canAssignNational = currentUser?.role == UserRole.president ||
+        currentUser?.role == UserRole.superAdmin ||
+        currentUser?.nationalRole == UserRole.president;
+
     final pendingAsync =
         ref.watch(pendingRegistrationsStreamProvider(widget.organizationId));
 
@@ -342,6 +353,71 @@ class _ExecutiveApprovalQueueCardState
                             ),
                           ),
                           const SizedBox(height: 8),
+                          if (canAssignNational) ...[
+                            Container(
+                              height: 40,
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.teal.shade400),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<UserRole?>(
+                                  value: _assignedNationalRoles[applicant.uid],
+                                  isExpanded: true,
+                                  hint: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.stars_rounded,
+                                        size: 15,
+                                        color: Colors.teal.shade800,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Expanded(
+                                        child: Text(
+                                          'National Office: None (Regular)',
+                                          style: TextStyle(fontSize: 13),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  items: [
+                                    const DropdownMenuItem<UserRole?>(
+                                      value: null,
+                                      child: Text(
+                                        'National Office: None',
+                                        style: TextStyle(fontSize: 13),
+                                      ),
+                                    ),
+                                    ...UserRole.values
+                                        .where((role) =>
+                                            role != UserRole.superAdmin &&
+                                            role != UserRole.member)
+                                        .map((role) {
+                                      return DropdownMenuItem<UserRole?>(
+                                        value: role,
+                                        child: Text(
+                                          'National Office: ${_roleLabel(role)}',
+                                          style: const TextStyle(fontSize: 13),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                  onChanged: isProcessing
+                                      ? null
+                                      : (newNatRole) {
+                                          setState(() =>
+                                              _assignedNationalRoles[applicant.uid] =
+                                                  newNatRole);
+                                        },
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
                           Container(
                             height: 40,
                             padding: const EdgeInsets.symmetric(horizontal: 10),

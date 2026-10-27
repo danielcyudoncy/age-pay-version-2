@@ -114,8 +114,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       final user = authState.valueOrNull;
       final orgId = user?.organizationId.isNotEmpty == true ? user!.organizationId : (user?.uid ?? '');
       final members = await controller.searchMembers(query);
-      final meetings = await controller.searchMeetings(query);
-      final announcements = user != null ? await controller.searchAnnouncements(query, orgId) : [];
+      final allMeetings = await controller.searchMeetings(query);
+      final userBranchId = user?.branchId;
+      final meetings = allMeetings.where((m) {
+        if (userBranchId != null && userBranchId.isNotEmpty) {
+          return m.branchId == userBranchId ||
+              (m.scope == 'national' && m.targetAudience == 'all');
+        }
+        return true;
+      }).toList();
+      final allAnnouncements = user != null
+          ? await controller.searchAnnouncements(query, orgId)
+          : <AnnouncementModel>[];
+      final announcements =
+          allAnnouncements.where((a) => a.isVisibleTo(user)).toList();
       final documents = user != null ? await controller.searchDocuments(query, orgId) : [];
       setState(() {
         _results = [...members, ...meetings, ...announcements, ...documents];

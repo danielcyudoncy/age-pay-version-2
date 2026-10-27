@@ -335,7 +335,8 @@ class NationalRepository {
     });
   }
 
-  /// Streams all active members belonging to the organization (National Assembly roll).
+  /// Streams members enrolled in the National Assembly roll.
+  /// Branch members are only included if the branch president has enrolled them into the national branch.
   Stream<List<UserModel>> getNationalMembersStream(String organizationId) {
     return _firestore
         .collection('users')
@@ -343,8 +344,15 @@ class NationalRepository {
         .where('isActive', isEqualTo: true)
         .snapshots()
         .map((snap) {
-      final members =
-          snap.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+      final members = snap.docs
+          .map((doc) => UserModel.fromFirestore(doc))
+          .where(
+            (u) =>
+                u.isEnrolledInNational ||
+                u.nationalRole != null ||
+                u.branchId == 'national',
+          )
+          .toList();
 
       // Sort: National Officers first, then branch officers, then alphabetically
       members.sort((a, b) {

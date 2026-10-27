@@ -4,16 +4,52 @@ import 'package:cls/features/obligations/models/obligation_model.dart';
 import 'package:cls/features/obligations/repositories/obligation_repository.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart'
     show membersStreamProvider;
+import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
 
 final obligationRepositoryProvider = Provider<ObligationRepository>((ref) {
   return ObligationRepository();
 });
 
-/// Stream of all obligations for treasurer / president view
+/// Stream of all obligations for treasurer / president view, scoped to active branch
 final allObligationsProvider =
     StreamProvider.autoDispose<List<ObligationModel>>((ref) {
+      final user = ref.watch(authProvider).valueOrNull;
+      if (user == null) return const Stream.empty();
+
+      final activeScope = ref.watch(activeExecutiveScopeProvider);
+      final isNationalScope = activeScope == ExecutiveScope.national &&
+          (user.nationalRole != null || user.role == UserRole.superAdmin);
+
       final repo = ref.watch(obligationRepositoryProvider);
-      return repo.getAllObligations();
+      final obligationsStream = repo.getAllObligations();
+
+      if (isNationalScope ||
+          user.role == UserRole.superAdmin ||
+          user.branchId == null ||
+          user.branchId!.isEmpty) {
+        return obligationsStream;
+      }
+
+      final membersAsync = ref.watch(membersStreamProvider);
+      final members = membersAsync.valueOrNull ?? [];
+      final branchMemberIds = <String>{};
+      for (final m in members) {
+        if (m.branchId == user.branchId) {
+          branchMemberIds.add(m.id);
+          if (m.userId.isNotEmpty) branchMemberIds.add(m.userId);
+        }
+      }
+      branchMemberIds.add(user.uid);
+
+      return obligationsStream.map((obligations) {
+        return obligations.where((o) {
+          if (o.branchId != null && o.branchId!.isNotEmpty) {
+            return o.branchId == user.branchId;
+          }
+          return branchMemberIds.contains(o.memberId);
+        }).toList();
+      });
     });
 
 /// AsyncValue provider that filters obligations by member ID, handling both

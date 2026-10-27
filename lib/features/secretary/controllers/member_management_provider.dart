@@ -44,6 +44,18 @@ class MemberManagementController {
     }
   }
 
+  Future<void> setNationalEnrollment({
+    required String memberId,
+    required bool isEnrolled,
+    required String byUserId,
+  }) {
+    return _repository.setNationalEnrollment(
+      memberId: memberId,
+      isEnrolled: isEnrolled,
+      byUserId: byUserId,
+    );
+  }
+
   Future<List<MemberModel>> searchMembers(String query) {
     return _repository.searchMembers(query);
   }

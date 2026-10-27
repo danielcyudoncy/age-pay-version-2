@@ -3,6 +3,7 @@ import '../../../core/constants/enums.dart';
 import '../models/expense_model.dart';
 import '../repositories/expense_repository.dart';
 import '../../auth/controllers/auth_provider.dart';
+import '../../national/controllers/national_provider.dart';
 
 final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
   return ExpenseRepository();
@@ -11,13 +12,63 @@ final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
 final expensesStreamProvider = StreamProvider.autoDispose<List<ExpenseModel>>((ref) {
   final user = ref.watch(authProvider).valueOrNull;
   if (user == null) return const Stream.empty();
-  return ref.watch(expenseRepositoryProvider).getExpenses();
+
+  final activeScope = ref.watch(activeExecutiveScopeProvider);
+  final isNationalScope = activeScope == ExecutiveScope.national &&
+      (user.nationalRole != null || user.role == UserRole.superAdmin);
+
+  return ref.watch(expenseRepositoryProvider).getExpenses().map((expenses) {
+    if (isNationalScope) {
+      return expenses.where((e) {
+        return e.branchId == 'national' ||
+            ((user.branchId == null || user.branchId!.isEmpty) &&
+                (e.branchId == null || e.branchId!.isEmpty));
+      }).toList();
+    }
+    if (user.role == UserRole.superAdmin) {
+      return expenses;
+    }
+    if (user.branchId != null && user.branchId!.isNotEmpty) {
+      return expenses.where((e) {
+        if (e.branchId != null && e.branchId!.isNotEmpty) {
+          return e.branchId == user.branchId;
+        }
+        return e.createdBy == user.uid;
+      }).toList();
+    }
+    return expenses;
+  });
 });
 
 final pendingExpensesStreamProvider = StreamProvider.autoDispose<List<ExpenseModel>>((ref) {
   final user = ref.watch(authProvider).valueOrNull;
   if (user == null) return const Stream.empty();
-  return ref.watch(expenseRepositoryProvider).getPendingExpenses();
+
+  final activeScope = ref.watch(activeExecutiveScopeProvider);
+  final isNationalScope = activeScope == ExecutiveScope.national &&
+      (user.nationalRole != null || user.role == UserRole.superAdmin);
+
+  return ref.watch(expenseRepositoryProvider).getPendingExpenses().map((expenses) {
+    if (isNationalScope) {
+      return expenses.where((e) {
+        return e.branchId == 'national' ||
+            ((user.branchId == null || user.branchId!.isEmpty) &&
+                (e.branchId == null || e.branchId!.isEmpty));
+      }).toList();
+    }
+    if (user.role == UserRole.superAdmin) {
+      return expenses;
+    }
+    if (user.branchId != null && user.branchId!.isNotEmpty) {
+      return expenses.where((e) {
+        if (e.branchId != null && e.branchId!.isNotEmpty) {
+          return e.branchId == user.branchId;
+        }
+        return e.createdBy == user.uid;
+      }).toList();
+    }
+    return expenses;
+  });
 });
 
 final expensesByCategoryProvider =

@@ -11,6 +11,7 @@ class NotificationModel {
   final String organizationId;
   final String? targetRole;
   final String? targetUserId;
+  final String? targetBranchId;
 
   const NotificationModel({
     required this.id,
@@ -24,6 +25,7 @@ class NotificationModel {
     this.organizationId = '',
     this.targetRole,
     this.targetUserId,
+    this.targetBranchId,
   });
 
   NotificationModel copyWith({
@@ -38,6 +40,7 @@ class NotificationModel {
     String? organizationId,
     String? targetRole,
     String? targetUserId,
+    String? targetBranchId,
   }) {
     return NotificationModel(
       id: id ?? this.id,
@@ -51,6 +54,7 @@ class NotificationModel {
       organizationId: organizationId ?? this.organizationId,
       targetRole: targetRole ?? this.targetRole,
       targetUserId: targetUserId ?? this.targetUserId,
+      targetBranchId: targetBranchId ?? this.targetBranchId,
     );
   }
 
@@ -79,6 +83,7 @@ class NotificationModel {
       organizationId: map['organizationId'] ?? '',
       targetRole: map['targetRole'],
       targetUserId: map['targetUserId'],
+      targetBranchId: map['targetBranchId'],
     );
   }
 
@@ -95,6 +100,7 @@ class NotificationModel {
       'organizationId': organizationId,
       if (targetRole != null) 'targetRole': targetRole,
       if (targetUserId != null) 'targetUserId': targetUserId,
+      if (targetBranchId != null) 'targetBranchId': targetBranchId,
     };
   }
 }

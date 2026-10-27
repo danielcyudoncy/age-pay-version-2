@@ -18,6 +18,7 @@ class ExpenseModel {
   final DateTime? rejectedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? branchId;
 
   const ExpenseModel({
     required this.id,
@@ -36,6 +37,7 @@ class ExpenseModel {
     this.rejectedAt,
     required this.createdAt,
     required this.updatedAt,
+    this.branchId,
   });
 
   factory ExpenseModel.fromFirestore(DocumentSnapshot doc) {
@@ -76,6 +78,7 @@ class ExpenseModel {
       rejectedAt: data['rejectedAt'] != null ? _parseDate(data['rejectedAt']) : null,
       createdAt: _parseDate(data['createdAt']),
       updatedAt: _parseDate(data['updatedAt']),
+      branchId: data['branchId'] as String?,
     );
   }
 
@@ -94,6 +97,7 @@ class ExpenseModel {
       if (rejectionReason != null) 'rejectionReason': rejectionReason,
       if (rejectedBy != null) 'rejectedBy': rejectedBy,
       if (rejectedAt != null) 'rejectedAt': Timestamp.fromDate(rejectedAt!),
+      if (branchId != null) 'branchId': branchId,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -173,6 +177,7 @@ class ExpenseModel {
     DateTime? rejectedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? branchId,
   }) {
     return ExpenseModel(
       id: id ?? this.id,
@@ -191,6 +196,7 @@ class ExpenseModel {
       rejectedAt: rejectedAt ?? this.rejectedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      branchId: branchId ?? this.branchId,
     );
   }
 }

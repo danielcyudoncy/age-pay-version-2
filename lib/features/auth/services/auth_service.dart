@@ -332,7 +332,11 @@ class AuthService {
     }
   }
 
-  Stream<List<UserModel>> getPendingRegistrations(String organizationId) {
+  Stream<List<UserModel>> getPendingRegistrations(
+    String organizationId, {
+    String? branchId,
+    bool isNationalExecutive = false,
+  }) {
     if (_auth.currentUser == null) {
       return const Stream.empty();
     }
@@ -345,14 +349,25 @@ class AuthService {
               final isPending = u.status == AccountStatus.pendingApproval ||
                   (!u.isActive && u.status != AccountStatus.rejected);
               if (!isPending) return false;
-              // If organizationId is provided and matching, include it.
-              // If user has no organizationId yet, also include it.
               if (organizationId.isNotEmpty &&
                   u.organizationId.isNotEmpty &&
                   u.organizationId != organizationId) {
-                // If there are other pending users specifically in this org, prioritize them;
-                // otherwise still show to executive so no registration gets lost.
-                return true;
+                return false;
+              }
+              if (isNationalExecutive) {
+                // National executives only approve registrations intended directly for the national body.
+                // Branch-level applicants are strictly approved by their respective branch presidents.
+                if (u.branchId != null &&
+                    u.branchId!.isNotEmpty &&
+                    u.branchId != 'national') {
+                  return false;
+                }
+              } else if (branchId != null && branchId.isNotEmpty) {
+                if (u.branchId != null &&
+                    u.branchId!.isNotEmpty &&
+                    u.branchId != branchId) {
+                  return false;
+                }
               }
               return true;
             })
@@ -367,6 +382,7 @@ class AuthService {
     required String uid,
     required String organizationId,
     UserRole? assignedRole,
+    UserRole? assignedNationalRole,
     MemberDuesStanding? duesStanding,
     double? openingBalance,
   }) async {
@@ -378,14 +394,19 @@ class AuthService {
     final effectiveOpeningBalance = openingBalance ?? user.openingBalance;
 
     final batch = _firestore.batch();
-    batch.update(_firestore.collection('users').doc(uid), {
+    final userUpdates = <String, dynamic>{
       'organizationId': organizationId,
       'status': AccountStatus.approved.name,
       'role': approvedRole.name,
       'isActive': true,
       'duesStanding': effectiveStanding.name,
       'openingBalance': ?effectiveOpeningBalance,
-    });
+    };
+    if (assignedNationalRole != null) {
+      userUpdates['nationalRole'] = assignedNationalRole.name;
+      userUpdates['isEnrolledInNational'] = true;
+    }
+    batch.update(_firestore.collection('users').doc(uid), userUpdates);
 
     final membersSnap = await _firestore
         .collection('members')
@@ -396,13 +417,56 @@ class AuthService {
     String? memberId;
     if (membersSnap.docs.isNotEmpty) {
       memberId = membersSnap.docs.first.id;
-      batch.update(membersSnap.docs.first.reference, {
+      final memberUpdates = <String, dynamic>{
         'status': 'approved',
         'isActive': true,
+        'role': approvedRole.name,
         'duesStanding': effectiveStanding.name,
         'openingBalance': ?effectiveOpeningBalance,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
-      });
+      };
+      if (assignedNationalRole != null) {
+        memberUpdates['nationalRole'] = assignedNationalRole.name;
+        memberUpdates['isEnrolledInNational'] = true;
+      }
+      batch.update(membersSnap.docs.first.reference, memberUpdates);
+    }
+
+    if (assignedNationalRole != null) {
+      final nationalBranchQuery = await _firestore
+          .collection('branches')
+          .where('organizationId', isEqualTo: organizationId)
+          .where('isNational', isEqualTo: true)
+          .limit(1)
+          .get();
+
+      if (nationalBranchQuery.docs.isNotEmpty) {
+        final branchRef = nationalBranchQuery.docs.first.reference;
+        final branchUpdates = <String, dynamic>{
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+        switch (assignedNationalRole) {
+          case UserRole.president:
+            branchUpdates['presidentId'] = uid;
+            branchUpdates['presidentName'] = user.displayName;
+            break;
+          case UserRole.secretary:
+            branchUpdates['secretaryId'] = uid;
+            branchUpdates['secretaryName'] = user.displayName;
+            break;
+          case UserRole.financialSecretary:
+            branchUpdates['financialSecretaryId'] = uid;
+            branchUpdates['financialSecretaryName'] = user.displayName;
+            break;
+          case UserRole.treasurer:
+            branchUpdates['treasurerId'] = uid;
+            branchUpdates['treasurerName'] = user.displayName;
+            break;
+          default:
+            break;
+        }
+        batch.update(branchRef, branchUpdates);
+      }
     }
 
     await batch.commit();
@@ -421,12 +485,16 @@ class AuthService {
 
     // Notify approved user and resolve pending notifications
     try {
+      final notifBody = assignedNationalRole != null
+          ? 'Your registration has been approved. You are active as ${approvedRole.name} with National Office: ${assignedNationalRole.displayName}.'
+          : 'Your registration has been approved. You are now active with role: ${approvedRole.name}.';
+
       final notifDoc = _firestore.collection('notifications').doc();
       await notifDoc.set({
         'id': notifDoc.id,
         'organizationId': organizationId,
         'title': 'Registration Approved!',
-        'body': 'Your registration has been approved. You are now active with role: ${approvedRole.name}.',
+        'body': notifBody,
         'type': 'approval_success',
         'payload': uid,
         'targetUserId': uid,

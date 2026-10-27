@@ -103,6 +103,7 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
           memberIds: widget.memberIds,
           scope: _selectedScope,
           branchId: isNational ? null : user?.branchId,
+          branchName: isNational ? null : user?.branchName,
         );
   }
 

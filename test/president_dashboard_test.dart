@@ -41,7 +41,11 @@ class _MockAuthService implements AuthService {
   }
 
   @override
-  Stream<List<UserModel>> getPendingRegistrations(String organizationId) =>
+  Stream<List<UserModel>> getPendingRegistrations(
+    String organizationId, {
+    String? branchId,
+    bool isNationalExecutive = false,
+  }) =>
       Stream.value([]);
 
   @override
@@ -404,6 +408,7 @@ void main() {
       category: ExpenseCategory.administration,
       createdBy: 't1',
       expenseDate: testDate,
+      status: ExpenseStatus.approved,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     ),
@@ -415,8 +420,21 @@ void main() {
       category: ExpenseCategory.events,
       createdBy: 't1',
       expenseDate: testDate.subtract(const Duration(days: 2)),
+      status: ExpenseStatus.approved,
       createdAt: DateTime.now().subtract(const Duration(days: 2)),
       updatedAt: DateTime.now().subtract(const Duration(days: 2)),
+    ),
+    ExpenseModel(
+      id: 'e3',
+      title: 'Pending Laptop Requisition',
+      description: 'Pending requisition awaiting sign-offs',
+      amount: 50000,
+      category: ExpenseCategory.projects,
+      createdBy: 't1',
+      expenseDate: testDate,
+      status: ExpenseStatus.pendingApproval,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
   ];
 
@@ -503,8 +521,8 @@ void main() {
       expect(find.text('President Dashboard'), findsOneWidget);
       expect(find.text('Total Members'), findsOneWidget);
       expect(find.text('Total Collections'), findsOneWidget);
-      expect(find.text('Total Outstanding'), findsOneWidget);
-      expect(find.text('Net Position'), findsOneWidget);
+      expect(find.text('Total Disbursed'), findsOneWidget);
+      expect(find.text('Net Balance'), findsOneWidget);
 
       final allTexts = tester.allWidgets
           .whereType<Text>()
@@ -512,9 +530,62 @@ void main() {
           .toList();
       expect(allTexts, contains('2'));
       expect(allTexts, contains('₦15,000'));
-      expect(allTexts, contains('₦10,000'));
+      expect(allTexts, contains('₦7,000'));
       expect(allTexts, contains('₦8,000'));
     });
+
+    testWidgets(
+      'unapproved/pending expenses are not counted as disbursed and do not reduce net balance',
+      (tester) async {
+        final onlyPendingExpenses = [
+          ExpenseModel(
+            id: 'exp_pending',
+            title: 'Pending 57k Request',
+            description: 'Awaiting executive sign-offs',
+            amount: 57000,
+            category: ExpenseCategory.administration,
+            createdBy: 't1',
+            expenseDate: testDate,
+            status: ExpenseStatus.pendingApproval,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        ];
+
+        await tester.pumpWidget(
+          buildDashboard(
+            payments: [],
+            obligations: [],
+            levies: [],
+            expenses: onlyPendingExpenses,
+            members: testMembers,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final allTexts = tester.allWidgets
+            .whereType<Text>()
+            .map((w) => w.data ?? '')
+            .toList();
+        // Total Disbursed should be 0, Net Balance should be 0 (not -57,000)
+        expect(allTexts, contains('₦0'));
+        expect(allTexts, isNot(contains('-₦57,000')));
+        expect(
+          find.descendant(
+            of: find.widgetWithText(Card, 'Total Disbursed'),
+            matching: find.text('₦0'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.widgetWithText(Card, 'Net Balance'),
+            matching: find.text('₦0'),
+          ),
+          findsOneWidget,
+        );
+      },
+    );
 
     testWidgets('shows monthly collections list (ListView widget present)', (
       tester,
@@ -531,7 +602,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ListView), findsWidgets);
-      expect(find.text('Monthly Collections (Last 12 Months)'), findsOneWidget);
+      expect(find.text('Monthly Collections (Last 12 Months)'), findsNothing);
     });
 
     testWidgets('shows collections by method chart (PieChart widget present)', (
@@ -549,11 +620,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Scroll down to bring pie chart into viewport
-      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.drag(find.byType(ListView), const Offset(0, -1000));
       await tester.pumpAndSettle();
 
       expect(find.byType(PieChart), findsOneWidget);
-      expect(find.text('Collections by Method'), findsOneWidget);
+      expect(find.text('Revenue by Payment Method'), findsOneWidget);
     });
 
     testWidgets('shows active levies list with progress bars', (tester) async {
@@ -572,7 +643,7 @@ void main() {
       await tester.drag(find.byType(ListView), const Offset(0, -800));
       await tester.pumpAndSettle();
 
-      expect(find.text('Active Levies'), findsOneWidget);
+      expect(find.text('Active Levies & Projects'), findsOneWidget);
       expect(find.text('June Monthly Due'), findsOneWidget);
       expect(find.text('Project Fund'), findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsWidgets);
@@ -595,7 +666,7 @@ void main() {
       await tester.drag(find.byType(ListView), const Offset(0, -1000));
       await tester.pumpAndSettle();
 
-      expect(find.text('Recent Expenses'), findsOneWidget);
+      expect(find.text('Recent Disbursed Expenses'), findsOneWidget);
 
       final allTexts = tester.allWidgets
           .whereType<Text>()
@@ -607,7 +678,7 @@ void main() {
       expect(allTexts.any((t) => t.contains('₦5,000')), isTrue);
     });
 
-    testWidgets('shows view reports button', (tester) async {
+    testWidgets('shows view reports option in quick actions dropdown', (tester) async {
       await tester.pumpWidget(
         buildDashboard(
           payments: testPayments,
@@ -619,11 +690,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Scroll down to bring reports section into viewport
-      await tester.drag(find.byType(ListView), const Offset(0, -1200));
+      // Open the Executive Quick Actions dropdown menu
+      await tester.tap(find.text('Executive Quick Actions'));
       await tester.pumpAndSettle();
 
-      expect(find.text('View Reports'), findsOneWidget);
+      expect(find.text('Reports'), findsOneWidget);
     });
 
     testWidgets('shows loading state initially', (tester) async {

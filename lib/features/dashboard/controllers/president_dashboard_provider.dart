@@ -6,34 +6,219 @@ import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/obligations/models/obligation_model.dart';
+import 'package:cls/features/levies/models/levy_model.dart';
 import 'package:cls/features/levies/controllers/levy_provider.dart'
     hide obligationRepositoryProvider;
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/auth/models/user_model.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
+
+bool _isNationalScope(ExecutiveScope activeScope, UserModel user) {
+  return activeScope == ExecutiveScope.national &&
+      (user.nationalRole != null || user.role == UserRole.superAdmin);
+}
 
 // ---------------------------------------------------------------------------
 // Stream providers
 // ---------------------------------------------------------------------------
-final presidentAllPaymentsStreamProvider =
-    StreamProvider.autoDispose<List<PaymentModel>>((ref) {
-      final auth = ref.watch(authProvider);
-      if (auth.hasValue && auth.value == null) return const Stream.empty();
-      return ref.watch(paymentRepositoryProvider).getAllPayments();
-    });
-
 final presidentMembersStreamProvider =
     StreamProvider.autoDispose<List<MemberModel>>((ref) {
       final auth = ref.watch(authProvider);
-      if (auth.hasValue && auth.value == null) return const Stream.empty();
-      return ref.watch(memberRepositoryProvider).getMembers();
+      if (auth is AsyncError) {
+        return Stream.error(auth.error!, auth.stackTrace);
+      }
+      final user = auth.valueOrNull;
+      if (user == null) return const Stream.empty();
+
+      final activeScope = ref.watch(activeExecutiveScopeProvider);
+      final isNationalScope = _isNationalScope(activeScope, user);
+
+      return ref.watch(memberRepositoryProvider).getMembers().map((members) {
+        if (isNationalScope) {
+          return members
+              .where((m) =>
+                  m.isEnrolledInNational ||
+                  m.nationalRole != null ||
+                  m.branchId == 'national')
+              .toList();
+        }
+        if (user.role == UserRole.superAdmin) {
+          return members;
+        }
+        if (user.branchId != null && user.branchId!.isNotEmpty) {
+          return members.where((m) => m.branchId == user.branchId).toList();
+        }
+        return members;
+      });
+    });
+
+final presidentAllPaymentsStreamProvider =
+    StreamProvider.autoDispose<List<PaymentModel>>((ref) {
+      final auth = ref.watch(authProvider);
+      if (auth is AsyncError) {
+        return Stream.error(auth.error!, auth.stackTrace);
+      }
+      final user = auth.valueOrNull;
+      if (user == null) return const Stream.empty();
+
+      final activeScope = ref.watch(activeExecutiveScopeProvider);
+      final isNationalScope = _isNationalScope(activeScope, user);
+
+      final paymentsStream = ref.watch(paymentRepositoryProvider).getAllPayments();
+
+      if (isNationalScope) {
+        final obligationsAsync = ref.watch(presidentObligationsStreamProvider);
+        final nationalObligations = obligationsAsync.valueOrNull ?? [];
+        final nationalObligationIds = nationalObligations.map((o) => o.id).toSet();
+
+        return paymentsStream.map((payments) {
+          return payments.where((p) {
+            if (p.allocations.isNotEmpty) {
+              return p.allocations.any(
+                (a) => nationalObligationIds.contains(a.obligationId),
+              );
+            }
+            final note = (p.notes ?? '').toLowerCase();
+            return note.contains('national');
+          }).toList();
+        });
+      }
+
+      if (user.role == UserRole.superAdmin ||
+          user.branchId == null ||
+          user.branchId!.isEmpty) {
+        return paymentsStream;
+      }
+
+      final membersAsync = ref.watch(presidentMembersStreamProvider);
+      final members = membersAsync.valueOrNull ?? [];
+      final branchMemberIds = <String>{};
+      for (final m in members) {
+        if (m.branchId == user.branchId) {
+          branchMemberIds.add(m.id);
+          if (m.userId.isNotEmpty) branchMemberIds.add(m.userId);
+        }
+      }
+      branchMemberIds.add(user.uid);
+
+      return paymentsStream.map((payments) {
+        return payments
+            .where((p) => branchMemberIds.contains(p.memberId))
+            .toList();
+      });
     });
 
 final presidentExpensesStreamProvider =
     StreamProvider.autoDispose<List<ExpenseModel>>((ref) {
       final auth = ref.watch(authProvider);
-      if (auth.hasValue && auth.value == null) return const Stream.empty();
-      return ref.watch(expenseRepositoryProvider).getExpenses();
+      if (auth is AsyncError) {
+        return Stream.error(auth.error!, auth.stackTrace);
+      }
+      final user = auth.valueOrNull;
+      if (user == null) return const Stream.empty();
+
+      final activeScope = ref.watch(activeExecutiveScopeProvider);
+      final isNationalScope = _isNationalScope(activeScope, user);
+
+      return ref.watch(expenseRepositoryProvider).getExpenses().map((expenses) {
+        if (isNationalScope) {
+          return expenses.where((e) {
+            return e.branchId == 'national' ||
+                ((user.branchId == null || user.branchId!.isEmpty) &&
+                    (e.branchId == null || e.branchId!.isEmpty));
+          }).toList();
+        }
+        if (user.role == UserRole.superAdmin) {
+          return expenses;
+        }
+        if (user.branchId != null && user.branchId!.isNotEmpty) {
+          return expenses.where((e) {
+            if (e.branchId != null && e.branchId!.isNotEmpty) {
+              return e.branchId == user.branchId;
+            }
+            return e.createdBy == user.uid;
+          }).toList();
+        }
+        return expenses;
+      });
+    });
+
+final presidentObligationsStreamProvider =
+    StreamProvider.autoDispose<List<ObligationModel>>((ref) {
+      final auth = ref.watch(authProvider);
+      if (auth is AsyncError) {
+        return Stream.error(auth.error!, auth.stackTrace);
+      }
+      final user = auth.valueOrNull;
+      if (user == null) return const Stream.empty();
+
+      final activeScope = ref.watch(activeExecutiveScopeProvider);
+      final isNationalScope = _isNationalScope(activeScope, user);
+
+      final obligationsStream =
+          ref.watch(obligationRepositoryProvider).getAllObligations();
+
+      if (isNationalScope) {
+        return obligationsStream.map((obligations) {
+          return obligations.where((o) => o.scope == 'national').toList();
+        });
+      }
+
+      if (user.role == UserRole.superAdmin ||
+          user.branchId == null ||
+          user.branchId!.isEmpty) {
+        return obligationsStream;
+      }
+
+      final membersAsync = ref.watch(presidentMembersStreamProvider);
+      final members = membersAsync.valueOrNull ?? [];
+      final branchMemberIds = <String>{};
+      for (final m in members) {
+        if (m.branchId == user.branchId) {
+          branchMemberIds.add(m.id);
+          if (m.userId.isNotEmpty) branchMemberIds.add(m.userId);
+        }
+      }
+      branchMemberIds.add(user.uid);
+
+      return obligationsStream.map((obligations) {
+        return obligations.where((o) {
+          if (o.branchId != null && o.branchId!.isNotEmpty) {
+            return o.branchId == user.branchId;
+          }
+          return branchMemberIds.contains(o.memberId);
+        }).toList();
+      });
+    });
+
+final presidentLeviesStreamProvider =
+    StreamProvider.autoDispose<List<LevyModel>>((ref) {
+      final auth = ref.watch(authProvider);
+      if (auth is AsyncError) {
+        return Stream.error(auth.error!, auth.stackTrace);
+      }
+      final user = auth.valueOrNull;
+      if (user == null) return const Stream.empty();
+
+      final activeScope = ref.watch(activeExecutiveScopeProvider);
+      final isNationalScope = _isNationalScope(activeScope, user);
+
+      return ref.watch(levyRepositoryProvider).getActiveLevies().map((levies) {
+        if (isNationalScope) {
+          return levies.where((l) => l.scope == 'national').toList();
+        }
+        if (user.role == UserRole.superAdmin) {
+          return levies;
+        }
+        if (user.branchId != null && user.branchId!.isNotEmpty) {
+          return levies.where((l) {
+            return l.scope == 'national' || l.branchId == user.branchId;
+          }).toList();
+        }
+        return levies;
+      });
     });
 
 // ---------------------------------------------------------------------------
@@ -149,7 +334,7 @@ final totalCollectionsProvider = Provider.autoDispose<AsyncValue<double>>((
   ref,
 ) {
   final paymentsAsync = ref.watch(presidentAllPaymentsStreamProvider);
-  final obligationsAsync = ref.watch(allObligationsProvider);
+  final obligationsAsync = ref.watch(presidentObligationsStreamProvider);
 
   return _combine<double>([paymentsAsync, obligationsAsync], () {
     final payments = paymentsAsync.valueOrNull ?? [];
@@ -170,7 +355,7 @@ final totalCollectionsProvider = Provider.autoDispose<AsyncValue<double>>((
 
 final totalOutstandingLeviesProvider = Provider.autoDispose<AsyncValue<double>>(
   (ref) {
-    final obligationsAsync = ref.watch(allObligationsProvider);
+    final obligationsAsync = ref.watch(presidentObligationsStreamProvider);
     return obligationsAsync.whenData(
       (list) => list
           .where(
@@ -212,7 +397,7 @@ final monthlyCollectionsProvider =
 final collectionsByMethodProvider =
     Provider.autoDispose<AsyncValue<Map<PaymentMethod, double>>>((ref) {
       final paymentsAsync = ref.watch(presidentAllPaymentsStreamProvider);
-      final obligationsAsync = ref.watch(allObligationsProvider);
+      final obligationsAsync = ref.watch(presidentObligationsStreamProvider);
 
       return _combine<Map<PaymentMethod, double>>(
         [paymentsAsync, obligationsAsync],
@@ -297,8 +482,8 @@ final memberCollectionSummaryProvider =
 
 final activeLeviesSummaryProvider =
     Provider.autoDispose<AsyncValue<List<ActiveLevySummary>>>((ref) {
-      final leviesAsync = ref.watch(activeLeviesProvider);
-      final obligationsAsync = ref.watch(allObligationsProvider);
+      final leviesAsync = ref.watch(presidentLeviesStreamProvider);
+      final obligationsAsync = ref.watch(presidentObligationsStreamProvider);
 
       return _combine<List<ActiveLevySummary>>(
         [leviesAsync, obligationsAsync],
@@ -382,7 +567,10 @@ final recentExpensesProvider =
     Provider.autoDispose<AsyncValue<List<ExpenseModel>>>((ref) {
       final expensesAsync = ref.watch(presidentExpensesStreamProvider);
       return expensesAsync.whenData((list) {
-        final sorted = [...list]
+        final approved = list
+            .where((e) => e.status == ExpenseStatus.approved)
+            .toList();
+        final sorted = [...approved]
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         return sorted.take(10).toList();
       });
@@ -398,7 +586,10 @@ final financialOverviewProvider =
         () {
           final collections = collectionsAsync.valueOrNull ?? 0.0;
           final allExpenses = expensesAsync.valueOrNull ?? [];
-          final totalExpenses = allExpenses.fold<double>(
+          final approvedExpenses = allExpenses
+              .where((e) => e.status == ExpenseStatus.approved)
+              .toList();
+          final totalExpenses = approvedExpenses.fold<double>(
             0.0,
             (sum, e) => sum + e.amount,
           );

@@ -31,11 +31,15 @@ class _EditBranchBankDialogState extends ConsumerState<EditBranchBankDialog> {
   @override
   void initState() {
     super.initState();
-    _bankNameController = TextEditingController(text: widget.branch.bankName ?? '');
-    _accountNumberController =
-        TextEditingController(text: widget.branch.accountNumber ?? '');
-    _accountNameController =
-        TextEditingController(text: widget.branch.accountName ?? '');
+    _bankNameController = TextEditingController(
+      text: widget.branch.bankName ?? '',
+    );
+    _accountNumberController = TextEditingController(
+      text: widget.branch.accountNumber ?? '',
+    );
+    _accountNameController = TextEditingController(
+      text: widget.branch.accountName ?? '',
+    );
   }
 
   @override
@@ -51,7 +55,9 @@ class _EditBranchBankDialogState extends ConsumerState<EditBranchBankDialog> {
     setState(() => _isLoading = true);
 
     try {
-      await ref.read(nationalRepositoryProvider).updateBranchBankDetails(
+      await ref
+          .read(nationalRepositoryProvider)
+          .updateBranchBankDetails(
             branchId: widget.branch.id,
             bankName: _bankNameController.text.trim(),
             accountNumber: _accountNumberController.text.trim(),
@@ -152,7 +158,9 @@ class _EditBranchBankDialogState extends ConsumerState<EditBranchBankDialog> {
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return 'Required';
-                  if (val.trim().length < 10) return 'Must be at least 10 digits';
+                  if (val.trim().length < 10) {
+                    return 'Must be at least 10 digits';
+                  }
                   return null;
                 },
               ),

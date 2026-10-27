@@ -18,6 +18,9 @@ class MemberModel {
   final double? openingBalance;
   final UserRole? role;
   final UserRole? nationalRole;
+  final bool isEnrolledInNational;
+  final DateTime? enrolledInNationalAt;
+  final String? enrolledInNationalBy;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -38,6 +41,9 @@ class MemberModel {
     this.openingBalance,
     this.role,
     this.nationalRole,
+    this.isEnrolledInNational = false,
+    this.enrolledInNationalAt,
+    this.enrolledInNationalBy,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -85,6 +91,11 @@ class MemberModel {
       openingBalance: (data['openingBalance'] as num?)?.toDouble(),
       role: parsedRole,
       nationalRole: parsedNationalRole,
+      isEnrolledInNational: data['isEnrolledInNational'] == true,
+      enrolledInNationalAt: data['enrolledInNationalAt'] != null
+          ? _parseDate(data['enrolledInNationalAt'])
+          : null,
+      enrolledInNationalBy: data['enrolledInNationalBy'] as String?,
       createdAt: _parseDate(data['createdAt']),
       updatedAt: _parseDate(data['updatedAt']),
     );
@@ -106,6 +117,11 @@ class MemberModel {
       if (branchName != null) 'branchName': branchName,
       if (role != null) 'role': role!.name,
       if (nationalRole != null) 'nationalRole': nationalRole!.name,
+      'isEnrolledInNational': isEnrolledInNational,
+      if (enrolledInNationalAt != null)
+        'enrolledInNationalAt': Timestamp.fromDate(enrolledInNationalAt!),
+      if (enrolledInNationalBy != null)
+        'enrolledInNationalBy': enrolledInNationalBy,
       'profilePhotoUrl': profilePhotoUrl,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -135,6 +151,9 @@ class MemberModel {
     double? openingBalance,
     UserRole? role,
     UserRole? nationalRole,
+    bool? isEnrolledInNational,
+    DateTime? enrolledInNationalAt,
+    String? enrolledInNationalBy,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -155,6 +174,9 @@ class MemberModel {
       openingBalance: openingBalance ?? this.openingBalance,
       role: role ?? this.role,
       nationalRole: nationalRole ?? this.nationalRole,
+      isEnrolledInNational: isEnrolledInNational ?? this.isEnrolledInNational,
+      enrolledInNationalAt: enrolledInNationalAt ?? this.enrolledInNationalAt,
+      enrolledInNationalBy: enrolledInNationalBy ?? this.enrolledInNationalBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

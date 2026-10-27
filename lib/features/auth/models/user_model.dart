@@ -19,6 +19,9 @@ class UserModel {
   final MemberDuesStanding duesStanding;
   final double? openingBalance;
   final UserRole? nationalRole;
+  final bool isEnrolledInNational;
+  final DateTime? enrolledInNationalAt;
+  final String? enrolledInNationalBy;
 
   const UserModel({
     required this.uid,
@@ -38,6 +41,9 @@ class UserModel {
     this.duesStanding = MemberDuesStanding.newMember,
     this.openingBalance,
     this.nationalRole,
+    this.isEnrolledInNational = false,
+    this.enrolledInNationalAt,
+    this.enrolledInNationalBy,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -126,6 +132,11 @@ class UserModel {
       duesStanding: parsedStanding,
       openingBalance: (data['openingBalance'] as num?)?.toDouble(),
       nationalRole: parsedNationalRole,
+      isEnrolledInNational: data['isEnrolledInNational'] == true,
+      enrolledInNationalAt: data['enrolledInNationalAt'] != null
+          ? _parseDate(data['enrolledInNationalAt'])
+          : null,
+      enrolledInNationalBy: data['enrolledInNationalBy'] as String?,
     );
   }
 
@@ -145,6 +156,11 @@ class UserModel {
       if (branchName != null) 'branchName': branchName,
       if (requestedRole != null) 'requestedRole': requestedRole!.name,
       if (nationalRole != null) 'nationalRole': nationalRole!.name,
+      'isEnrolledInNational': isEnrolledInNational,
+      if (enrolledInNationalAt != null)
+        'enrolledInNationalAt': Timestamp.fromDate(enrolledInNationalAt!),
+      if (enrolledInNationalBy != null)
+        'enrolledInNationalBy': enrolledInNationalBy,
       if (coFounderName != null) 'coFounderName': coFounderName,
       if (coFounderPhone != null) 'coFounderPhone': coFounderPhone,
     };
@@ -174,6 +190,9 @@ class UserModel {
     MemberDuesStanding? duesStanding,
     double? openingBalance,
     UserRole? nationalRole,
+    bool? isEnrolledInNational,
+    DateTime? enrolledInNationalAt,
+    String? enrolledInNationalBy,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -193,6 +212,9 @@ class UserModel {
       duesStanding: duesStanding ?? this.duesStanding,
       openingBalance: openingBalance ?? this.openingBalance,
       nationalRole: nationalRole ?? this.nationalRole,
+      isEnrolledInNational: isEnrolledInNational ?? this.isEnrolledInNational,
+      enrolledInNationalAt: enrolledInNationalAt ?? this.enrolledInNationalAt,
+      enrolledInNationalBy: enrolledInNationalBy ?? this.enrolledInNationalBy,
     );
   }
 

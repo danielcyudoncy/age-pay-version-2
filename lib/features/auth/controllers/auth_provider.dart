@@ -4,6 +4,7 @@ import '../models/user_model.dart';
 import '../repositories/co_founder_invitation_repository.dart';
 import '../models/co_founder_invitation_model.dart';
 import '../../../core/constants/enums.dart';
+import '../../national/controllers/national_provider.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
@@ -16,7 +17,17 @@ final pendingRegistrationsStreamProvider =
     StreamProvider.autoDispose.family<List<UserModel>, String>((ref, organizationId) {
   final user = ref.watch(authProvider).valueOrNull;
   if (user == null) return const Stream.empty();
-  return ref.watch(authServiceProvider).getPendingRegistrations(organizationId);
+
+  final activeScope = ref.watch(activeExecutiveScopeProvider);
+  final isNationalExecutive =
+      (activeScope == ExecutiveScope.national && user.nationalRole != null) ||
+          user.role == UserRole.superAdmin;
+
+  return ref.watch(authServiceProvider).getPendingRegistrations(
+    organizationId,
+    branchId: user.branchId,
+    isNationalExecutive: isNationalExecutive,
+  );
 });
 
 final userCoFounderInviteStreamProvider =

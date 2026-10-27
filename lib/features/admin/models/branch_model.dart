@@ -139,8 +139,7 @@ class BranchModel {
       presidentName: presidentName ?? this.presidentName,
       secretaryId: secretaryId ?? this.secretaryId,
       secretaryName: secretaryName ?? this.secretaryName,
-      financialSecretaryId:
-          financialSecretaryId ?? this.financialSecretaryId,
+      financialSecretaryId: financialSecretaryId ?? this.financialSecretaryId,
       financialSecretaryName:
           financialSecretaryName ?? this.financialSecretaryName,
       treasurerId: treasurerId ?? this.treasurerId,

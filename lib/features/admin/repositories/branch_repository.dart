@@ -6,7 +6,7 @@ class BranchRepository {
   final String collection = 'branches';
 
   BranchRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   CollectionReference get _collection => _firestore.collection(collection);
 
@@ -16,8 +16,11 @@ class BranchRepository {
         .where('organizationId', isEqualTo: organizationId)
         .where('isActive', isEqualTo: true)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => BranchModel.fromFirestore(doc)).toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => BranchModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   Future<List<BranchModel>> getBranchesFuture(String organizationId) async {
@@ -26,9 +29,7 @@ class BranchRepository {
         .where('organizationId', isEqualTo: organizationId)
         .where('isActive', isEqualTo: true)
         .get();
-    return snapshot.docs
-        .map((doc) => BranchModel.fromFirestore(doc))
-        .toList();
+    return snapshot.docs.map((doc) => BranchModel.fromFirestore(doc)).toList();
   }
 
   Future<BranchModel?> getBranchById(String id) async {
@@ -51,8 +52,12 @@ class BranchRepository {
   }
 
   Future<void> updateBranch(BranchModel branch) async {
-    await _collection.doc(branch.id).update(
-      branch.copyWith(updatedAt: DateTime.now()).toFirestore(),
-    );
+    await _collection
+        .doc(branch.id)
+        .update(branch.copyWith(updatedAt: DateTime.now()).toFirestore());
+  }
+
+  Future<void> deleteBranch(String id) async {
+    await _collection.doc(id).delete();
   }
 }
