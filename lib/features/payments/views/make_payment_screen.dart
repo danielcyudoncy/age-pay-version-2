@@ -14,6 +14,7 @@ import 'package:cls/features/payments/controllers/payment_provider.dart';
 import 'package:cls/features/payments/controllers/offline_payment_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:cls/features/admin/controllers/admin_provider.dart';
+import 'package:cls/features/admin/models/branch_model.dart';
 import 'package:cls/features/admin/models/organization_model.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -561,18 +562,38 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
     );
   }
 
-  Widget _buildReceivingAccountCard(ThemeData theme, OrganizationModel? org) {
-    final bankName = (org?.bankName?.isNotEmpty == true)
-        ? org!.bankName!
-        : 'First Bank of Nigeria';
-    final accountNumber = (org?.accountNumber?.isNotEmpty == true)
-        ? org!.accountNumber!
-        : '0123456789';
-    final accountName = (org?.accountName?.isNotEmpty == true)
-        ? org!.accountName!
-        : (org?.name.isNotEmpty == true
-            ? '${org!.name} Central Treasury'
-            : 'Age Grade Central Treasury');
+  Widget _buildReceivingAccountCard(
+    ThemeData theme,
+    OrganizationModel? org, {
+    bool isNational = false,
+    BranchModel? branch,
+  }) {
+    final useBranch = !isNational &&
+        branch != null &&
+        (branch.bankName?.isNotEmpty == true);
+    final bankName = useBranch
+        ? branch.bankName!
+        : ((org?.bankName?.isNotEmpty == true)
+            ? org!.bankName!
+            : 'First Bank of Nigeria');
+    final accountNumber = useBranch
+        ? branch.accountNumber!
+        : ((org?.accountNumber?.isNotEmpty == true)
+            ? org!.accountNumber!
+            : '0123456789');
+    final accountName = useBranch
+        ? branch.accountName!
+        : ((org?.accountName?.isNotEmpty == true)
+            ? org!.accountName!
+            : (org?.name.isNotEmpty == true
+                ? '${org!.name} Central Treasury'
+                : 'Age Grade Central Treasury'));
+
+    final accountLabel = isNational
+        ? 'NATIONAL TREASURY ACCOUNT'
+        : (branch != null
+            ? '${branch.name.toUpperCase()} ACCOUNT'
+            : 'RECEIVING ACCOUNT');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -607,8 +628,8 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                     color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.account_balance,
+                  child: Icon(
+                    isNational ? Icons.stars_rounded : Icons.account_balance,
                     color: Colors.white,
                     size: 15,
                   ),
@@ -616,7 +637,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'RECEIVING ACCOUNT',
+                    accountLabel,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 11,
@@ -1041,7 +1062,28 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                     builder: (context) {
                       final org =
                           ref.watch(currentOrganizationProvider).valueOrNull;
-                      return _buildReceivingAccountCard(theme, org);
+                      final user = ref.watch(authProvider).valueOrNull;
+                      final branches =
+                          (user != null && user.organizationId.isNotEmpty)
+                              ? ref
+                                  .watch(branchesStreamFamily(user.organizationId))
+                                  .valueOrNull
+                              : null;
+                      final selectedObligations =
+                          _getFilteredObligations(obligations ?? [])
+                              .where((o) => _selectedObligationIds.contains(o.id))
+                              .toList();
+                      final isNational =
+                          selectedObligations.any((o) => o.scope == 'national');
+                      final branch = branches
+                          ?.where((b) => b.id == user?.branchId)
+                          .firstOrNull;
+                      return _buildReceivingAccountCard(
+                        theme,
+                        org,
+                        isNational: isNational,
+                        branch: branch,
+                      );
                     },
                   ),
                   _buildPaymentModeCard(

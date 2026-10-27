@@ -38,6 +38,8 @@ class NotificationRepository {
     required String organizationId,
     String? userId,
     UserRole? role,
+    String? branchId,
+    bool isNationalExecutive = false,
   }) {
     try {
       if (FirebaseAuth.instance.currentUser == null) {
@@ -64,7 +66,13 @@ class NotificationRepository {
                   doc.data() as Map<String, dynamic>,
                   doc.id,
                 ))
-            .where((n) => _isNotificationForUser(n, userId, role))
+            .where((n) => _isNotificationForUser(
+                  n,
+                  userId,
+                  role,
+                  branchId: branchId,
+                  isNationalExecutive: isNationalExecutive,
+                ))
             .toList();
       items.sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
       return items;
@@ -134,6 +142,15 @@ class NotificationRepository {
             final applicantUid = doc.id;
             if (applicantUid == userId) continue;
 
+            final applicantBranchId = data['branchId'] as String?;
+            if (!isNationalExecutive && branchId != null && branchId.isNotEmpty) {
+              if (applicantBranchId != null &&
+                  applicantBranchId.isNotEmpty &&
+                  applicantBranchId != branchId) {
+                continue;
+              }
+            }
+
             final displayName =
                 data['displayName'] as String? ?? 'New member';
             final branchName = data['branchName'] as String?;
@@ -186,17 +203,33 @@ class NotificationRepository {
   bool isNotificationForUser(
     NotificationModel n,
     String? userId,
-    UserRole? role,
-  ) =>
-      _isNotificationForUser(n, userId, role);
+    UserRole? role, {
+    String? branchId,
+    bool isNationalExecutive = false,
+  }) =>
+      _isNotificationForUser(
+        n,
+        userId,
+        role,
+        branchId: branchId,
+        isNationalExecutive: isNationalExecutive,
+      );
 
   bool _isNotificationForUser(
     NotificationModel n,
     String? userId,
-    UserRole? role,
-  ) {
+    UserRole? role, {
+    String? branchId,
+    bool isNationalExecutive = false,
+  }) {
     if (n.targetUserId != null && n.targetUserId!.isNotEmpty) {
       if (n.targetUserId != userId) return false;
+    }
+
+    if (n.targetBranchId != null && n.targetBranchId!.isNotEmpty) {
+      if (!isNationalExecutive && n.targetBranchId != branchId) {
+        return false;
+      }
     }
 
     final lowerTitle = n.title.trim().toLowerCase();
@@ -207,16 +240,18 @@ class NotificationRepository {
         lowerBody.contains('executive meeting session') ||
         lowerBody.contains('all executive officers');
 
-    if (isExecutiveNotification && (role == null || !role.isExecutive)) {
+    if (isExecutiveNotification && !isNationalExecutive && (role == null || !role.isExecutive)) {
       return false;
     }
 
     if (n.targetRole != null && n.targetRole!.isNotEmpty) {
       final target = n.targetRole!.toLowerCase();
+      if ((target == 'executives' || target == 'executive') &&
+          !isNationalExecutive &&
+          (role == null || !role.isExecutive)) {
+        return false;
+      }
       if (role != null) {
-        if ((target == 'executives' || target == 'executive') && !role.isExecutive) {
-          return false;
-        }
         if (target == 'president' &&
             role != UserRole.president &&
             role != UserRole.vicePresident &&

@@ -5,7 +5,8 @@ class AdminService {
   final OrganizationRepository _organizationRepository;
 
   AdminService({OrganizationRepository? organizationRepository})
-    : _organizationRepository = organizationRepository ?? OrganizationRepository();
+    : _organizationRepository =
+          organizationRepository ?? OrganizationRepository();
 
   Stream<List<OrganizationModel>> getActiveOrganizations() {
     return _organizationRepository.getOrganizations().map(

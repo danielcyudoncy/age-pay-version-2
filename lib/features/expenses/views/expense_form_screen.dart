@@ -7,6 +7,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl/intl.dart';
 // path package not needed – using DateTime-based file names
 import '../../../core/constants/enums.dart';
+import '../../auth/controllers/auth_provider.dart';
+import '../../national/controllers/national_provider.dart';
 import '../models/expense_model.dart';
 import '../controllers/expense_provider.dart';
 
@@ -115,6 +117,11 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       final repo = ref.read(expenseRepositoryProvider);
       final orgId = widget.organizationId;
 
+      final user = ref.read(authProvider).valueOrNull;
+      final activeScope = ref.read(activeExecutiveScopeProvider);
+      final defaultBranchId =
+          activeScope == ExecutiveScope.national ? 'national' : user?.branchId;
+
       if (_isEditing) {
         final updated = widget.expense!.copyWith(
           title: _titleController.text.trim(),
@@ -126,6 +133,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           organizationId: widget.expense!.organizationId.isNotEmpty
               ? widget.expense!.organizationId
               : orgId,
+          branchId: widget.expense!.branchId ?? defaultBranchId,
           updatedAt: DateTime.now(),
         );
         await repo.updateExpense(updated);
@@ -140,6 +148,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           expenseDate: _expenseDate,
           createdBy: widget.currentUserId,
           receiptUrl: receiptUrl,
+          branchId: defaultBranchId,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );

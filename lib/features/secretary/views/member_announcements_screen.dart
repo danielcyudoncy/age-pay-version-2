@@ -32,15 +32,13 @@ class MemberAnnouncementsScreen extends ConsumerWidget {
       data: (orgId) {
         final announcementsAsync = ref.watch(announcementsStreamProvider(orgId));
         final user = ref.watch(authProvider).valueOrNull;
-        final isExecutive = user?.isExecutive ?? false;
 
         return Scaffold(
           appBar: AppBar(title: const Text('Announcements')),
           body: announcementsAsync.when(
             data: (announcements) {
-              final visible = isExecutive
-                  ? announcements
-                  : announcements.where((a) => !a.isExecutivesOnly).toList();
+              final visible =
+                  announcements.where((a) => a.isVisibleTo(user)).toList();
 
               if (visible.isEmpty) {
                 return Center(
@@ -172,6 +170,31 @@ class _MemberAnnouncementCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (announcement.audienceLabel != 'Everyone') ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.secondary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.group_outlined, size: 12, color: theme.colorScheme.secondary),
+                        const SizedBox(width: 4),
+                        Text(
+                          announcement.audienceLabel,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.secondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const Spacer(),
                 Text(
                   dateFormat.format(date),

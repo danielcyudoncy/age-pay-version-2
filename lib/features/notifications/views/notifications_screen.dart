@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/enums.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../auth/models/user_model.dart';
+import '../../payments/views/make_payment_screen.dart';
 import '../controllers/notification_provider.dart';
 import '../models/notification_model.dart';
 import '../widgets/notification_widgets.dart';
@@ -24,6 +25,15 @@ class NotificationsScreen extends ConsumerWidget {
         notification.payload!.isNotEmpty &&
         isExecutive) {
       _showApprovalSheet(context, ref, notification.payload!);
+    } else if (notification.type == 'levy') {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => MakePaymentScreen(
+            memberId: currentUser.uid,
+            memberEmail: currentUser.email,
+          ),
+        ),
+      );
     }
   }
 
@@ -115,6 +125,7 @@ class _ApprovalModal extends ConsumerStatefulWidget {
 
 class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
   UserRole? _selectedRole;
+  UserRole? _selectedNationalRole;
   bool _isProcessing = false;
 
   String _roleLabel(UserRole role) {
@@ -160,15 +171,19 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
         uid: applicant.uid,
         organizationId: widget.organizationId,
         assignedRole: roleToAssign,
+        assignedNationalRole: _selectedNationalRole,
       );
 
       if (mounted) {
         Navigator.of(context).pop();
+        final nationalNotice = _selectedNationalRole != null
+            ? ' & National ${_roleLabel(_selectedNationalRole!)}'
+            : '';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green.shade700,
             content: Text(
-              '${applicant.displayName} approved as ${_roleLabel(roleToAssign)}.',
+              '${applicant.displayName} approved as ${_roleLabel(roleToAssign)}$nationalNotice.',
             ),
           ),
         );
@@ -211,6 +226,10 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authService = ref.watch(authServiceProvider);
+    final currentUser = ref.watch(authProvider).valueOrNull;
+    final canAssignNational = currentUser?.role == UserRole.president ||
+        currentUser?.role == UserRole.superAdmin ||
+        currentUser?.nationalRole == UserRole.president;
 
     return Container(
       padding: EdgeInsets.only(
@@ -360,8 +379,13 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Assign Official Role',
+                '1. Assign Branch Role',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Operational role within ${applicant.branchName ?? "their branch"}.',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 8),
               Container(
@@ -393,6 +417,62 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
                   ),
                 ),
               ),
+              if (canAssignNational) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Icon(Icons.stars_rounded, size: 16, color: Colors.teal),
+                    const SizedBox(width: 6),
+                    const Text(
+                      '2. Assign National Office (Optional)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Elevate this member into the National Executive / Assembly.',
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.teal.shade300),
+                    color: Colors.teal.shade50.withValues(alpha: 0.3),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<UserRole?>(
+                      value: _selectedNationalRole,
+                      isExpanded: true,
+                      hint: const Text('None (Regular Member)'),
+                      items: [
+                        const DropdownMenuItem<UserRole?>(
+                          value: null,
+                          child: Text('None (Regular Member)'),
+                        ),
+                        ...UserRole.values
+                            .where((role) =>
+                                role != UserRole.superAdmin &&
+                                role != UserRole.member)
+                            .map((role) {
+                          return DropdownMenuItem<UserRole?>(
+                            value: role,
+                            child: Text('National ${_roleLabel(role)}'),
+                          );
+                        }),
+                      ],
+                      onChanged: _isProcessing
+                          ? null
+                          : (newNatRole) {
+                              setState(() => _selectedNationalRole = newNatRole);
+                            },
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               Row(
                 children: [

@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/meetings/controllers/meeting_provider.dart';
 import 'package:cls/features/meetings/models/meeting_model.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
 import 'package:cls/features/notifications/controllers/notification_provider.dart';
 import 'package:cls/features/notifications/models/notification_model.dart';
 import 'package:cls/features/secretary/controllers/secretary_dashboard_provider.dart';
@@ -143,6 +145,14 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
           ? user.organizationId
           : user.uid;
 
+      final activeScope = ref.read(activeExecutiveScopeProvider);
+      final isNational = activeScope == ExecutiveScope.national &&
+          (user.nationalRole != null || user.role == UserRole.superAdmin);
+      final meetingScope =
+          widget.meeting?.scope ?? (isNational ? 'national' : 'branch');
+      final meetingBranchId =
+          widget.meeting?.branchId ?? (isNational ? 'national' : user.branchId);
+
       if (_pickedFile != null && _pickedFileName != null) {
         final meetingId =
             widget.meeting?.id ??
@@ -153,6 +163,8 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
               meetingDate: _selectedDate!,
               createdBy: user.uid,
               targetAudience: _targetAudience,
+              scope: meetingScope,
+              branchId: meetingBranchId,
             );
         final result = await controller.uploadMinutesFile(
           meetingId,
@@ -172,6 +184,8 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
             meetingDate: _selectedDate!,
             createdBy: user.uid,
             targetAudience: _targetAudience,
+            scope: meetingScope,
+            branchId: meetingBranchId,
           );
 
       final meeting = MeetingModel(
@@ -189,6 +203,8 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
         updatedAt: DateTime.now(),
         createdBy: widget.meeting?.createdBy ?? user.uid,
         targetAudience: _targetAudience,
+        scope: meetingScope,
+        branchId: meetingBranchId,
       );
 
       await controller.updateMeeting(meeting);
@@ -200,6 +216,9 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
         ).format(_selectedDate!);
 
         final isExecutiveOnly = _targetAudience == 'executives';
+        final announcementAudience = isExecutiveOnly
+            ? (isNational ? 'nationalexecutives' : 'branchexecutives')
+            : (isNational ? 'all' : 'branch');
 
         // 1. Post to Announcements
         final announcement = AnnouncementModel(
@@ -221,7 +240,9 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
           isPinned: true,
           announcementDate: _selectedDate!,
           createdBy: user.uid,
-          targetAudience: _targetAudience,
+          targetAudience: announcementAudience,
+          targetBranchId: isNational ? null : user.branchId,
+          targetBranchName: isNational ? null : user.branchName,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -240,6 +261,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
               : 'Meeting Scheduled: $title',
           body: '$formattedDateTime at $venue',
           type: 'meeting',
+          targetBranchId: isNational ? null : user.branchId,
           receivedAt: DateTime.now(),
         );
 

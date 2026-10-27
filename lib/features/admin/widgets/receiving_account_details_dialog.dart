@@ -22,7 +22,8 @@ class ReceivingAccountDetailsDialog extends ConsumerWidget {
     final orgAsync = ref.watch(currentOrganizationProvider);
     final user = ref.watch(authProvider).valueOrNull;
 
-    final canEdit = user != null &&
+    final canEdit =
+        user != null &&
         (user.role == UserRole.treasurer ||
             user.role == UserRole.viceTreasurer ||
             user.role == UserRole.president ||
@@ -64,7 +65,11 @@ class ReceivingAccountDetailsDialog extends ConsumerWidget {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.info_outline, size: 48, color: Colors.orange),
+                    const Icon(
+                      Icons.info_outline,
+                      size: 48,
+                      color: Colors.orange,
+                    ),
                     const SizedBox(height: 12),
                     const Text('No organization profile found.'),
                     const SizedBox(height: 16),
@@ -76,13 +81,15 @@ class ReceivingAccountDetailsDialog extends ConsumerWidget {
                 );
               }
 
-              final hasAccount = org.accountNumber != null &&
+              final hasAccount =
+                  org.accountNumber != null &&
                   org.accountNumber!.trim().isNotEmpty;
               final bankName = (org.bankName?.isNotEmpty == true)
                   ? org.bankName!
                   : 'First Bank of Nigeria';
-              final accountNumber =
-                  hasAccount ? org.accountNumber! : 'Not configured';
+              final accountNumber = hasAccount
+                  ? org.accountNumber!
+                  : 'Not configured';
               final accountName = (org.accountName?.isNotEmpty == true)
                   ? org.accountName!
                   : org.name;
@@ -151,7 +158,9 @@ class ReceivingAccountDetailsDialog extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.25,
+                            ),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -185,8 +194,11 @@ class ReceivingAccountDetailsDialog extends ConsumerWidget {
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.verified,
-                                        size: 13, color: Colors.white),
+                                    Icon(
+                                      Icons.verified,
+                                      size: 13,
+                                      color: Colors.white,
+                                    ),
                                     SizedBox(width: 4),
                                     Text(
                                       'Active',
@@ -234,8 +246,11 @@ class ReceivingAccountDetailsDialog extends ConsumerWidget {
                                     SnackBar(
                                       content: Row(
                                         children: [
-                                          const Icon(Icons.check_circle,
-                                              color: Colors.white, size: 18),
+                                          const Icon(
+                                            Icons.check_circle,
+                                            color: Colors.white,
+                                            size: 18,
+                                          ),
                                           const SizedBox(width: 8),
                                           Text(
                                             'Account number copied: $accountNumber',
@@ -247,7 +262,10 @@ class ReceivingAccountDetailsDialog extends ConsumerWidget {
                                     ),
                                   );
                                 },
-                                icon: const Icon(Icons.copy, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.copy,
+                                  color: Colors.white,
+                                ),
                                 tooltip: 'Copy Account Number',
                               ),
                             ],
@@ -346,7 +364,9 @@ class ReceivingAccountDetailsDialog extends ConsumerWidget {
                             );
                           },
                           icon: Icon(
-                            hasAccount ? Icons.edit_note : Icons.add_circle_outline,
+                            hasAccount
+                                ? Icons.edit_note
+                                : Icons.add_circle_outline,
                             size: 18,
                           ),
                           label: Text(

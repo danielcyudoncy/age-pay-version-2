@@ -9,6 +9,8 @@ class LevyModel {
   final ObligationType type;
   final double amountPerMember;
   final String? targetGroup; // 'all', 'executives', or member ID list
+  final String scope; // 'national' | 'branch'
+  final String? branchId;
   final DateTime dueDate;
   final String createdBy;
   final bool isActive;
@@ -23,6 +25,8 @@ class LevyModel {
     required this.type,
     required this.amountPerMember,
     this.targetGroup,
+    this.scope = 'branch',
+    this.branchId,
     required this.dueDate,
     required this.createdBy,
     this.isActive = true,
@@ -43,6 +47,8 @@ class LevyModel {
       ),
       amountPerMember: (data['amountPerMember'] as num?)?.toDouble() ?? 0.0,
       targetGroup: data['targetGroup'],
+      scope: data['scope'] ?? 'branch',
+      branchId: data['branchId'],
       dueDate: _parseDate(data['dueDate']),
       createdBy: data['createdBy'] ?? '',
       isActive: data['isActive'] ?? true,
@@ -59,6 +65,8 @@ class LevyModel {
       'type': type.name,
       'amountPerMember': amountPerMember,
       'targetGroup': targetGroup,
+      'scope': scope,
+      if (branchId != null) 'branchId': branchId,
       'dueDate': Timestamp.fromDate(dueDate),
       'createdBy': createdBy,
       'isActive': isActive,
@@ -81,6 +89,8 @@ class LevyModel {
     ObligationType? type,
     double? amountPerMember,
     String? targetGroup,
+    String? scope,
+    String? branchId,
     DateTime? dueDate,
     String? createdBy,
     bool? isActive,
@@ -95,6 +105,8 @@ class LevyModel {
       type: type ?? this.type,
       amountPerMember: amountPerMember ?? this.amountPerMember,
       targetGroup: targetGroup ?? this.targetGroup,
+      scope: scope ?? this.scope,
+      branchId: branchId ?? this.branchId,
       dueDate: dueDate ?? this.dueDate,
       createdBy: createdBy ?? this.createdBy,
       isActive: isActive ?? this.isActive,

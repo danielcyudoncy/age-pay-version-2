@@ -16,6 +16,11 @@ class MemberModel {
   final String? profilePhotoUrl;
   final MemberDuesStanding duesStanding;
   final double? openingBalance;
+  final UserRole? role;
+  final UserRole? nationalRole;
+  final bool isEnrolledInNational;
+  final DateTime? enrolledInNationalAt;
+  final String? enrolledInNationalBy;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -34,6 +39,11 @@ class MemberModel {
     this.profilePhotoUrl,
     this.duesStanding = MemberDuesStanding.newMember,
     this.openingBalance,
+    this.role,
+    this.nationalRole,
+    this.isEnrolledInNational = false,
+    this.enrolledInNationalAt,
+    this.enrolledInNationalBy,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -47,6 +57,22 @@ class MemberModel {
             orElse: () => MemberDuesStanding.newMember,
           )
         : MemberDuesStanding.newMember;
+
+    final roleStr = data['role'] as String?;
+    final UserRole? parsedRole = roleStr != null
+        ? UserRole.values.firstWhere(
+            (r) => r.name.toLowerCase() == roleStr.trim().toLowerCase(),
+            orElse: () => UserRole.member,
+          )
+        : null;
+
+    final nationalRoleStr = data['nationalRole'] as String?;
+    final UserRole? parsedNationalRole = nationalRoleStr != null
+        ? UserRole.values.firstWhere(
+            (r) => r.name.toLowerCase() == nationalRoleStr.trim().toLowerCase(),
+            orElse: () => UserRole.member,
+          )
+        : null;
 
     return MemberModel(
       id: doc.id,
@@ -63,6 +89,13 @@ class MemberModel {
       profilePhotoUrl: data['profilePhotoUrl'],
       duesStanding: parsedStanding,
       openingBalance: (data['openingBalance'] as num?)?.toDouble(),
+      role: parsedRole,
+      nationalRole: parsedNationalRole,
+      isEnrolledInNational: data['isEnrolledInNational'] == true,
+      enrolledInNationalAt: data['enrolledInNationalAt'] != null
+          ? _parseDate(data['enrolledInNationalAt'])
+          : null,
+      enrolledInNationalBy: data['enrolledInNationalBy'] as String?,
       createdAt: _parseDate(data['createdAt']),
       updatedAt: _parseDate(data['updatedAt']),
     );
@@ -82,6 +115,13 @@ class MemberModel {
       if (openingBalance != null) 'openingBalance': openingBalance,
       if (branchId != null) 'branchId': branchId,
       if (branchName != null) 'branchName': branchName,
+      if (role != null) 'role': role!.name,
+      if (nationalRole != null) 'nationalRole': nationalRole!.name,
+      'isEnrolledInNational': isEnrolledInNational,
+      if (enrolledInNationalAt != null)
+        'enrolledInNationalAt': Timestamp.fromDate(enrolledInNationalAt!),
+      if (enrolledInNationalBy != null)
+        'enrolledInNationalBy': enrolledInNationalBy,
       'profilePhotoUrl': profilePhotoUrl,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -109,6 +149,11 @@ class MemberModel {
     String? profilePhotoUrl,
     MemberDuesStanding? duesStanding,
     double? openingBalance,
+    UserRole? role,
+    UserRole? nationalRole,
+    bool? isEnrolledInNational,
+    DateTime? enrolledInNationalAt,
+    String? enrolledInNationalBy,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -127,6 +172,11 @@ class MemberModel {
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
       duesStanding: duesStanding ?? this.duesStanding,
       openingBalance: openingBalance ?? this.openingBalance,
+      role: role ?? this.role,
+      nationalRole: nationalRole ?? this.nationalRole,
+      isEnrolledInNational: isEnrolledInNational ?? this.isEnrolledInNational,
+      enrolledInNationalAt: enrolledInNationalAt ?? this.enrolledInNationalAt,
+      enrolledInNationalBy: enrolledInNationalBy ?? this.enrolledInNationalBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

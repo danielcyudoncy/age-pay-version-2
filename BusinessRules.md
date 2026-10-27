@@ -159,6 +159,13 @@ Default roles include:
 
 Organizations may create custom roles.
 
+### Super Admin Governance Rules
+1. **Platform Scope**: The Super Admin possesses platform-level authority across all tenant organizations and branches.
+2. **User & Role Administration**: The Super Admin can globally search all registered users, adjust branch or national roles, reassign members between organizations/branches, approve pending registrations, and suspend or activate accounts.
+3. **Privilege Elevation**: Super Admin status can only be granted or revoked by another active Super Admin.
+4. **System Configuration**: Only the Super Admin can configure global payment gateway modes (live/sandbox), fee bearer policies, dual-approval expense thresholds, maintenance mode, and communication integrations.
+5. **Maintenance Mode Enforcement**: When maintenance mode is activated, standard user logins and operations are temporarily restricted with a custom public announcement notice.
+
 ---
 
 ## Disciplinary Penalties & Provost Decorum Rules
@@ -592,6 +599,36 @@ The business architecture supports future modules including:
 * Subscription Billing
 * AI Treasurer
 * AI Financial Advisor
+
+---
+
+## National Portfolios & Branch Privacy Boundaries
+
+### Core Privacy Principle
+National account holders (National President, National Secretary, National Treasurer, etc.) do NOT have the right to inspect or access local branch records without explicit delegation or authorization by that branch:
+* **National account holders only see what the branch president wants them to see.**
+* Branch internal activities remain isolated from national visibility by default.
+
+### Specific Isolation Boundaries
+1. **Meetings & Roll Call Privacy**:
+   * National executives cannot view branch meetings, branch meeting minutes, attendance roll calls, or branch attendee counts.
+   * National dashboard and executive views only query and display national-tier meetings (`scope == 'national'`).
+2. **Announcement & Meeting Cross-Branch Privacy**:
+   * Announcements for branch meetings and branch-specific notices are private to the members and executives of that branch.
+   * Cross-branch leakage is strictly prohibited: A member of a branch (including a sole member of a newly created branch) must never see meeting announcements, upcoming meeting cards, or calendar events from any other branch.
+   * National account holders cannot view branch announcements unless they are directly registered members of that branch.
+   * SuperAdmin users belonging to a branch are scoped to their branch on the Member Dashboard and will not see other branches' meetings or meeting broadcasts.
+   * Legacy meeting records or announcements lacking explicit target branch identifiers default to the creator's branch boundary and will not leak to members of different branches. Global broadcasts require explicit national scope (`scope == 'national'` with `targetAudience == 'all'`).
+3. **Member Directory & National Assembly Roll**:
+   * Branch members are NOT visible to national account holders unless they are explicitly **"Enrolled in national branch"** (`isEnrolledInNational == true`) by their Branch President.
+   * Branch Presidents (and SuperAdmins) have exclusive authority to enroll or unenroll branch members in the national tier with an audit trail (`enrolledInNationalAt`, `enrolledInNationalBy`).
+   * National officers and direct national branch members are visible by virtue of their national roles.
+4. **Registration Approvals**:
+   * New applicant registrations for a branch are exclusively approved by that branch's president.
+   * National executives only receive and approve registrations intended directly for the national secretariat or unassigned applicants.
+5. **National Levies Applicability**:
+   * When a national levy is created, it applies to **all branch members** across all branches nationwide.
+   * Automated obligations are distributed to every active branch member in the organization, ensuring comprehensive national compliance while preserving member private record isolation at the branch level.
 
 ---
 

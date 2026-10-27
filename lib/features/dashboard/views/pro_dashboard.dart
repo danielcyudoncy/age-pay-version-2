@@ -408,7 +408,8 @@ class _ProHomeTab extends ConsumerWidget {
           const SizedBox(height: 8),
           announcementsAsync.when(
             data: (items) {
-              if (items.isEmpty) {
+              final visible = items.where((a) => a.isVisibleTo(user)).toList();
+              if (visible.isEmpty) {
                 return Card(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
@@ -434,7 +435,7 @@ class _ProHomeTab extends ConsumerWidget {
                   ),
                 );
               }
-              final recent = items.take(3).toList();
+              final recent = visible.take(3).toList();
               final dateFormat = DateFormat('MMM dd, yyyy');
 
               return Column(

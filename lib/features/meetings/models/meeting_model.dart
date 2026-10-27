@@ -13,6 +13,8 @@ class MeetingModel {
   final DateTime updatedAt;
   final String createdBy;
   final String targetAudience; // 'all' | 'executives'
+  final String scope; // 'national' | 'branch'
+  final String? branchId;
 
   const MeetingModel({
     required this.id,
@@ -27,6 +29,8 @@ class MeetingModel {
     required this.updatedAt,
     required this.createdBy,
     this.targetAudience = 'all',
+    this.scope = 'branch',
+    this.branchId,
   });
 
   factory MeetingModel.fromFirestore(DocumentSnapshot doc) {
@@ -45,6 +49,8 @@ class MeetingModel {
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       createdBy: data['createdBy'] ?? '',
       targetAudience: data['targetAudience'] ?? 'all',
+      scope: data['scope'] ?? 'branch',
+      branchId: data['branchId'] as String?,
     );
   }
 
@@ -61,6 +67,8 @@ class MeetingModel {
       'updatedAt': Timestamp.fromDate(updatedAt),
       'createdBy': createdBy,
       'targetAudience': targetAudience,
+      'scope': scope,
+      if (branchId != null) 'branchId': branchId,
     };
   }
 
@@ -77,6 +85,8 @@ class MeetingModel {
     DateTime? updatedAt,
     String? createdBy,
     String? targetAudience,
+    String? scope,
+    String? branchId,
   }) {
     return MeetingModel(
       id: id ?? this.id,
@@ -91,6 +101,8 @@ class MeetingModel {
       updatedAt: updatedAt ?? this.updatedAt,
       createdBy: createdBy ?? this.createdBy,
       targetAudience: targetAudience ?? this.targetAudience,
+      scope: scope ?? this.scope,
+      branchId: branchId ?? this.branchId,
     );
   }
 

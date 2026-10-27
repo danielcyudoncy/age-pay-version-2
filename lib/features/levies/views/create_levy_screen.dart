@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
+import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/levies/controllers/levy_provider.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
 
 class CreateLevyScreen extends ConsumerStatefulWidget {
   final String creatorId;
@@ -29,6 +31,8 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
 
   ObligationType _selectedType = ObligationType.monthlyDue;
   DateTime _dueDate = DateTime.now().add(const Duration(days: 30));
+  String _selectedScope = 'branch';
+  bool _scopeInitialized = false;
 
   final List<ObligationType> _types = [
     ObligationType.monthlyDue,
@@ -82,6 +86,7 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
     }
 
     final user = ref.read(authProvider).valueOrNull;
+    final isNational = _selectedScope == 'national';
     ref
         .read(levyCreationProvider.notifier)
         .createLevy(
@@ -96,6 +101,9 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
               : _groupController.text.trim(),
           organizationId: user?.organizationId,
           memberIds: widget.memberIds,
+          scope: _selectedScope,
+          branchId: isNational ? null : user?.branchId,
+          branchName: isNational ? null : user?.branchName,
         );
   }
 
@@ -103,6 +111,24 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final creationState = ref.watch(levyCreationProvider);
+    UserModel? user;
+    try {
+      user = ref.watch(authProvider).valueOrNull;
+    } catch (_) {
+      user = null;
+    }
+    final activeScope = ref.watch(activeExecutiveScopeProvider);
+    final canCreateNationalLevy = user?.role == UserRole.superAdmin ||
+        user?.nationalRole != null ||
+        user?.role == UserRole.president;
+
+    if (!_scopeInitialized) {
+      _selectedScope =
+          (activeScope == ExecutiveScope.national && canCreateNationalLevy)
+              ? 'national'
+              : 'branch';
+      _scopeInitialized = true;
+    }
 
     ref.listen<LevyCreationState>(levyCreationProvider, (previous, next) {
       if (!previous!.isSuccess && next.isSuccess) {
@@ -146,6 +172,46 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
             children: [
               Text('Levy Details', style: theme.textTheme.titleLarge),
               const SizedBox(height: 16),
+
+              if (canCreateNationalLevy) ...[
+                Text(
+                  'Levy Scope',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(
+                      value: 'branch',
+                      label: Text('Branch Level'),
+                      icon: Icon(Icons.location_city),
+                    ),
+                    ButtonSegment(
+                      value: 'national',
+                      label: Text('National Level'),
+                      icon: Icon(Icons.public),
+                    ),
+                  ],
+                  selected: {_selectedScope},
+                  onSelectionChanged: (newSelection) {
+                    setState(() {
+                      _selectedScope = newSelection.first;
+                    });
+                  },
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _selectedScope == 'national'
+                      ? 'National obligations apply across all branches and remit directly to the National Treasury.'
+                      : 'Branch obligations apply to members in this branch and remit to the Branch account.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Title
               TextFormField(

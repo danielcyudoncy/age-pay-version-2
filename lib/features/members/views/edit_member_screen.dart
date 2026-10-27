@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
+import 'package:cls/core/theme/app_theme.dart';
+import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/national/widgets/assign_national_office_dialog.dart';
 
 class EditMemberScreen extends ConsumerStatefulWidget {
   final MemberModel member;
@@ -30,6 +33,7 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
   String? _error;
   DateTime? _selectedDob;
   DateTime? _selectedJoinedDate;
+  late bool _isEnrolledInNational;
 
   @override
   void initState() {
@@ -38,6 +42,7 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
     _phoneController = TextEditingController(text: widget.member.phoneNumber);
     _selectedDob = widget.member.dateOfBirth;
     _selectedJoinedDate = widget.member.joinedDate;
+    _isEnrolledInNational = widget.member.isEnrolledInNational;
     _dobController = TextEditingController(
       text: DateFormat('MMM d, yyyy').format(widget.member.dateOfBirth),
     );
@@ -105,10 +110,20 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
         joinedDate: _canEditJoinedDate()
             ? (_selectedJoinedDate ?? widget.member.joinedDate)
             : widget.member.joinedDate,
+        isEnrolledInNational: _isEnrolledInNational,
         updatedAt: DateTime.now(),
       );
 
       await ref.read(memberRepositoryProvider).updateMember(updatedMember);
+
+      if (_isEnrolledInNational != widget.member.isEnrolledInNational) {
+        final currentUid = ref.read(authProvider).valueOrNull?.uid ?? '';
+        await ref.read(memberRepositoryProvider).setNationalEnrollment(
+              memberId: widget.member.id,
+              isEnrolled: _isEnrolledInNational,
+              byUserId: currentUid,
+            );
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -256,6 +271,120 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
                   ),
                 ),
               const SizedBox(height: 24),
+              Builder(
+                builder: (context) {
+                  final currentUser = ref.watch(authProvider).valueOrNull;
+                  final canAssignNational = currentUser?.role == UserRole.president ||
+                      currentUser?.role == UserRole.superAdmin;
+                  if (!canAssignNational) return const SizedBox.shrink();
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.stars_rounded, color: AppTheme.brandGreen),
+                        label: Text(
+                          widget.member.nationalRole != null
+                              ? 'Edit National Office (${widget.member.nationalRole!.displayName})'
+                              : 'Assign to National Office',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.brandGreen,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppTheme.brandGreen),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final targetUser = UserModel(
+                            uid: widget.member.userId.isNotEmpty
+                                ? widget.member.userId
+                                : widget.member.id,
+                            organizationId: currentUser?.organizationId ?? '',
+                            email: widget.member.email,
+                            displayName: widget.member.fullName,
+                            phoneNumber: widget.member.phoneNumber,
+                            role: widget.member.role ?? UserRole.member,
+                            createdAt: widget.member.createdAt,
+                            branchId: widget.member.branchId,
+                            branchName: widget.member.branchName,
+                            nationalRole: widget.member.nationalRole,
+                          );
+                          final changed = await AssignNationalOfficeDialog.show(
+                            context,
+                            targetUser,
+                          );
+                          if (changed == true && context.mounted) {
+                            Navigator.of(context).pop(true);
+                          }
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+              Builder(
+                builder: (context) {
+                  final currentUser = ref.watch(authProvider).valueOrNull;
+                  final canManageNational =
+                      currentUser?.role == UserRole.president ||
+                          currentUser?.role == UserRole.superAdmin;
+                  if (!canManageNational) return const SizedBox.shrink();
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Card(
+                      elevation: 0,
+                      color: _isEnrolledInNational
+                          ? Colors.green.shade50
+                          : Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest
+                              .withValues(alpha: 0.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: _isEnrolledInNational
+                              ? Colors.green.shade300
+                              : Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: SwitchListTile(
+                        title: const Text(
+                          'Enrolled in national branch',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        subtitle: Text(
+                          _isEnrolledInNational
+                              ? 'Visible to national leadership in national rosters.'
+                              : 'Private to this local branch only.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _isEnrolledInNational
+                                ? Colors.green.shade800
+                                : Colors.grey.shade700,
+                          ),
+                        ),
+                        value: _isEnrolledInNational,
+                        activeThumbColor: Colors.green,
+                        onChanged: (val) {
+                          setState(() {
+                            _isEnrolledInNational = val;
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
               SizedBox(
                 width: double.infinity,
                 height: 48,

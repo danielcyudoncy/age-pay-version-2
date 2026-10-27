@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cls/core/constants/enums.dart';
+import 'package:cls/features/admin/controllers/admin_provider.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/secretary/controllers/announcement_provider.dart';
@@ -44,7 +46,9 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
       ),
       body: announcementsAsync.when(
         data: (announcements) {
-          final announcementDates = announcements
+          final visible =
+              announcements.where((a) => a.isVisibleTo(user)).toList();
+          final announcementDates = visible
               .where((a) => a.announcementDate != null)
               .map((a) => DateFormat('yyyy-MM-dd').format(a.announcementDate!))
               .toSet();
@@ -98,7 +102,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                if (announcements.isEmpty)
+                if (visible.isEmpty)
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
@@ -118,7 +122,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                     ),
                   )
                 else
-                  ...announcements.map(
+                  ...visible.map(
                     (a) => _AnnouncementCard(
                       announcement: a,
                       dateFormat: dateFormat,
@@ -157,6 +161,48 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
     bool isPinned = false;
     DateTime announcementDate = date;
 
+    final isNationalOrAdmin = user.isNationalExecutive ||
+        (user.role == UserRole.superAdmin &&
+            (user.branchId == null || user.branchId!.isEmpty));
+
+    String selectedAudience = isNationalOrAdmin ? 'all' : 'branch';
+    String? selectedBranchId = user.branchId;
+    String? selectedBranchName = user.branchName;
+
+    final List<DropdownMenuItem<String>> audienceItems = isNationalOrAdmin
+        ? const [
+            DropdownMenuItem(
+              value: 'all',
+              child: Text('Everyone (All Members Worldwide)'),
+            ),
+            DropdownMenuItem(
+              value: 'allExecutives',
+              child: Text('All Executives (National & Branches)'),
+            ),
+            DropdownMenuItem(
+              value: 'nationalExecutives',
+              child: Text('National Executives Only'),
+            ),
+            DropdownMenuItem(
+              value: 'branch',
+              child: Text('Specific Branch (All Members)'),
+            ),
+            DropdownMenuItem(
+              value: 'branchExecutives',
+              child: Text('Specific Branch (Executives Only)'),
+            ),
+          ]
+        : [
+            DropdownMenuItem(
+              value: 'branch',
+              child: Text('My Branch (${user.branchName ?? 'Branch'} Members)'),
+            ),
+            DropdownMenuItem(
+              value: 'branchExecutives',
+              child: Text('My Branch (${user.branchName ?? 'Branch'} Executives Only)'),
+            ),
+          ];
+
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -165,6 +211,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 InkWell(
                   onTap: () async {
@@ -195,6 +242,71 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                   onChanged: (v) { if (v != null) setDialogState(() => selectedCategory = v); },
                 ),
                 const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedAudience,
+                  decoration: const InputDecoration(
+                    labelText: 'Target Audience',
+                    prefixIcon: Icon(Icons.people_alt_outlined),
+                  ),
+                  items: audienceItems,
+                  onChanged: (v) {
+                    if (v != null) {
+                      setDialogState(() => selectedAudience = v);
+                    }
+                  },
+                ),
+                if (isNationalOrAdmin &&
+                    (selectedAudience == 'branch' ||
+                        selectedAudience == 'branchExecutives')) ...[
+                  const SizedBox(height: 12),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final branchesAsync =
+                          ref.watch(branchesStreamFamily(user.organizationId));
+                      return branchesAsync.when(
+                        data: (branches) {
+                          if (branches.isEmpty) {
+                            return const Text('No branches available');
+                          }
+                          final currentBranch = branches.any((b) => b.id == selectedBranchId)
+                              ? selectedBranchId
+                              : branches.first.id;
+                          if (selectedBranchId == null) {
+                            selectedBranchId = branches.first.id;
+                            selectedBranchName = branches.first.name;
+                          }
+                          return DropdownButtonFormField<String>(
+                            initialValue: currentBranch,
+                            decoration: const InputDecoration(
+                              labelText: 'Target Branch',
+                              prefixIcon: Icon(Icons.location_city),
+                            ),
+                            items: branches
+                                .map(
+                                  (b) => DropdownMenuItem(
+                                    value: b.id,
+                                    child: Text(b.name),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                final matched = branches.firstWhere((b) => b.id == val);
+                                setDialogState(() {
+                                  selectedBranchId = matched.id;
+                                  selectedBranchName = matched.name;
+                                });
+                              }
+                            },
+                          );
+                        },
+                        loading: () => const LinearProgressIndicator(),
+                        error: (_, _) => const Text('Error loading branches'),
+                      );
+                    },
+                  ),
+                ],
+                const SizedBox(height: 12),
                 SwitchListTile(title: const Text('Pin'), value: isPinned, onChanged: (v) => setDialogState(() => isPinned = v)),
               ],
             ),
@@ -206,6 +318,15 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                 if (titleController.text.trim().isEmpty) return;
                 try {
                   final controller = ref.read(announcementControllerProvider);
+                  String? finalBranchId;
+                  String? finalBranchName;
+                  if (selectedAudience == 'branch' || selectedAudience == 'branchExecutives') {
+                    finalBranchId = selectedBranchId;
+                    finalBranchName = selectedBranchName;
+                  } else if (!isNationalOrAdmin) {
+                    finalBranchId = user.branchId;
+                    finalBranchName = user.branchName;
+                  }
                   final announcement = AnnouncementModel(
                     id: '',
                     organizationId: user.organizationId,
@@ -215,6 +336,9 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                     isPinned: isPinned,
                     announcementDate: announcementDate,
                     createdBy: user.uid,
+                    targetAudience: selectedAudience,
+                    targetBranchId: finalBranchId,
+                    targetBranchName: finalBranchName,
                     createdAt: DateTime.now(),
                     updatedAt: DateTime.now(),
                   );
@@ -250,6 +374,49 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
     bool isPinned = announcement.isPinned;
     DateTime announcementDate = announcement.announcementDate ?? DateTime.now();
 
+    final isNationalOrAdmin = user.isNationalExecutive ||
+        (user.role == UserRole.superAdmin &&
+            (user.branchId == null || user.branchId!.isEmpty));
+
+    String selectedAudience = announcement.targetAudience;
+    if (selectedAudience.isEmpty) selectedAudience = 'all';
+    String? selectedBranchId = announcement.targetBranchId ?? user.branchId;
+    String? selectedBranchName = announcement.targetBranchName ?? user.branchName;
+
+    final List<DropdownMenuItem<String>> audienceItems = isNationalOrAdmin
+        ? const [
+            DropdownMenuItem(
+              value: 'all',
+              child: Text('Everyone (All Members Worldwide)'),
+            ),
+            DropdownMenuItem(
+              value: 'allExecutives',
+              child: Text('All Executives (National & Branches)'),
+            ),
+            DropdownMenuItem(
+              value: 'nationalExecutives',
+              child: Text('National Executives Only'),
+            ),
+            DropdownMenuItem(
+              value: 'branch',
+              child: Text('Specific Branch (All Members)'),
+            ),
+            DropdownMenuItem(
+              value: 'branchExecutives',
+              child: Text('Specific Branch (Executives Only)'),
+            ),
+          ]
+        : [
+            DropdownMenuItem(
+              value: 'branch',
+              child: Text('My Branch (${user.branchName ?? 'Branch'} Members)'),
+            ),
+            DropdownMenuItem(
+              value: 'branchExecutives',
+              child: Text('My Branch (${user.branchName ?? 'Branch'} Executives Only)'),
+            ),
+          ];
+
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -258,6 +425,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 InkWell(
                   onTap: () async {
@@ -288,6 +456,71 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                   onChanged: (v) { if (v != null) setDialogState(() => selectedCategory = v); },
                 ),
                 const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedAudience,
+                  decoration: const InputDecoration(
+                    labelText: 'Target Audience',
+                    prefixIcon: Icon(Icons.people_alt_outlined),
+                  ),
+                  items: audienceItems,
+                  onChanged: (v) {
+                    if (v != null) {
+                      setDialogState(() => selectedAudience = v);
+                    }
+                  },
+                ),
+                if (isNationalOrAdmin &&
+                    (selectedAudience == 'branch' ||
+                        selectedAudience == 'branchExecutives')) ...[
+                  const SizedBox(height: 12),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final branchesAsync =
+                          ref.watch(branchesStreamFamily(user.organizationId));
+                      return branchesAsync.when(
+                        data: (branches) {
+                          if (branches.isEmpty) {
+                            return const Text('No branches available');
+                          }
+                          final currentBranch = branches.any((b) => b.id == selectedBranchId)
+                              ? selectedBranchId
+                              : branches.first.id;
+                          if (selectedBranchId == null) {
+                            selectedBranchId = branches.first.id;
+                            selectedBranchName = branches.first.name;
+                          }
+                          return DropdownButtonFormField<String>(
+                            initialValue: currentBranch,
+                            decoration: const InputDecoration(
+                              labelText: 'Target Branch',
+                              prefixIcon: Icon(Icons.location_city),
+                            ),
+                            items: branches
+                                .map(
+                                  (b) => DropdownMenuItem(
+                                    value: b.id,
+                                    child: Text(b.name),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                final matched = branches.firstWhere((b) => b.id == val);
+                                setDialogState(() {
+                                  selectedBranchId = matched.id;
+                                  selectedBranchName = matched.name;
+                                });
+                              }
+                            },
+                          );
+                        },
+                        loading: () => const LinearProgressIndicator(),
+                        error: (_, _) => const Text('Error loading branches'),
+                      );
+                    },
+                  ),
+                ],
+                const SizedBox(height: 12),
                 SwitchListTile(title: const Text('Pin'), value: isPinned, onChanged: (v) => setDialogState(() => isPinned = v)),
               ],
             ),
@@ -299,12 +532,24 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                 if (titleController.text.trim().isEmpty) return;
                 try {
                   final controller = ref.read(announcementControllerProvider);
+                  String? finalBranchId;
+                  String? finalBranchName;
+                  if (selectedAudience == 'branch' || selectedAudience == 'branchExecutives') {
+                    finalBranchId = selectedBranchId;
+                    finalBranchName = selectedBranchName;
+                  } else if (!isNationalOrAdmin) {
+                    finalBranchId = user.branchId;
+                    finalBranchName = user.branchName;
+                  }
                   final updated = announcement.copyWith(
                     title: titleController.text.trim(),
                     body: bodyController.text.trim(),
                     category: selectedCategory,
                     isPinned: isPinned,
                     announcementDate: announcementDate,
+                    targetAudience: selectedAudience,
+                    targetBranchId: finalBranchId,
+                    targetBranchName: finalBranchName,
                   );
                   await controller.updateAnnouncement(updated);
                   if (ctx.mounted) Navigator.pop(ctx);
@@ -360,10 +605,12 @@ class _SelectedDayAnnouncements extends ConsumerWidget {
     final dayAnnouncementsAsync = ref.watch(
       announcementsByDateStreamProvider((orgId: orgId, date: date)),
     );
+    final user = ref.watch(authProvider).valueOrNull;
 
     return dayAnnouncementsAsync.when(
       data: (items) {
-        if (items.isEmpty) {
+        final visible = items.where((a) => a.isVisibleTo(user)).toList();
+        if (visible.isEmpty) {
           return Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -377,7 +624,7 @@ class _SelectedDayAnnouncements extends ConsumerWidget {
           );
         }
         return Column(
-          children: items
+          children: visible
               .map((a) => _AnnouncementCard(
                     announcement: a,
                     dateFormat: dateFormat,
@@ -561,8 +808,29 @@ class _AnnouncementCard extends StatelessWidget {
           child: Icon(Icons.campaign, color: theme.colorScheme.primary),
         ),
         title: Text(announcement.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(
-          '${announcement.category.name.toUpperCase()} • ${announcement.announcementDate != null ? dateFormat.format(announcement.announcementDate!) : dateFormat.format(announcement.createdAt)}',
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 2),
+            Text(
+              '${announcement.category.name.toUpperCase()} • ${announcement.announcementDate != null ? dateFormat.format(announcement.announcementDate!) : dateFormat.format(announcement.createdAt)}',
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.people_alt_outlined, size: 13, color: theme.colorScheme.primary),
+                const SizedBox(width: 4),
+                Text(
+                  announcement.audienceLabel,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

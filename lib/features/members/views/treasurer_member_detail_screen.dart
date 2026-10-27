@@ -7,6 +7,7 @@ import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/dashboard/controllers/president_dashboard_provider.dart';
 import 'package:cls/features/obligations/models/obligation_model.dart';
 import 'edit_member_screen.dart';
 import '../widgets/member_widgets.dart';
@@ -29,11 +30,15 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
     final dateFormat = DateFormat('MMM d, yyyy');
 
-    final currentUserRole = authState.valueOrNull?.role;
+    final currentUser = authState.valueOrNull;
+    final currentUserRole = currentUser?.role;
     final canEdit = !isReadOnly &&
         (currentUserRole == UserRole.treasurer ||
             currentUserRole == UserRole.financialSecretary ||
             currentUserRole == UserRole.viceTreasurer ||
+            currentUserRole == UserRole.superAdmin);
+    final canManageNationalEnrollment = !isReadOnly &&
+        (currentUserRole == UserRole.president ||
             currentUserRole == UserRole.superAdmin);
 
     return Scaffold(
@@ -82,6 +87,71 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                         ? () => _navigateToEditScreen(context, ref, member)
                         : null,
                   ),
+                  if (canManageNationalEnrollment) ...[
+                    const SizedBox(height: 16),
+                    _NationalBranchEnrollmentCard(
+                      member: member,
+                      onToggle: (bool newValue) async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: Text(
+                              newValue
+                                  ? 'Enroll in National Branch?'
+                                  : 'Remove from National Branch?',
+                            ),
+                            content: Text(
+                              newValue
+                                  ? 'Enrolling ${member.fullName} in the national branch grants national leadership the privilege to view this member in national rosters and records.'
+                                  : 'Removing ${member.fullName} from the national branch will hide their information from national account holders.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: Text(newValue ? 'Enroll' : 'Remove'),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirmed == true && context.mounted) {
+                          try {
+                            final currentUid = currentUser?.uid ?? '';
+                            await ref
+                                .read(memberRepositoryProvider)
+                                .setNationalEnrollment(
+                                  memberId: member.id,
+                                  isEnrolled: newValue,
+                                  byUserId: currentUid,
+                                );
+                            ref.invalidate(membersStreamProvider);
+                            ref.invalidate(presidentMembersStreamProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    newValue
+                                        ? '${member.fullName} is now enrolled in national branch'
+                                        : '${member.fullName} removed from national branch',
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to update: $e')),
+                              );
+                            }
+                          }
+                        }
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   LevySummaryCard(
                     label: 'Levies Owed',
@@ -1048,6 +1118,89 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
   }
 }
 
+class _NationalBranchEnrollmentCard extends StatelessWidget {
+  final MemberModel member;
+  final ValueChanged<bool> onToggle;
 
+  const _NationalBranchEnrollmentCard({
+    required this.member,
+    required this.onToggle,
+  });
 
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isEnrolled = member.isEnrolledInNational;
+
+    return Card(
+      elevation: 0,
+      color: isEnrolled
+          ? Colors.green.shade50
+          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isEnrolled
+              ? Colors.green.shade300
+              : theme.colorScheme.outlineVariant,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isEnrolled
+                    ? Colors.green.shade100
+                    : theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.account_balance,
+                color: isEnrolled
+                    ? Colors.green.shade800
+                    : theme.colorScheme.onSurfaceVariant,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Enrolled in national branch',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isEnrolled
+                        ? 'Permitted to be viewed by national account holders.'
+                        : 'Restricted solely to this local branch.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isEnrolled
+                          ? Colors.green.shade800
+                          : Colors.grey.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: isEnrolled,
+              activeThumbColor: Colors.green,
+              onChanged: onToggle,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 

@@ -98,7 +98,9 @@ class _ProvostDashboardState extends ConsumerState<ProvostDashboard> {
         }
       },
       child: Scaffold(
-      appBar: (_selectedIndex == 2 || _selectedIndex == 3)
+      appBar: (_selectedIndex == 2 ||
+              _selectedIndex == 3 ||
+              (_selectedIndex == 1 && activeMeeting != null))
           ? null
           : AppBar(
               title: FittedBox(

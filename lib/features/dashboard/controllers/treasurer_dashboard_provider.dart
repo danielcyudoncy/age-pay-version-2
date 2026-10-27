@@ -11,6 +11,7 @@ import 'package:cls/features/levies/controllers/levy_provider.dart'
     hide obligationRepositoryProvider;
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Repositories
@@ -22,20 +23,71 @@ final memberRepositoryProvider = Provider<MemberRepository>((ref) {
 // ---------------------------------------------------------------------------
 // Streams
 // ---------------------------------------------------------------------------
-final allPaymentsStreamProvider =
-    StreamProvider.autoDispose<List<PaymentModel>>((ref) {
-      final auth = ref.watch(authProvider);
-      if (auth.hasValue && auth.value == null) return const Stream.empty();
-      return ref.watch(paymentRepositoryProvider).getAllPayments();
-    });
-
 final membersStreamProvider = StreamProvider.autoDispose<List<MemberModel>>((
   ref,
 ) {
-  final auth = ref.watch(authProvider);
-  if (auth.hasValue && auth.value == null) return const Stream.empty();
-  return ref.watch(memberRepositoryProvider).getMembers();
+  final user = ref.watch(authProvider).valueOrNull;
+  if (user == null) return const Stream.empty();
+
+  final activeScope = ref.watch(activeExecutiveScopeProvider);
+  final isNationalScope = activeScope == ExecutiveScope.national &&
+      (user.nationalRole != null || user.role == UserRole.superAdmin);
+
+  return ref.watch(memberRepositoryProvider).getMembers().map((members) {
+    if (isNationalScope) {
+      return members
+          .where((m) =>
+              m.isEnrolledInNational ||
+              m.nationalRole != null ||
+              m.branchId == 'national')
+          .toList();
+    }
+    if (user.role == UserRole.superAdmin) {
+      return members;
+    }
+    if (user.branchId != null && user.branchId!.isNotEmpty) {
+      return members.where((m) => m.branchId == user.branchId).toList();
+    }
+    return members;
+  });
 });
+
+final allPaymentsStreamProvider =
+    StreamProvider.autoDispose<List<PaymentModel>>((ref) {
+      final user = ref.watch(authProvider).valueOrNull;
+      if (user == null) return const Stream.empty();
+
+      final activeScope = ref.watch(activeExecutiveScopeProvider);
+      final isNationalScope = activeScope == ExecutiveScope.national &&
+          (user.nationalRole != null || user.role == UserRole.superAdmin);
+
+      final paymentsStream =
+          ref.watch(paymentRepositoryProvider).getAllPayments();
+
+      if (isNationalScope ||
+          user.role == UserRole.superAdmin ||
+          user.branchId == null ||
+          user.branchId!.isEmpty) {
+        return paymentsStream;
+      }
+
+      final membersAsync = ref.watch(membersStreamProvider);
+      final members = membersAsync.valueOrNull ?? [];
+      final branchMemberIds = <String>{};
+      for (final m in members) {
+        if (m.branchId == user.branchId) {
+          branchMemberIds.add(m.id);
+          if (m.userId.isNotEmpty) branchMemberIds.add(m.userId);
+        }
+      }
+      branchMemberIds.add(user.uid);
+
+      return paymentsStream.map((payments) {
+        return payments
+            .where((p) => branchMemberIds.contains(p.memberId))
+            .toList();
+      });
+    });
 
 final memberByUserIdProvider = FutureProvider.autoDispose
     .family<MemberModel?, String>((ref, userId) {

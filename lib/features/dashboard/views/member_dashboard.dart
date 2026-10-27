@@ -160,15 +160,12 @@ class MemberDashboard extends ConsumerWidget {
     );
 
     final user = ref.watch(authProvider).valueOrNull;
-    final isExecutive = user?.isExecutive ?? false;
 
     final announcementsCount = ref
         .watch(announcementsStreamProvider(orgId))
         .when(
           data: (items) {
-            final visible = isExecutive
-                ? items
-                : items.where((a) => !a.isExecutivesOnly).toList();
+            final visible = items.where((a) => a.isVisibleTo(user)).toList();
             return visible.length;
           },
           loading: () => 0,
@@ -930,6 +927,20 @@ class _UpcomingMeetingCard extends ConsumerWidget {
             meetings.where((m) {
               if (!m.meetingDate.isAfter(threshold)) return false;
               if (m.isExecutivesOnly && !isExecutive) return false;
+              final userBranchId = user?.branchId;
+              if (userBranchId != null && userBranchId.isNotEmpty) {
+                final isGlobalNational =
+                    m.scope == 'national' && m.targetAudience == 'all';
+                if (!isGlobalNational) {
+                  if (m.branchId == null || m.branchId != userBranchId) {
+                    return false;
+                  }
+                }
+              } else {
+                if (m.scope != 'national') {
+                  return false;
+                }
+              }
               return true;
             }).toList()
               ..sort((a, b) => a.meetingDate.compareTo(b.meetingDate));

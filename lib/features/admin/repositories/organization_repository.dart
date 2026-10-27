@@ -16,10 +16,9 @@ class OrganizationRepository {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs
-                  .map((doc) => OrganizationModel.fromFirestore(doc))
-                  .toList(),
+          (snapshot) => snapshot.docs
+              .map((doc) => OrganizationModel.fromFirestore(doc))
+              .toList(),
         );
   }
 
@@ -33,10 +32,9 @@ class OrganizationRepository {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs
-                  .map((doc) => OrganizationModel.fromFirestore(doc))
-                  .toList(),
+          (snapshot) => snapshot.docs
+              .map((doc) => OrganizationModel.fromFirestore(doc))
+              .toList(),
         );
   }
 
@@ -52,12 +50,16 @@ class OrganizationRepository {
     if (FirebaseAuth.instance.currentUser == null || id.isEmpty) {
       return const Stream.empty();
     }
-    return _collection.doc(id).snapshots().map((doc) {
-      if (doc.exists && doc.data() != null) {
-        return OrganizationModel.fromFirestore(doc);
-      }
-      return null;
-    }).handleError((_) => null);
+    return _collection
+        .doc(id)
+        .snapshots()
+        .map((doc) {
+          if (doc.exists && doc.data() != null) {
+            return OrganizationModel.fromFirestore(doc);
+          }
+          return null;
+        })
+        .handleError((_) => null);
   }
 
   Future<String> createOrganization(OrganizationModel organization) async {
@@ -70,9 +72,7 @@ class OrganizationRepository {
   Future<void> updateOrganization(OrganizationModel organization) async {
     await _collection
         .doc(organization.id)
-        .update(
-          organization.copyWith(updatedAt: DateTime.now()).toFirestore(),
-        );
+        .update(organization.copyWith(updatedAt: DateTime.now()).toFirestore());
   }
 
   Future<void> activateOrganization(String id) async {
@@ -94,6 +94,19 @@ class OrganizationRepository {
       'openForJoin': openForJoin,
       'updatedAt': Timestamp.fromDate(DateTime.now()),
     });
+  }
+
+  Future<void> deleteOrganization(String id) async {
+    // 1. Delete associated branches
+    final branchesSnap = await _firestore
+        .collection('branches')
+        .where('organizationId', isEqualTo: id)
+        .get();
+    for (final doc in branchesSnap.docs) {
+      await doc.reference.delete();
+    }
+    // 2. Delete the organization document
+    await _collection.doc(id).delete();
   }
 
   Future<void> updateBankDetails({

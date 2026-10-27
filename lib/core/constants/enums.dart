@@ -161,3 +161,17 @@ enum ExpenseCategory {
   miscellaneous,
 }
 
+enum BranchTier {
+  national,
+  branch,
+}
+
+enum ExecutiveScope {
+  branch,
+  national,
+}
+
+enum ObligationScope {
+  national,
+  branch,
+}

@@ -153,7 +153,10 @@ Example
   "status": "active",
   "joinedAt": "",
   "roleId": "",
-  "permissions": []
+  "permissions": [],
+  "isEnrolledInNational": false,
+  "enrolledInNationalAt": null,
+  "enrolledInNationalBy": null
 }
 ```
 
@@ -732,6 +735,38 @@ Organization
 * Soft-delete non-financial records when required.
 * Never hardcode document paths.
 * Keep Firestore rules synchronized with application permissions.
+
+---
+
+## System Configuration Schema
+
+### Collection: `system_settings`
+
+Document: `global_config`
+
+Controls platform-wide system operational configuration, gateway switches, and security thresholds for the Super Admin:
+
+```json
+{
+  "paymentEnvironment": "live",
+  "paystackPublicKey": "pk_live_...",
+  "flutterwavePublicKey": "FLWPUBK_...",
+  "feeBearer": "member",
+  "currency": "NGN",
+  "dualApprovalExpenseThreshold": 50000.0,
+  "requirePresidentApproval": true,
+  "maxUploadSizeBytes": 10485760,
+  "sessionTimeoutMinutes": 60,
+  "pushNotificationsEnabled": true,
+  "smsNotificationsEnabled": true,
+  "smsProvider": "Termii",
+  "emailNotificationsEnabled": true,
+  "maintenanceMode": false,
+  "maintenanceMessage": "System is undergoing scheduled maintenance. Please check back shortly.",
+  "updatedAt": "Timestamp",
+  "updatedBy": "admin@agepay.com"
+}
+```
 
 ---
 

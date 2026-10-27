@@ -23,6 +23,8 @@ class ObligationModel {
   final String? waivedBy;
   final DateTime? waivedAt;
   final PenaltyWaiverStatus? waiverStatus;
+  final String scope; // 'national' | 'branch'
+  final String? branchId;
 
   const ObligationModel({
     required this.id,
@@ -46,6 +48,8 @@ class ObligationModel {
     this.waivedBy,
     this.waivedAt,
     this.waiverStatus,
+    this.scope = 'branch',
+    this.branchId,
   });
 
   bool get isPaid => status == ObligationStatus.paid || outstandingBalance <= 0;
@@ -112,6 +116,8 @@ class ObligationModel {
       waivedBy: data['waivedBy'] as String?,
       waivedAt: data['waivedAt'] != null ? _parseDate(data['waivedAt']) : null,
       waiverStatus: waiverStatus,
+      scope: data['scope'] ?? 'branch',
+      branchId: data['branchId'] as String?,
     );
   }
 
@@ -137,6 +143,8 @@ class ObligationModel {
       'waivedBy': waivedBy,
       'waivedAt': waivedAt != null ? Timestamp.fromDate(waivedAt!) : null,
       'waiverStatus': waiverStatus?.name,
+      'scope': scope,
+      if (branchId != null) 'branchId': branchId,
     };
   }
 
@@ -168,6 +176,8 @@ class ObligationModel {
     String? waivedBy,
     DateTime? waivedAt,
     PenaltyWaiverStatus? waiverStatus,
+    String? scope,
+    String? branchId,
   }) {
     final newStatus = status ?? this.status;
     final newPaid = paidAmount ?? this.paidAmount;
@@ -200,6 +210,8 @@ class ObligationModel {
       waivedBy: waivedBy ?? this.waivedBy,
       waivedAt: waivedAt ?? this.waivedAt,
       waiverStatus: waiverStatus ?? this.waiverStatus,
+      scope: scope ?? this.scope,
+      branchId: branchId ?? this.branchId,
     );
   }
 }

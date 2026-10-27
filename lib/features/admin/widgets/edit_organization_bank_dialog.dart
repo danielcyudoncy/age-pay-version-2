@@ -9,10 +9,7 @@ import '../controllers/admin_provider.dart';
 class EditOrganizationBankDialog extends ConsumerStatefulWidget {
   final OrganizationModel organization;
 
-  const EditOrganizationBankDialog({
-    super.key,
-    required this.organization,
-  });
+  const EditOrganizationBankDialog({super.key, required this.organization});
 
   static Future<bool?> show(
     BuildContext context, {
@@ -93,7 +90,9 @@ class _EditOrganizationBankDialogState
     });
 
     try {
-      await ref.read(organizationRepositoryProvider).updateBankDetails(
+      await ref
+          .read(organizationRepositoryProvider)
+          .updateBankDetails(
             organizationId: widget.organization.id,
             bankName: _bankNameController.text.trim(),
             accountNumber: _accountNumberController.text.trim(),
@@ -286,16 +285,17 @@ class _EditOrganizationBankDialogState
 
                 // Bank Name with Autocomplete
                 Autocomplete<String>(
-                  initialValue:
-                      TextEditingValue(text: _bankNameController.text),
+                  initialValue: TextEditingValue(
+                    text: _bankNameController.text,
+                  ),
                   optionsBuilder: (TextEditingValue textEditingValue) {
                     if (textEditingValue.text.isEmpty) {
                       return _popularBanks;
                     }
                     return _popularBanks.where((String option) {
                       return option.toLowerCase().contains(
-                            textEditingValue.text.toLowerCase(),
-                          );
+                        textEditingValue.text.toLowerCase(),
+                      );
                     });
                   },
                   onSelected: (String selection) {
@@ -303,28 +303,28 @@ class _EditOrganizationBankDialogState
                   },
                   fieldViewBuilder:
                       (context, controller, focusNode, onFieldSubmitted) {
-                    controller.addListener(() {
-                      _bankNameController.text = controller.text;
-                    });
-                    return TextFormField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      decoration: InputDecoration(
-                        labelText: 'Bank Name *',
-                        hintText: 'e.g. Zenith Bank, First Bank',
-                        prefixIcon: const Icon(Icons.account_balance),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter bank name';
-                        }
-                        return null;
+                        controller.addListener(() {
+                          _bankNameController.text = controller.text;
+                        });
+                        return TextFormField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          decoration: InputDecoration(
+                            labelText: 'Bank Name *',
+                            hintText: 'e.g. Zenith Bank, First Bank',
+                            prefixIcon: const Icon(Icons.account_balance),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter bank name';
+                            }
+                            return null;
+                          },
+                        );
                       },
-                    );
-                  },
                 ),
                 const SizedBox(height: 14),
 
@@ -382,8 +382,9 @@ class _EditOrganizationBankDialogState
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed:
-                            _isLoading ? null : () => Navigator.pop(context),
+                        onPressed: _isLoading
+                            ? null
+                            : () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
