@@ -59,7 +59,7 @@ class HomeRouter extends ConsumerWidget {
           return PendingApprovalScreen(user: user);
         }
 
-        if (user.organizationId.isEmpty) {
+        if (user.organizationId.isEmpty && user.role != UserRole.superAdmin) {
           return const OrganizationPickerScreen();
         }
 

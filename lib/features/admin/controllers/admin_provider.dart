@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/organization_model.dart';
+import '../services/system_reset_service.dart';
 import '../repositories/organization_repository.dart';
 import '../models/branch_model.dart';
 import '../repositories/branch_repository.dart';
@@ -135,3 +136,8 @@ final currentOrganizationProvider =
         yield null;
       }
     });
+
+final systemResetServiceProvider = Provider<SystemResetService>((ref) {
+  return SystemResetService();
+});
+

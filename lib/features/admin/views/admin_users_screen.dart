@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -6,6 +7,7 @@ import '../../auth/models/user_model.dart';
 import '../controllers/admin_provider.dart';
 import '../widgets/edit_user_role_dialog.dart';
 import '../widgets/reassign_branch_dialog.dart';
+import '../widgets/system_reset_dialog.dart';
 
 class AdminUsersScreen extends ConsumerStatefulWidget {
   final bool filterPending;
@@ -55,6 +57,11 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.restore, color: Colors.red),
+            tooltip: 'Reset System Data',
+            onPressed: () => SystemResetDialog.show(context),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
@@ -490,6 +497,61 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                           );
                         }
                         break;
+                      case 'delete_user':
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Delete User'),
+                            content: Text(
+                              'Are you sure you want to permanently delete "${user.displayName}" (${user.email})? This action cannot be undone.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancel'),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          try {
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .delete();
+                            final memberDocs = await FirebaseFirestore.instance
+                                .collection('members')
+                                .where('userId', isEqualTo: user.uid)
+                                .get();
+                            for (final doc in memberDocs.docs) {
+                              await doc.reference.delete();
+                            }
+                            ref.invalidate(allUsersStreamProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: Colors.green,
+                                  content: Text('User "${user.displayName}" deleted successfully.'),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: Colors.red,
+                                  content: Text('Failed to delete user: $e'),
+                                ),
+                              );
+                            }
+                          }
+                        }
+                        break;
                     }
                   },
                   itemBuilder: (context) => [
@@ -571,6 +633,25 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                         ],
                       ),
                     ),
+                    if (user.email.toLowerCase().trim() != 'danielcyudoncy@gmail.com' &&
+                        user.role != UserRole.superAdmin) ...[
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'delete_user',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Delete User Account',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],

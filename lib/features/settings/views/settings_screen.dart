@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../admin/controllers/admin_provider.dart';
 import '../../admin/widgets/edit_organization_bank_dialog.dart';
+import '../../admin/widgets/system_reset_dialog.dart';
 import '../../../core/constants/enums.dart';
 import '../controllers/settings_provider.dart';
 
@@ -15,6 +16,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final notifier = ref.watch(settingsProvider.notifier);
+    final user = ref.watch(authProvider).valueOrNull;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -165,6 +167,91 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
+          if (user != null &&
+              (user.email.toLowerCase().trim() == 'danielcyudoncy@gmail.com' ||
+               user.role == UserRole.superAdmin)) ...[
+            const SizedBox(height: 24),
+            _SectionHeader(title: 'Danger Zone', icon: Icons.warning_amber_rounded),
+            Card(
+              color: Colors.red.withValues(alpha: 0.06),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.delete_forever, color: Colors.red, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'System & Test Data Reset',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: Colors.red,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Wipe all test records & users except Super Admin',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'This will purge all organizations, branches, collections (payments, expenses, obligations, levies, receipts, announcements) and delete all users except danielcyudoncy@gmail.com, restoring the app to an empty, brand new state.',
+                      style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          final didReset = await SystemResetDialog.show(context);
+                          if (didReset == true && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                backgroundColor: Colors.green,
+                                content: Text('System reset successfully! All test data wiped.'),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.restore, size: 18),
+                        label: const Text('Reset All Test Data & Users'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           SizedBox(height: MediaQuery.paddingOf(context).bottom + 16),
         ],
       ),
