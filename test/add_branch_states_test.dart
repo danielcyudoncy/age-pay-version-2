@@ -257,6 +257,13 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(AddBranchDialog), findsOneWidget);
+
+      // Also switch to Custom Branch tab on the narrow 320px screen
+      await tester.tap(find.text('Custom Branch'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Branch Name *'), findsOneWidget);
     });
   });
 }

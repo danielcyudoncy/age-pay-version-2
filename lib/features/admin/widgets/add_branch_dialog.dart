@@ -200,6 +200,7 @@ class _AddBranchDialogState extends ConsumerState<AddBranchDialog> {
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14),
       actionsPadding: const EdgeInsets.all(12),
@@ -544,16 +545,23 @@ class _AddBranchDialogState extends ConsumerState<AddBranchDialog> {
             const SizedBox(height: 14),
             DropdownButtonFormField<String>(
               initialValue: _customSelectedState,
+              isExpanded: true,
               decoration: const InputDecoration(
                 labelText: 'State (Optional)',
-                hintText: 'Select state if applicable',
+                hintText: 'Select state',
                 prefixIcon: Icon(Icons.map_outlined),
                 border: OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(value: null, child: Text('None / Diaspora')),
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('None / Diaspora', overflow: TextOverflow.ellipsis),
+                ),
                 ...kNigerianStates.map(
-                  (s) => DropdownMenuItem(value: s, child: Text(s)),
+                  (s) => DropdownMenuItem(
+                    value: s,
+                    child: Text(s, overflow: TextOverflow.ellipsis),
+                  ),
                 ),
               ],
               onChanged: (val) {
