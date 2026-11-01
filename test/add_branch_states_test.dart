@@ -246,5 +246,17 @@ void main() {
       expect(find.text('State (Optional)'), findsOneWidget);
       expect(find.text('City / District (Optional)'), findsOneWidget);
     });
+
+    testWidgets('Renders properly without overflow on narrow mobile screens (320px width)', (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(AddBranchDialog), findsOneWidget);
+    });
   });
 }

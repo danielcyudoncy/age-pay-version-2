@@ -190,6 +190,8 @@ class _AddBranchDialogState extends ConsumerState<AddBranchDialog> {
     final theme = Theme.of(context);
     final branchesAsync = ref.watch(branchesStreamFamily(widget.organization.id));
     final existingBranches = branchesAsync.asData?.value ?? [];
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final dialogHeight = (screenHeight * 0.65).clamp(380.0, 500.0);
 
     final filteredStates = kNigerianStates.where((state) {
       if (_searchQuery.isEmpty) return true;
@@ -198,9 +200,10 @@ class _AddBranchDialogState extends ConsumerState<AddBranchDialog> {
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-      actionsPadding: const EdgeInsets.all(16),
+      titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+      actionsPadding: const EdgeInsets.all(12),
+      actionsOverflowButtonSpacing: 8,
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -238,34 +241,48 @@ class _AddBranchDialogState extends ConsumerState<AddBranchDialog> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           // Tab Switcher
-          SegmentedButton<int>(
-            segments: const [
-              ButtonSegment<int>(
-                value: 0,
-                icon: Icon(Icons.checklist_rtl_rounded, size: 18),
-                label: Text('36 States (Checkboxes)'),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<int>(
+              showSelectedIcon: false,
+              style: SegmentedButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
               ),
-              ButtonSegment<int>(
-                value: 1,
-                icon: Icon(Icons.edit_location_alt_outlined, size: 18),
-                label: Text('Custom Branch'),
-              ),
-            ],
-            selected: {_selectedTabIndex},
-            onSelectionChanged: (newSelection) {
-              setState(() {
-                _selectedTabIndex = newSelection.first;
-                _errorMessage = null;
-              });
-            },
+              segments: const [
+                ButtonSegment<int>(
+                  value: 0,
+                  icon: Icon(Icons.checklist_rtl_rounded, size: 16),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('36 States (Checkboxes)', style: TextStyle(fontSize: 12)),
+                  ),
+                ),
+                ButtonSegment<int>(
+                  value: 1,
+                  icon: Icon(Icons.edit_location_alt_outlined, size: 16),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Custom Branch', style: TextStyle(fontSize: 12)),
+                  ),
+                ),
+              ],
+              selected: {_selectedTabIndex},
+              onSelectionChanged: (newSelection) {
+                setState(() {
+                  _selectedTabIndex = newSelection.first;
+                  _errorMessage = null;
+                });
+              },
+            ),
           ),
         ],
       ),
       content: SizedBox(
         width: 520,
-        height: 480,
+        height: dialogHeight,
         child: Column(
           children: [
             if (_errorMessage != null) ...[
@@ -434,11 +451,16 @@ class _AddBranchDialogState extends ConsumerState<AddBranchDialog> {
 
                     return CheckboxListTile(
                       dense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                      controlAffinity: ListTileControlAffinity.leading,
                       value: alreadyCreated ? true : isSelected,
                       onChanged: alreadyCreated
                           ? null
                           : (checked) => _toggleState(state, checked),
-                      title: Row(
+                      title: Wrap(
+                        spacing: 6,
+                        runSpacing: 2,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
                             state,
@@ -447,8 +469,7 @@ class _AddBranchDialogState extends ConsumerState<AddBranchDialog> {
                               color: alreadyCreated ? Colors.grey : null,
                             ),
                           ),
-                          if (alreadyCreated) ...[
-                            const SizedBox(width: 8),
+                          if (alreadyCreated)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
@@ -467,13 +488,14 @@ class _AddBranchDialogState extends ConsumerState<AddBranchDialog> {
                                 ),
                               ),
                             ),
-                          ],
                         ],
                       ),
                       subtitle: Text(
                         alreadyCreated
                             ? 'Branch currently active in this state'
                             : 'Will provision: ${getStandardBranchName(state)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11,
                           color: alreadyCreated
