@@ -654,6 +654,24 @@ National account holders (National President, National Secretary, National Treas
 
 ---
 
+## Nigerian State Branch Provisioning Rules
+
+1. **Standardized State Coverage**:
+   * Branch provisioning provides a canonical catalog of all 36 States in Nigeria + Federal Capital Territory (FCT Abuja).
+   * Prevents inconsistent spelling, casing, or colloquial abbreviations (e.g., standardizes "Lagos Branch", "Abia Branch", "Abuja Branch").
+
+2. **Batch Checkbox Provisioning**:
+   * Super Admins can select multiple states via checkboxes and provision all selected chapters atomically in a single batch write (`BranchRepository.createBranches`).
+   * Provides quick filters for common diaspora hubs (Lagos, Abuja, Rivers, Abia, Enugu, Anambra, Imo, Delta, Kano, Oyo).
+
+3. **Duplicate Prevention**:
+   * System inspects existing organization branches; any state that already has an active chapter is marked as "Already added" with its checkbox disabled to prevent redundant branch creation.
+
+4. **Custom Branch Fallback**:
+   * Dedicated custom branch tab permits provisioning non-state chapters (e.g. specialized town branches like "Aba North Chapter" or international branches like "UK / Diaspora Chapter").
+
+---
+
 ## Related Documents
 
 * FirestoreSchema.md

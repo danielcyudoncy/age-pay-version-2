@@ -51,6 +51,27 @@ class BranchRepository {
     return docRef.id;
   }
 
+  Future<List<String>> createBranches(List<BranchModel> branches) async {
+    if (branches.isEmpty) return [];
+    final batch = _firestore.batch();
+    final ids = <String>[];
+    final now = DateTime.now();
+
+    for (final branch in branches) {
+      final docRef = _collection.doc();
+      final newBranch = branch.copyWith(
+        id: docRef.id,
+        createdAt: now,
+        updatedAt: now,
+      );
+      batch.set(docRef, newBranch.toFirestore());
+      ids.add(docRef.id);
+    }
+
+    await batch.commit();
+    return ids;
+  }
+
   Future<void> updateBranch(BranchModel branch) async {
     await _collection
         .doc(branch.id)

@@ -5,6 +5,7 @@ import 'package:cls/features/admin/models/branch_model.dart';
 import 'package:cls/features/admin/models/organization_model.dart';
 import 'package:cls/features/admin/widgets/edit_branch_bank_dialog.dart';
 import 'package:cls/features/admin/widgets/organization_list_item.dart';
+import '../widgets/add_branch_dialog.dart';
 import '../services/bank_verification_service.dart';
 
 class OrganizationManagementScreen extends ConsumerStatefulWidget {
@@ -552,96 +553,7 @@ class _OrganizationManagementScreenState
   }
 
   void _showAddBranchDialog(BuildContext context, OrganizationModel org) {
-    final nameController = TextEditingController();
-    final stateController = TextEditingController();
-    final cityController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            'Add Branch to ${org.name}',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Branch Name',
-                  hintText: 'e.g. Aba, Lagos, Abuja',
-                  prefixIcon: Icon(Icons.location_city_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: stateController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'State',
-                  hintText: 'e.g. Abia, Lagos',
-                  prefixIcon: Icon(Icons.map_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: cityController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'City',
-                  hintText: 'e.g. Aba, Ikeja',
-                  prefixIcon: Icon(Icons.pin_drop_outlined),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final branchName = nameController.text.trim();
-              if (branchName.isEmpty) return;
-
-              final newBranch = BranchModel(
-                id: '',
-                organizationId: org.id,
-                name: branchName,
-                state: stateController.text.trim(),
-                city: cityController.text.trim(),
-                isActive: true,
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-              );
-
-              await ref.read(branchRepositoryProvider).createBranch(newBranch);
-              if (ctx.mounted) {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Branch "$branchName" created for ${org.name}',
-                    ),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              }
-            },
-            child: const Text('Add Branch'),
-          ),
-        ],
-      ),
-    );
+    AddBranchDialog.show(context, org);
   }
 
   void _showBranchDetailsDialog(BuildContext context, BranchModel branch) {
