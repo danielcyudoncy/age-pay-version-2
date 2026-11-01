@@ -173,33 +173,39 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
         ? const [
             DropdownMenuItem(
               value: 'all',
-              child: Text('Everyone (All Members Worldwide)'),
+              child: Text('Everyone (All Members Worldwide)', overflow: TextOverflow.ellipsis),
             ),
             DropdownMenuItem(
               value: 'allExecutives',
-              child: Text('All Executives (National & Branches)'),
+              child: Text('All Executives (National & Branches)', overflow: TextOverflow.ellipsis),
             ),
             DropdownMenuItem(
               value: 'nationalExecutives',
-              child: Text('National Executives Only'),
+              child: Text('National Executives Only', overflow: TextOverflow.ellipsis),
             ),
             DropdownMenuItem(
               value: 'branch',
-              child: Text('Specific Branch (All Members)'),
+              child: Text('Specific Branch (All Members)', overflow: TextOverflow.ellipsis),
             ),
             DropdownMenuItem(
               value: 'branchExecutives',
-              child: Text('Specific Branch (Executives Only)'),
+              child: Text('Specific Branch (Executives Only)', overflow: TextOverflow.ellipsis),
             ),
           ]
         : [
             DropdownMenuItem(
               value: 'branch',
-              child: Text('My Branch (${user.branchName ?? 'Branch'} Members)'),
+              child: Text(
+                'My Branch (${user.branchName ?? 'Branch'} Members)',
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             DropdownMenuItem(
               value: 'branchExecutives',
-              child: Text('My Branch (${user.branchName ?? 'Branch'} Executives Only)'),
+              child: Text(
+                'My Branch (${user.branchName ?? 'Branch'} Executives Only)',
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ];
 
@@ -390,33 +396,39 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
         ? const [
             DropdownMenuItem(
               value: 'all',
-              child: Text('Everyone (All Members Worldwide)'),
+              child: Text('Everyone (All Members Worldwide)', overflow: TextOverflow.ellipsis),
             ),
             DropdownMenuItem(
               value: 'allExecutives',
-              child: Text('All Executives (National & Branches)'),
+              child: Text('All Executives (National & Branches)', overflow: TextOverflow.ellipsis),
             ),
             DropdownMenuItem(
               value: 'nationalExecutives',
-              child: Text('National Executives Only'),
+              child: Text('National Executives Only', overflow: TextOverflow.ellipsis),
             ),
             DropdownMenuItem(
               value: 'branch',
-              child: Text('Specific Branch (All Members)'),
+              child: Text('Specific Branch (All Members)', overflow: TextOverflow.ellipsis),
             ),
             DropdownMenuItem(
               value: 'branchExecutives',
-              child: Text('Specific Branch (Executives Only)'),
+              child: Text('Specific Branch (Executives Only)', overflow: TextOverflow.ellipsis),
             ),
           ]
         : [
             DropdownMenuItem(
               value: 'branch',
-              child: Text('My Branch (${user.branchName ?? 'Branch'} Members)'),
+              child: Text(
+                'My Branch (${user.branchName ?? 'Branch'} Members)',
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             DropdownMenuItem(
               value: 'branchExecutives',
-              child: Text('My Branch (${user.branchName ?? 'Branch'} Executives Only)'),
+              child: Text(
+                'My Branch (${user.branchName ?? 'Branch'} Executives Only)',
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ];
 
@@ -755,15 +767,18 @@ class _DayCell extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
       child: Container(
         margin: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           color: isSelected ? colorScheme.primary : (isToday ? colorScheme.primaryContainer : null),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Stack(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Center(
+            FittedBox(
+              fit: BoxFit.scaleDown,
               child: Text(
                 '${date.day}',
                 style: TextStyle(
@@ -771,26 +786,21 @@ class _DayCell extends StatelessWidget {
                       ? colorScheme.onPrimary
                       : (isToday ? colorScheme.onPrimaryContainer : null),
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  fontSize: 14,
+                  fontSize: 13,
                 ),
               ),
             ),
-            if (hasAnnouncement)
-              Positioned(
-                bottom: 4,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+            if (hasAnnouncement) ...[
+              const SizedBox(height: 2),
+              Container(
+                width: 5,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
+                  shape: BoxShape.circle,
                 ),
               ),
+            ],
           ],
         ),
       ),
@@ -814,67 +824,135 @@ class _AnnouncementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final date = announcement.announcementDate ?? announcement.createdAt;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
-          child: Icon(Icons.campaign, color: theme.colorScheme.primary),
-        ),
-        title: Text(
-          announcement.title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Column(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 2),
-            Text(
-              '${announcement.category.name.toUpperCase()} • ${announcement.announcementDate != null ? dateFormat.format(announcement.announcementDate!) : dateFormat.format(announcement.createdAt)}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
+            // Header Row: Avatar, Title & Date, Pin, Edit & Delete buttons
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.people_alt_outlined, size: 13, color: theme.colorScheme.primary),
-                const SizedBox(width: 4),
+                CircleAvatar(
+                  backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
+                  child: Icon(Icons.campaign, color: theme.colorScheme.primary),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    announcement.audienceLabel,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.primary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              announcement.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          if (announcement.isPinned) ...[
+                            const SizedBox(width: 6),
+                            const Icon(Icons.push_pin, size: 16, color: Colors.red),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        dateFormat.format(date),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  icon: const Icon(Icons.edit, size: 18),
+                  tooltip: 'Edit announcement',
+                  onPressed: onEdit,
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                  tooltip: 'Delete announcement',
+                  onPressed: onDelete,
                 ),
               ],
             ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (announcement.isPinned)
-              const Padding(
-                padding: EdgeInsets.only(right: 2),
-                child: Icon(Icons.push_pin, size: 16, color: Colors.red),
+            if (announcement.body.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                announcement.body,
+                style: const TextStyle(fontSize: 14),
               ),
-            IconButton(
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.edit, size: 18),
-              onPressed: onEdit,
-            ),
-            IconButton(
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.delete, size: 18),
-              onPressed: onDelete,
+            ],
+            const SizedBox(height: 12),
+            // Tags: Category and Audience
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    announcement.category.name.replaceAll('_', ' ').toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+                if (announcement.audienceLabel != 'Everyone')
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.sizeOf(context).width - 96,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.secondary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.people_alt_outlined, size: 12, color: theme.colorScheme.secondary),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            announcement.audienceLabel,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.secondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ],
         ),

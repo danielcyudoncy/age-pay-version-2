@@ -147,7 +147,10 @@ class _MemberAnnouncementCard extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
-                if (announcement.isPinned) const Icon(Icons.push_pin, size: 16, color: Colors.red),
+                if (announcement.isPinned) ...[
+                  const SizedBox(width: 6),
+                  const Icon(Icons.push_pin, size: 16, color: Colors.red),
+                ],
               ],
             ),
             const SizedBox(height: 10),

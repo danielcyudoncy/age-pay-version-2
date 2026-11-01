@@ -131,7 +131,37 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('Announcements'), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text('All Announcements'),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       expect(find.text('All Announcements'), findsOneWidget);
+    });
+
+    testWidgets('AnnouncementsScreen handles date selection and create dialog without overflow on 320x640 small screen', (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(buildScreen(const AnnouncementsScreen()));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+
+      // Tap Add button to open the Create Announcement dialog
+      await tester.tap(find.text('Add'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('New Announcement'), findsOneWidget);
+
+      // Close dialog
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
     });
   });
 }
