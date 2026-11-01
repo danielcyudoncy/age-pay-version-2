@@ -16,6 +16,8 @@ import 'package:cls/features/secretary/views/calendar_screen.dart';
 import 'package:cls/features/secretary/views/documents_screen.dart';
 import 'package:cls/features/secretary/views/search_screen.dart';
 import 'package:cls/features/meetings/controllers/meeting_provider.dart';
+import 'package:cls/features/pro/views/pro_communication_hub_screen.dart';
+import 'package:cls/features/pro/widgets/pro_member_contact_card.dart';
 
 class ProDashboard extends ConsumerStatefulWidget {
   const ProDashboard({super.key});
@@ -107,6 +109,21 @@ class _ProDashboardState extends ConsumerState<ProDashboard> {
                 ],
               ),
         body: IndexedStack(index: _selectedIndex, children: pages),
+        floatingActionButton: (_selectedIndex == 0 || _selectedIndex == 1)
+            ? FloatingActionButton.extended(
+                heroTag: 'pro_dispatch_fab',
+                icon: const Icon(Icons.podcasts),
+                label: const Text('Dispatch Broadcast'),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ProCommunicationHubScreen(),
+                    ),
+                  );
+                },
+              )
+            : null,
         bottomNavigationBar: NavigationBar(
           selectedIndex: _selectedIndex,
           onDestinationSelected: (index) => setState(() => _selectedIndex = index),
@@ -154,6 +171,15 @@ class _ProHomeTab extends ConsumerWidget {
     required this.user,
     required this.onNavigate,
   });
+
+  void _openHub(BuildContext context, CommunicationChannel channel) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProCommunicationHubScreen(initialChannel: channel),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -334,7 +360,109 @@ class _ProHomeTab extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+
+          // Omnichannel Communication Center
+          Card(
+            elevation: 0,
+            color: theme.colorScheme.primary.withValues(alpha: 0.08),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: theme.colorScheme.primary.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.podcasts,
+                          color: theme.colorScheme.primary,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Member Communication Hub',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            Text(
+                              'Broadcast In-App, dispatch WhatsApp & send SMS text',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _openHub(context, CommunicationChannel.whatsApp),
+                          icon: const Icon(Icons.chat, size: 16, color: Colors.green),
+                          label: const Text('WhatsApp'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            side: BorderSide(
+                              color: Colors.green.withValues(alpha: 0.4),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _openHub(context, CommunicationChannel.sms),
+                          icon: const Icon(Icons.sms, size: 16, color: Colors.blue),
+                          label: const Text('SMS'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            side: BorderSide(
+                              color: Colors.blue.withValues(alpha: 0.4),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () => _openHub(context, CommunicationChannel.omnichannel),
+                          icon: const Icon(Icons.rocket_launch, size: 16),
+                          label: const Text('Dispatch'),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
 
           // Quick Action Buttons
           Text(
@@ -349,9 +477,27 @@ class _ProHomeTab extends ConsumerWidget {
             child: Row(
               children: [
                 QuickActionButton(
+                  icon: Icons.podcasts,
+                  label: 'Omnichannel Hub',
+                  onPressed: () => _openHub(context, CommunicationChannel.omnichannel),
+                ),
+                const SizedBox(width: 12),
+                QuickActionButton(
                   icon: Icons.campaign,
                   label: 'New Broadcast',
                   onPressed: () => onNavigate(1),
+                ),
+                const SizedBox(width: 12),
+                QuickActionButton(
+                  icon: Icons.chat,
+                  label: 'WhatsApp Blast',
+                  onPressed: () => _openHub(context, CommunicationChannel.whatsApp),
+                ),
+                const SizedBox(width: 12),
+                QuickActionButton(
+                  icon: Icons.sms,
+                  label: 'SMS Dispatch',
+                  onPressed: () => _openHub(context, CommunicationChannel.sms),
                 ),
                 const SizedBox(width: 12),
                 QuickActionButton(
@@ -577,6 +723,64 @@ class _ProHomeTab extends ConsumerWidget {
             },
             loading: () => const SizedBox.shrink(),
             error: (_, _) => const SizedBox.shrink(),
+          ),
+          const SizedBox(height: 20),
+
+          // Direct Member Outreach (WhatsApp, SMS & Call)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Direct Member Outreach',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SearchScreen(),
+                    ),
+                  );
+                },
+                child: const Text('View All'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          membersAsync.when(
+            data: (membersList) {
+              if (membersList.isEmpty) {
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Center(
+                      child: Text(
+                        'No members found in branch roster',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }
+              final displayMembers = membersList.take(4).toList();
+              return Column(
+                children: displayMembers.map((m) {
+                  return ProMemberContactCard(member: m);
+                }).toList(),
+              );
+            },
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            error: (err, _) => Text('Error loading member roster: $err'),
           ),
         ],
       ),

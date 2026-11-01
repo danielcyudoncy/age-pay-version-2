@@ -1,19 +1,42 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:flutter/services.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../../core/constants/enums.dart';
 
 class NotificationService {
   final FirebaseMessaging? _messaging;
+  final FlutterLocalNotificationsPlugin? _localNotifications;
 
   final List<String> _subscribedTopics = [];
 
-  NotificationService({FirebaseMessaging? messaging}) : _messaging = messaging;
+  NotificationService({
+    FirebaseMessaging? messaging,
+    FlutterLocalNotificationsPlugin? localNotifications,
+  })  : _messaging = messaging,
+        _localNotifications = localNotifications;
 
   FirebaseMessaging get _messagingInstance {
     return _messaging ?? FirebaseMessaging.instance;
   }
+
+  FlutterLocalNotificationsPlugin get _localNotificationsInstance {
+    return _localNotifications ?? FlutterLocalNotificationsPlugin();
+  }
+
+  static const AndroidNotificationChannel defaultChannel =
+      AndroidNotificationChannel(
+    'agepay_high_importance_channel',
+    'AgePay Notifications',
+    description:
+        'Urgent notifications with sound, banners, and app icon badges for community announcements, dues, and payments.',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+    showBadge: true,
+  );
 
   /// Top-level background message handler.
   static Future<void> firebaseMessagingBackgroundHandler(
@@ -23,28 +46,141 @@ class NotificationService {
   }
 
   Future<void> initialize() async {
-    // Request permissions (iOS)
-    final settings = await _messagingInstance.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
+    // 1. Initialize Flutter Local Notifications for sound, status bar, and app icon badge
+    const initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initializationSettingsDarwin = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
     );
-    log('FCM permission status: ${settings.authorizationStatus}');
+    const initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsDarwin,
+      macOS: initializationSettingsDarwin,
+    );
 
-    // Get FCM token
-    final token = await _messagingInstance.getToken();
-    log('FCM Token: $token');
+    try {
+      await _localNotificationsInstance.initialize(
+        settings: initializationSettings,
+        onDidReceiveNotificationResponse: (response) {
+          log('Notification tapped with payload: ${response.payload}');
+        },
+      );
 
-    // Configure foreground handlers
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      log('Foreground message received: ${message.messageId}');
-      log('Title: ${message.notification?.title}');
-      log('Body: ${message.notification?.body}');
-    });
+      final androidPlugin = _localNotificationsInstance
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin != null) {
+        await androidPlugin.createNotificationChannel(defaultChannel);
+        await androidPlugin.requestNotificationsPermission();
+      }
+    } catch (e) {
+      log('Local notifications initialization note: $e');
+    }
 
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      log('Message opened from background: ${message.messageId}');
-    });
+    // 2. Request FCM permissions & set foreground presentation options
+    try {
+      final settings = await _messagingInstance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      log('FCM permission status: ${settings.authorizationStatus}');
+
+      await _messagingInstance.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    } catch (e) {
+      log('FCM permission setup note: $e');
+    }
+
+    // 3. Get FCM token
+    try {
+      final token = await _messagingInstance.getToken();
+      log('FCM Token: $token');
+    } catch (e) {
+      log('FCM token fetch note: $e');
+    }
+
+    // 4. Configure foreground handlers
+    try {
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        log('Foreground message received: ${message.messageId}');
+        final title = message.notification?.title ??
+            message.data['title'] ??
+            'AgePay Notification';
+        final body = message.notification?.body ?? message.data['body'] ?? '';
+        if (title.isNotEmpty || body.isNotEmpty) {
+          showNotification(
+            title: title,
+            body: body,
+            payload: message.data['payload'],
+          );
+        }
+      });
+
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        log('Message opened from background: ${message.messageId}');
+      });
+    } catch (e) {
+      log('FCM stream listener note: $e');
+    }
+  }
+
+  /// Displays a heads-up system notification with high importance, default sound,
+  /// vibration, and app icon badge. Also triggers an immediate in-app sound.
+  Future<void> showNotification({
+    int? id,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    // 1. Play immediate in-app sound and haptic vibration feedback
+    try {
+      await SystemSound.play(SystemSoundType.alert);
+      await HapticFeedback.mediumImpact();
+    } catch (_) {}
+
+    // 2. Trigger OS notification tray banner, ringtone, and app icon badge
+    try {
+      final notifId =
+          id ?? DateTime.now().millisecondsSinceEpoch.remainder(100000);
+      const androidDetails = AndroidNotificationDetails(
+        'agepay_high_importance_channel',
+        'AgePay Notifications',
+        channelDescription:
+            'Urgent notifications with sound, banners, and app icon badges for community announcements, dues, and payments.',
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+        channelShowBadge: true,
+        icon: '@mipmap/ic_launcher',
+      );
+      const darwinDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+      const details = NotificationDetails(
+        android: androidDetails,
+        iOS: darwinDetails,
+        macOS: darwinDetails,
+      );
+
+      await _localNotificationsInstance.show(
+        id: notifId,
+        title: title,
+        body: body,
+        notificationDetails: details,
+        payload: payload,
+      );
+    } catch (e) {
+      log('Local notification display note: $e');
+    }
   }
 
   Future<String?> getToken() async {

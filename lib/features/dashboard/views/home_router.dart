@@ -18,6 +18,7 @@ import '../../auth/views/pending_approval_screen.dart';
 import '../../auth/views/co_founder_verification_dialog.dart';
 import '../../national/controllers/national_provider.dart';
 import '../../admin/controllers/admin_provider.dart';
+import '../../notifications/controllers/notification_provider.dart';
 
 class HomeRouter extends ConsumerWidget {
   const HomeRouter({super.key});
@@ -31,6 +32,9 @@ class HomeRouter extends ConsumerWidget {
         if (user == null) {
           return const LoginScreen();
         }
+
+        ref.watch(initializeNotificationsProvider);
+        ref.watch(notificationListProvider);
 
         // 1. Check if user has an incoming Co-Founder invitation for General Secretary
         if (user.phoneNumber.isNotEmpty) {

@@ -26,6 +26,9 @@ import 'package:cls/features/payments/repositories/payment_repository.dart';
 import 'package:cls/features/obligations/repositories/obligation_repository.dart';
 import 'package:cls/features/payments/models/payment_model.dart';
 import 'package:cls/features/obligations/models/obligation_model.dart';
+import 'package:cls/features/pro/controllers/pro_communication_provider.dart';
+import 'package:cls/features/pro/services/pro_communication_service.dart';
+import 'package:cls/features/pro/views/pro_communication_hub_screen.dart';
 
 class _MockAuthService implements AuthService {
   final UserModel? user;
@@ -285,6 +288,9 @@ void main() {
         memberRepositoryProvider.overrideWith((ref) => mockMemberRepo),
         paymentRepositoryProvider.overrideWith((ref) => mockPayments),
         obligationRepositoryProvider.overrideWith((ref) => mockObligationRepo),
+        proCommunicationServiceProvider.overrideWith((ref) => ProCommunicationService(
+          announcementRepo: mockAnnouncementRepo,
+        )),
       ],
       child: const MaterialApp(
         home: ProDashboard(),
@@ -507,6 +513,58 @@ void main() {
       await tester.tap(find.text('Roster Members'));
       await tester.pumpAndSettle();
       expect(find.byType(SearchScreen), findsOneWidget);
+    });
+
+    testWidgets('displays Omnichannel Communication Center and navigates to Hub', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        buildProDashboard(
+          user: proUser,
+          announcements: testAnnouncements,
+          events: testEvents,
+          docs: testDocs,
+          members: testMembers,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Check Member Communication Hub banner
+      expect(find.text('Member Communication Hub'), findsOneWidget);
+      expect(find.text('Omnichannel Hub'), findsOneWidget);
+      expect(find.text('WhatsApp Blast'), findsOneWidget);
+      expect(find.text('SMS Dispatch'), findsOneWidget);
+
+      // Tap Omnichannel Hub button
+      await tester.tap(find.text('Omnichannel Hub'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProCommunicationHubScreen), findsOneWidget);
+      expect(find.text('PRO Communication Hub'), findsOneWidget);
+    });
+
+    testWidgets('displays Member Quick Outreach section with member cards', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        buildProDashboard(
+          user: proUser,
+          announcements: testAnnouncements,
+          events: testEvents,
+          docs: testDocs,
+          members: testMembers,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Check Direct Member Outreach header
+      expect(find.text('Direct Member Outreach'), findsOneWidget);
+      expect(find.text('Member One'), findsOneWidget);
+      expect(find.text('Member Two'), findsOneWidget);
     });
   });
 }
