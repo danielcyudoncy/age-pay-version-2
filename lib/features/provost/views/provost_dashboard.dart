@@ -1,21 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/enums.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../auth/models/user_model.dart';
-import '../../auth/views/login_screen.dart';
 import '../../dashboard/views/member_dashboard.dart';
 import '../../members/models/member_model.dart';
-import '../../notifications/controllers/notification_provider.dart';
-import '../../notifications/views/notifications_screen.dart';
 import '../../obligations/models/obligation_model.dart';
 import '../../secretary/controllers/secretary_dashboard_provider.dart';
-import '../../settings/views/about_screen.dart';
-import '../../settings/views/help_screen.dart';
-import '../../settings/views/settings_screen.dart';
 import '../controllers/provost_provider.dart';
 import '../models/infraction_presets.dart';
 import '../widgets/active_meeting_decorum_card.dart';
@@ -23,6 +16,9 @@ import '../widgets/issue_penalty_sheet.dart';
 import '../widgets/request_waiver_dialog.dart';
 import 'meeting_decorum_screen.dart';
 import 'waiver_audit_ledger_screen.dart';
+import '../../dashboard/widgets/dashboard_app_bar_actions.dart';
+import '../../dashboard/widgets/dashboard_tab_pop_scope.dart';
+import '../../dashboard/widgets/dual_role_switcher_card.dart';
 
 class ProvostDashboard extends ConsumerStatefulWidget {
   const ProvostDashboard({super.key});
@@ -33,7 +29,6 @@ class ProvostDashboard extends ConsumerStatefulWidget {
 
 class _ProvostDashboardState extends ConsumerState<ProvostDashboard> {
   int _selectedIndex = 0;
-  DateTime? _lastBackPressTime;
 
   void _onNavigate(int index) {
     setState(() => _selectedIndex = index);
@@ -74,196 +69,32 @@ class _ProvostDashboardState extends ConsumerState<ProvostDashboard> {
       const MemberDashboard(),
     ];
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        if (_selectedIndex != 0) {
-          setState(() => _selectedIndex = 0);
-          return;
-        }
-
-        final now = DateTime.now();
-        if (_lastBackPressTime == null ||
-            now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
-          _lastBackPressTime = now;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Press back again to exit'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        } else {
-          SystemNavigator.pop();
-        }
-      },
+    return DashboardTabPopScope(
+      selectedIndex: _selectedIndex,
+      onSelectTab: _onNavigate,
       child: Scaffold(
-      appBar: (_selectedIndex == 2 ||
-              _selectedIndex == 3 ||
-              (_selectedIndex == 1 && activeMeeting != null))
-          ? null
-          : AppBar(
-              title: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(_appBarTitle(_selectedIndex)),
+        appBar: (_selectedIndex == 2 ||
+                _selectedIndex == 3 ||
+                (_selectedIndex == 1 && activeMeeting != null))
+            ? null
+            : AppBar(
+                title: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(_appBarTitle(_selectedIndex)),
+                ),
+                actions: [
+                  DashboardAppBarActions(
+                    user: user,
+                    onRefresh: () async {
+                      ref.invalidate(provostPenaltiesStreamProvider(user.organizationId));
+                      ref.invalidate(provostWaiversStreamProvider(user.organizationId));
+                      ref.invalidate(pendingWaiversStreamProvider(user.organizationId));
+                    },
+                  ),
+                ],
               ),
-              actions: [
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: Badge(
-                    isLabelVisible: ref.watch(unreadCountProvider) > 0,
-                    label: Text('${ref.watch(unreadCountProvider)}'),
-                    child: const Icon(Icons.notifications_outlined,
-                        color: AppTheme.brandGreen),
-                  ),
-                  tooltip: 'Notifications',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => NotificationsScreen(currentUser: user),
-                      ),
-                    );
-                  },
-                ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, color: AppTheme.brandGreen),
-                  tooltip: 'Menu',
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  onSelected: (value) async {
-                    switch (value) {
-                      case 'refresh':
-                        ref.invalidate(provostPenaltiesStreamProvider);
-                        ref.invalidate(provostWaiversStreamProvider);
-                        ref.invalidate(pendingWaiversStreamProvider);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Dashboard refreshed'),
-                              duration: Duration(seconds: 1),
-                            ),
-                          );
-                        }
-                        break;
-                      case 'settings':
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => const SettingsScreen()),
-                        );
-                        break;
-                      case 'help':
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => const HelpScreen()),
-                        );
-                        break;
-                      case 'about':
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => const AboutScreen()),
-                        );
-                        break;
-                      case 'logout':
-                        final navigator = Navigator.of(context);
-                        final shouldLogout = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Sign Out'),
-                            content: const Text(
-                                'Are you sure you want to sign out?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(ctx).pop(false),
-                                child: const Text('Cancel'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.of(ctx).pop(true),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  foregroundColor: Colors.white,
-                                ),
-                                child: const Text('Sign Out'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (shouldLogout == true && mounted) {
-                          await ref.read(authProvider.notifier).signOut();
-                          navigator.pushAndRemoveUntil(
-                            MaterialPageRoute(
-                                builder: (_) => const LoginScreen()),
-                            (route) => false,
-                          );
-                        }
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem<String>(
-                      value: 'refresh',
-                      child: Row(
-                        children: [
-                          Icon(Icons.refresh, size: 20, color: AppTheme.brandGreen),
-                          SizedBox(width: 12),
-                          Text('Refresh'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'settings',
-                      child: Row(
-                        children: [
-                          Icon(Icons.settings_outlined, size: 20, color: AppTheme.brandGreen),
-                          SizedBox(width: 12),
-                          Text('Settings'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'help',
-                      child: Row(
-                        children: [
-                          Icon(Icons.help_outline, size: 20, color: AppTheme.brandGreen),
-                          SizedBox(width: 12),
-                          Text('Help & Support'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'about',
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline, size: 20, color: AppTheme.brandGreen),
-                          SizedBox(width: 12),
-                          Text('About AgePay'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuDivider(),
-                    PopupMenuItem<String>(
-                      value: 'logout',
-                      child: Row(
-                        children: [
-                          Icon(Icons.logout, size: 20, color: Colors.red.shade700),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Sign Out',
-                            style: TextStyle(
-                              color: Colors.red.shade700,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-      body: pages[_selectedIndex],
+        body: pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onNavigate,
@@ -386,6 +217,12 @@ class _ProvostHomeTab extends ConsumerWidget {
             ),
 
             const SizedBox(height: 12),
+
+            // Dual Role Scope Switcher Banner (if user holds both Branch & National offices)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: DualRoleSwitcherCard(user: user),
+            ),
 
             // Active Meeting Decorum Banner Card
             ActiveMeetingDecorumCard(

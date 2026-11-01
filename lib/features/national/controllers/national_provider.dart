@@ -14,8 +14,12 @@ final nationalRepositoryProvider = Provider<NationalRepository>((ref) {
 /// Tracks whether a dual-role executive is actively viewing their local Branch or National Body
 final activeExecutiveScopeProvider = StateProvider<ExecutiveScope>((ref) {
   final user = ref.watch(authProvider).valueOrNull;
-  if (user != null &&
-      (user.nationalRole != null || user.role == UserRole.superAdmin)) {
+  if (user == null) return ExecutiveScope.branch;
+  if (user.role == UserRole.superAdmin) return ExecutiveScope.national;
+  // If the user is an ordinary member at branch level but an executive at national,
+  // start at national level. If they are an executive at branch level (e.g. PRO),
+  // start at branch level so their local branch dashboard is immediately visible.
+  if (user.nationalRole != null && user.role == UserRole.member) {
     return ExecutiveScope.national;
   }
   return ExecutiveScope.branch;

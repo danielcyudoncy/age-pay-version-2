@@ -8,6 +8,7 @@ import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
 import 'package:cls/features/dashboard/widgets/dashboard_tab_pop_scope.dart';
+import 'package:cls/features/dashboard/widgets/dual_role_switcher_card.dart';
 import 'package:cls/features/dashboard/views/member_dashboard.dart';
 import 'package:cls/features/secretary/controllers/secretary_dashboard_provider.dart';
 import 'package:cls/features/secretary/views/announcements_screen.dart';
@@ -287,7 +288,10 @@ class _ProHomeTab extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // Dual Role Scope Switcher Banner (if user holds both Branch & National offices)
+          DualRoleSwitcherCard(user: user),
 
           // Communication KPIs
           Row(

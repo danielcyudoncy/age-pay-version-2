@@ -143,7 +143,8 @@ class HomeRouter extends ConsumerWidget {
             dashboard = const ProDashboard();
             break;
           case UserRole.provost:
-            return const ProvostDashboard();
+            dashboard = const ProvostDashboard();
+            break;
           case UserRole.auditor:
           case UserRole.executiveMember:
           case UserRole.committeeChair:
