@@ -274,10 +274,12 @@ class _ProCommunicationHubScreenState
                           size: 24,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Select Dispatch Channel',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            'Select Dispatch Channel',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -362,64 +364,60 @@ class _ProCommunicationHubScreenState
             // 3. Target Audience & Urgency (for In-App & Omnichannel)
             if (_selectedChannel == CommunicationChannel.inApp ||
                 _selectedChannel == CommunicationChannel.omnichannel) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _targetAudience,
-                      decoration: const InputDecoration(
-                        labelText: 'Target Audience',
-                        prefixIcon: Icon(Icons.people_outline),
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'all',
-                          child: Text('All Members'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'branch',
-                          child: Text('My Branch Only'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'executives',
-                          child: Text('Executives Only'),
-                        ),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setState(() => _targetAudience = val);
-                      },
-                    ),
+              DropdownButtonFormField<String>(
+                initialValue: _targetAudience,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Target Audience',
+                  prefixIcon: Icon(Icons.people_outline),
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'all',
+                    child: Text('All Members', overflow: TextOverflow.ellipsis),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _urgency,
-                      decoration: const InputDecoration(
-                        labelText: 'Urgency',
-                        prefixIcon: Icon(Icons.priority_high),
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'normal',
-                          child: Text('Normal Notice'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'important',
-                          child: Text('Important'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'urgent',
-                          child: Text('Urgent Advisory'),
-                        ),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setState(() => _urgency = val);
-                      },
-                    ),
+                  DropdownMenuItem(
+                    value: 'branch',
+                    child: Text('My Branch Only', overflow: TextOverflow.ellipsis),
+                  ),
+                  DropdownMenuItem(
+                    value: 'executives',
+                    child: Text('Executives Only', overflow: TextOverflow.ellipsis),
                   ),
                 ],
+                onChanged: (val) {
+                  if (val != null) setState(() => _targetAudience = val);
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _urgency,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Urgency',
+                  prefixIcon: Icon(Icons.priority_high),
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'normal',
+                    child: Text('Normal Notice', overflow: TextOverflow.ellipsis),
+                  ),
+                  DropdownMenuItem(
+                    value: 'important',
+                    child: Text('Important', overflow: TextOverflow.ellipsis),
+                  ),
+                  DropdownMenuItem(
+                    value: 'urgent',
+                    child: Text('Urgent Advisory', overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+                onChanged: (val) {
+                  if (val != null) setState(() => _urgency = val);
+                },
               ),
               const SizedBox(height: 12),
               SwitchListTile(
@@ -457,6 +455,8 @@ class _ProCommunicationHubScreenState
                                   ? 'Broadcasting to all $validPhoneCount members'
                                   : 'Direct message to: ${_selectedDirectMember!.fullName}',
                               style: const TextStyle(fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             Text(
                               _selectedDirectMember == null
@@ -466,6 +466,8 @@ class _ProCommunicationHubScreenState
                                 fontSize: 12,
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -523,18 +525,28 @@ class _ProCommunicationHubScreenState
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${_bodyController.text.length} characters',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurfaceVariant,
+                Flexible(
+                  child: Text(
+                    '${_bodyController.text.length} characters',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Text(
-                  'Approx. ${(_bodyController.text.length / 160).ceil().clamp(1, 10)} SMS page(s)',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    'Approx. ${(_bodyController.text.length / 160).ceil().clamp(1, 10)} SMS page(s)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -560,10 +572,12 @@ class _ProCommunicationHubScreenState
                       children: [
                         const Icon(Icons.preview_outlined, size: 18),
                         const SizedBox(width: 8),
-                        Text(
-                          'Formatted Dispatch Preview',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            'Formatted Dispatch Preview',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],

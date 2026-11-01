@@ -426,9 +426,12 @@ class _ProHomeTab extends ConsumerWidget {
                         child: OutlinedButton.icon(
                           onPressed: () => _openHub(context, CommunicationChannel.whatsApp),
                           icon: const Icon(Icons.chat, size: 16, color: Colors.green),
-                          label: const Text('WhatsApp'),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('WhatsApp'),
+                          ),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                             side: BorderSide(
                               color: Colors.green.withValues(alpha: 0.4),
                             ),
@@ -440,9 +443,12 @@ class _ProHomeTab extends ConsumerWidget {
                         child: OutlinedButton.icon(
                           onPressed: () => _openHub(context, CommunicationChannel.sms),
                           icon: const Icon(Icons.sms, size: 16, color: Colors.blue),
-                          label: const Text('SMS'),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('SMS'),
+                          ),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                             side: BorderSide(
                               color: Colors.blue.withValues(alpha: 0.4),
                             ),
@@ -454,9 +460,12 @@ class _ProHomeTab extends ConsumerWidget {
                         child: FilledButton.icon(
                           onPressed: () => _openHub(context, CommunicationChannel.omnichannel),
                           icon: const Icon(Icons.rocket_launch, size: 16),
-                          label: const Text('Dispatch'),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('Dispatch'),
+                          ),
                           style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                           ),
                         ),
                       ),
