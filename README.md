@@ -1,48 +1,5 @@
 # AgePay
 
-![AgePay Logo](assets/images/logo.png)
-
-A modern community financial & management platform.
-
-![Flutter](https://img.shields.io/badge/Flutter-3.x-blue.svg)
-![Dart](https://img.shields.io/badge/Dart-3.x-blue.svg)
-![Firebase](https://img.shields.io/badge/Firebase-Backend-orange.svg)
-![Firestore](https://img.shields.io/badge/Cloud%20Firestore-Database-yellow.svg)
-![Riverpod](https://img.shields.io/badge/Riverpod-State%20Management-purple.svg)
-![Material 3](https://img.shields.io/badge/Material%203-UI-blueviolet.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
-
----
-
-## Table of Contents
-
-- [Introduction](#introduction)
-- [Why AgePay?](#why-agepay)
-- [Vision](#vision)
-- [Mission](#mission)
-- [Core Principles](#core-principles)
-- [Key Features](#key-features)
-- [Supported Organizations](#supported-organizations)
-- [Technology Stack](#technology-stack)
-- [Documentation](#documentation)
-- [Project Status](#project-status)
-- [Roadmap](#roadmap)
-- [Project Architecture](#project-architecture)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Development Workflow](#development-workflow)
-- [Coding Standards](#coding-standards)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [Security](#security)
-- [Frequently Asked Questions](#frequently-asked-questions)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
-- [Maintainers](#maintainers)
-- [Final Notes](#final-notes)
-
----
-
 ## Introduction
 
 AgePay is a modern **Flutter-powered Community Financial Management Platform** designed to help organizations efficiently manage members, finances, meetings, projects, communication, and organizational activities from a single application.

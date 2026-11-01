@@ -51,6 +51,12 @@ void main() async {
 
   await _initFirebase();
 
+  try {
+    await NotificationService().initialize();
+  } catch (e) {
+    debugPrint('Notification service init note: $e');
+  }
+
   runApp(const ProviderScope(child: MyApp()));
 }
 

@@ -134,6 +134,10 @@ class AuthService {
     String? newBranchName,
     String? coFounderName,
     String? coFounderPhone,
+    String? founderNinOrBvn,
+    String? cacNumber,
+    String? townUnionName,
+    String? townUnionContact,
     MemberDuesStanding duesStanding = MemberDuesStanding.newMember,
     double? openingBalance,
   }) async {
@@ -164,9 +168,15 @@ class AuthService {
           'contactEmail': email,
           'contactPhone': phoneNumber,
           'address': '',
-          'isActive': false, // Inactive until co-founder verification
-          'openForJoin': false,
+          'isActive': false, // Inactive until co-founder verification and SuperAdmin platform verification
+          'openForJoin': false, // Hidden from public join until SuperAdmin platform verification
+          'verificationStatus': 'pending_verification',
           'memberCount': 1,
+          if (cacNumber != null && cacNumber.isNotEmpty) 'cacNumber': cacNumber,
+          if (townUnionName != null && townUnionName.isNotEmpty) 'townUnionName': townUnionName,
+          if (townUnionContact != null && townUnionContact.isNotEmpty) 'townUnionContact': townUnionContact,
+          if (founderNinOrBvn != null && founderNinOrBvn.isNotEmpty) 'founderNinOrBvn': founderNinOrBvn,
+          'isBankVerified': false,
           'createdAt': Timestamp.fromDate(DateTime.now()),
           'updatedAt': Timestamp.fromDate(DateTime.now()),
         }));
@@ -262,6 +272,8 @@ class AuthService {
         branchName: finalBranchName,
         coFounderName: coFounderName,
         coFounderPhone: coFounderPhone,
+        ninOrBvn: founderNinOrBvn,
+        isIdentityVerified: founderNinOrBvn != null && founderNinOrBvn.isNotEmpty,
         duesStanding: duesStanding,
         openingBalance: openingBalance,
         createdAt: DateTime.now(),
@@ -826,6 +838,34 @@ class AuthService {
 
   Future<void> signOut() async {
     await _auth.signOut();
+  }
+
+  Future<UserModel> updateUserProfile({
+    required String uid,
+    required String displayName,
+    required String phoneNumber,
+    String? ninOrBvn,
+  }) async {
+    final Map<String, dynamic> updates = {
+      'displayName': displayName.trim(),
+      'phoneNumber': phoneNumber.trim(),
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    };
+    if (ninOrBvn != null && ninOrBvn.trim().isNotEmpty) {
+      updates['ninOrBvn'] = ninOrBvn.trim();
+    }
+
+    await _firestore.collection('users').doc(uid).update(updates);
+
+    try {
+      final user = _auth.currentUser;
+      if (user != null && user.uid == uid) {
+        await user.updateDisplayName(displayName.trim());
+      }
+    } catch (_) {}
+
+    final updated = await _getUserData(uid);
+    return updated!;
   }
 
   Future<UserModel?> getCurrentUser() async {

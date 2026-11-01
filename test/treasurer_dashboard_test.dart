@@ -600,11 +600,11 @@ void main() {
           .toList();
       expect(allTexts, contains('Record Cash Payment'));
       expect(allTexts, contains('Verify Payments'));
-      expect(allTexts, contains('Create Levy'));
+      expect(allTexts, isNot(contains('Create Levy')));
       expect(allTexts, contains('Add Expense'));
     });
 
-    testWidgets('Create Levy button is tappable', (tester) async {
+    testWidgets('Create Levy is excluded from Treasurer dashboard', (tester) async {
       await tester.pumpWidget(
         buildDashboard(
           payments: testPayments,
@@ -620,12 +620,13 @@ void main() {
       await tester.drag(find.byType(ListView).first, const Offset(0, -800));
       await tester.pumpAndSettle();
 
-      // Verify all quick action buttons are present
+      // Verify Create Levy is not present on Treasurer dashboard
       final allTexts = tester.allWidgets
           .whereType<Text>()
           .map((w) => w.data ?? '')
           .toList();
-      expect(allTexts, contains('Create Levy'));
+      expect(allTexts, isNot(contains('Create Levy')));
+      expect(allTexts, contains('Add Expense'));
     });
 
     testWidgets('shows empty states when no data', (tester) async {

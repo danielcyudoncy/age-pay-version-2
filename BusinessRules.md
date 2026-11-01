@@ -80,6 +80,28 @@ Only **Active** organizations can perform transactions.
 
 ---
 
+## Fraud Mitigation & Verification Rules (Zero-Trust Onboarding)
+
+To eliminate collusion, unauthorized age-grade creation, and fund siphoning:
+
+### 1. Executive Identity Verification (NIN / BVN)
+* Pioneer founders (President and General Secretary) must provide a valid 11-digit National Identity Number (NIN) or Bank Verification Number (BVN).
+* Sequences with repetitive dummy patterns or flagged IDs on the platform blacklist are blocked immediately from registration.
+
+### 2. Community & Legal Credentials
+* When registering an Age Grade, applicants must submit their Corporate Affairs Commission (CAC) incorporation status or number, their ancestral Town Union name, and Town Union executive contact.
+
+### 3. Platform Verification Gate (SuperAdmin Approval)
+* Mutual co-signing by President and Secretary transitions an organization to `verificationStatus: pending_verification` and `openForJoin: false`.
+* Newly registered organizations remain invisible to public user join searches and cannot collect payments until Platform SuperAdmins review and approve their credentials in the Admin Panel.
+
+### 4. Bank Account Matching & Anti-Siphoning Controls
+* Personal bank accounts are strictly prohibited from receiving association dues.
+* Receiving bank accounts must be in the name of the Age Grade or contain corporate/association keywords.
+* Account names must be verified via NUBAN lookup and matched against the organization entity before being activated.
+
+---
+
 ## Member Rules
 
 A member belongs to one organization at a time.
@@ -629,6 +651,24 @@ National account holders (National President, National Secretary, National Treas
 5. **National Levies Applicability**:
    * When a national levy is created, it applies to **all branch members** across all branches nationwide.
    * Automated obligations are distributed to every active branch member in the organization, ensuring comprehensive national compliance while preserving member private record isolation at the branch level.
+
+---
+
+## Nigerian State Branch Provisioning Rules
+
+1. **Standardized State Coverage**:
+   * Branch provisioning provides a canonical catalog of all 36 States in Nigeria + Federal Capital Territory (FCT Abuja).
+   * Prevents inconsistent spelling, casing, or colloquial abbreviations (e.g., standardizes "Lagos Branch", "Abia Branch", "Abuja Branch").
+
+2. **Batch Checkbox Provisioning**:
+   * Super Admins can select multiple states via checkboxes and provision all selected chapters atomically in a single batch write (`BranchRepository.createBranches`).
+   * Provides quick filters for common diaspora hubs (Lagos, Abuja, Rivers, Abia, Enugu, Anambra, Imo, Delta, Kano, Oyo).
+
+3. **Duplicate Prevention**:
+   * System inspects existing organization branches; any state that already has an active chapter is marked as "Already added" with its checkbox disabled to prevent redundant branch creation.
+
+4. **Custom Branch Fallback**:
+   * Dedicated custom branch tab permits provisioning non-state chapters (e.g. specialized town branches like "Aba North Chapter" or international branches like "UK / Diaspora Chapter").
 
 ---
 

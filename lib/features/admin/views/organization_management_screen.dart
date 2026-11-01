@@ -5,6 +5,8 @@ import 'package:cls/features/admin/models/branch_model.dart';
 import 'package:cls/features/admin/models/organization_model.dart';
 import 'package:cls/features/admin/widgets/edit_branch_bank_dialog.dart';
 import 'package:cls/features/admin/widgets/organization_list_item.dart';
+import '../widgets/add_branch_dialog.dart';
+import '../services/bank_verification_service.dart';
 
 class OrganizationManagementScreen extends ConsumerStatefulWidget {
   const OrganizationManagementScreen({super.key});
@@ -137,80 +139,332 @@ class _OrganizationManagementScreenState
   }
 
   void _showCreateDialog(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController();
     final slugController = TextEditingController();
     final emailController = TextEditingController();
     final phoneController = TextEditingController();
     final addressController = TextEditingController();
+    final branchNameController =
+        TextEditingController(text: 'Headquarters / Main Branch');
+    final bankNameController = TextEditingController();
+    final accountNumberController = TextEditingController();
+    final accountNameController = TextEditingController();
+
     bool openForJoin = true;
+    bool showBankSection = false;
+    bool slugManuallyEdited = false;
+    bool isSaving = false;
+    String? dialogError;
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Create Organization'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  shape: BoxShape.circle,
                 ),
-                TextField(
-                  controller: slugController,
-                  decoration: const InputDecoration(labelText: 'Slug'),
+                child: Icon(Icons.business, color: Colors.blue.shade700, size: 22),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Provision Organization',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(labelText: 'Contact Email'),
+              ),
+            ],
+          ),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'As Super Admin, creating this organization pre-verifies it and immediately provisions its primary branch so members can join easily without verification delays.',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade700, height: 1.3),
+                    ),
+                    const SizedBox(height: 16),
+                    if (dialogError != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Text(
+                          dialogError!,
+                          style: TextStyle(fontSize: 12, color: Colors.red.shade900),
+                        ),
+                      ),
+                    TextFormField(
+                      controller: nameController,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(
+                        labelText: 'Age Grade Name *',
+                        hintText: 'e.g. Udoka Age Grade',
+                        prefixIcon: Icon(Icons.corporate_fare_outlined),
+                      ),
+                      onChanged: (val) {
+                        if (!slugManuallyEdited) {
+                          setDialogState(() {
+                            slugController.text = val
+                                .trim()
+                                .toLowerCase()
+                                .replaceAll(RegExp(r'\s+'), '-');
+                          });
+                        }
+                      },
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Age Grade name is required'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: slugController,
+                      decoration: const InputDecoration(
+                        labelText: 'Platform Slug *',
+                        hintText: 'e.g. udoka-age-grade',
+                        prefixIcon: Icon(Icons.alternate_email),
+                      ),
+                      onChanged: (_) => slugManuallyEdited = true,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Slug is required'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: branchNameController,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(
+                        labelText: 'Primary Branch / Headquarters *',
+                        hintText: 'e.g. Headquarters / Main Branch',
+                        prefixIcon: Icon(Icons.location_on_outlined),
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Primary branch name is required'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'Contact Email (Optional)',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Contact Phone (Optional)',
+                        prefixIcon: Icon(Icons.phone_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: addressController,
+                      decoration: const InputDecoration(
+                        labelText: 'Community Address (Optional)',
+                        prefixIcon: Icon(Icons.place_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Toggle optional Bank Account setup upfront
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => setDialogState(() => showBankSection = !showBankSection),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              showBankSection
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              size: 20,
+                              color: Colors.blue.shade800,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                showBankSection
+                                    ? 'Hide Receiving Bank Setup'
+                                    : '+ Configure Association Bank Account (Optional)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.blue.shade900,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    if (showBankSection) ...[
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: bankNameController,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          labelText: 'Bank Name',
+                          hintText: 'e.g. First Bank of Nigeria',
+                          prefixIcon: Icon(Icons.account_balance),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: accountNumberController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 10,
+                        decoration: const InputDecoration(
+                          labelText: 'Account Number (10 Digits)',
+                          hintText: 'e.g. 0123456789',
+                          prefixIcon: Icon(Icons.numbers),
+                          counterText: '',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: accountNameController,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          labelText: 'Account Name',
+                          hintText: 'e.g. Udoka Age Grade Central',
+                          prefixIcon: Icon(Icons.badge),
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Open for join', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text(
+                        'Allow members to select and join this organization on registration',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      value: openForJoin,
+                      onChanged: (v) => setDialogState(() => openForJoin = v),
+                    ),
+                  ],
                 ),
-                TextField(
-                  controller: phoneController,
-                  decoration: const InputDecoration(labelText: 'Contact Phone'),
-                ),
-                TextField(
-                  controller: addressController,
-                  decoration: const InputDecoration(labelText: 'Address'),
-                ),
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  title: const Text('Open for join'),
-                  subtitle: const Text('Allow members to join this branch'),
-                  value: openForJoin,
-                  onChanged: (v) => setDialogState(() => openForJoin = v),
-                ),
-              ],
+              ),
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: isSaving ? null : () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
-            ElevatedButton(
-              onPressed: () async {
-                if (nameController.text.isEmpty ||
-                    slugController.text.isEmpty) {
-                  return;
-                }
-                final org = OrganizationModel(
-                  id: '',
-                  name: nameController.text.trim(),
-                  slug: slugController.text.trim(),
-                  contactEmail: emailController.text.trim(),
-                  contactPhone: phoneController.text.trim(),
-                  address: addressController.text.trim(),
-                  openForJoin: openForJoin,
-                  createdAt: DateTime.now(),
-                  updatedAt: DateTime.now(),
-                );
-                await ref
-                    .read(organizationRepositoryProvider)
-                    .createOrganization(org);
-                if (context.mounted) Navigator.pop(context);
-              },
-              child: const Text('Create'),
+            FilledButton.icon(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      if (!formKey.currentState!.validate()) return;
+
+                      final bankName = bankNameController.text.trim();
+                      final accNo = accountNumberController.text.trim();
+                      final accName = accountNameController.text.trim();
+                      bool hasBank = bankName.isNotEmpty || accNo.isNotEmpty || accName.isNotEmpty;
+                      bool isBankValid = false;
+
+                      if (hasBank) {
+                        final verifyRes = BankVerificationService.verifyAccount(
+                          bankName: bankName,
+                          accountNumber: accNo,
+                          organizationName: nameController.text.trim(),
+                          accountName: accName,
+                        );
+                        if (!verifyRes.isApproved) {
+                          setDialogState(() => dialogError = verifyRes.message);
+                          return;
+                        }
+                        isBankValid = true;
+                      }
+
+                      setDialogState(() {
+                        isSaving = true;
+                        dialogError = null;
+                      });
+
+                      try {
+                        final org = OrganizationModel(
+                          id: '',
+                          name: nameController.text.trim(),
+                          slug: slugController.text.trim(),
+                          contactEmail: emailController.text.trim(),
+                          contactPhone: phoneController.text.trim(),
+                          address: addressController.text.trim(),
+                          isActive: true,
+                          openForJoin: openForJoin,
+                          verificationStatus: 'verified',
+                          isBankVerified: isBankValid,
+                          bankAccountType: isBankValid ? 'association' : null,
+                          bankName: hasBank ? bankName : null,
+                          accountNumber: hasBank ? accNo : null,
+                          accountName: hasBank ? accName : null,
+                          createdAt: DateTime.now(),
+                          updatedAt: DateTime.now(),
+                        );
+
+                        await ref.read(organizationRepositoryProvider).createOrganization(
+                              org,
+                              initialBranchName: branchNameController.text.trim(),
+                            );
+
+                        ref.invalidate(organizationsStreamProvider);
+                        ref.invalidate(organizationsFutureProvider);
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.green.shade700,
+                              content: Text(
+                                '${org.name} and primary branch provisioned successfully! Members can now join with ease.',
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() {
+                          isSaving = false;
+                          dialogError = e.toString();
+                        });
+                      }
+                    },
+              icon: isSaving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.check_circle_outline, size: 18),
+              label: const Text('Provision & Activate'),
             ),
           ],
         ),
@@ -299,96 +553,7 @@ class _OrganizationManagementScreenState
   }
 
   void _showAddBranchDialog(BuildContext context, OrganizationModel org) {
-    final nameController = TextEditingController();
-    final stateController = TextEditingController();
-    final cityController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            'Add Branch to ${org.name}',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Branch Name',
-                  hintText: 'e.g. Aba, Lagos, Abuja',
-                  prefixIcon: Icon(Icons.location_city_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: stateController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'State',
-                  hintText: 'e.g. Abia, Lagos',
-                  prefixIcon: Icon(Icons.map_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: cityController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'City',
-                  hintText: 'e.g. Aba, Ikeja',
-                  prefixIcon: Icon(Icons.pin_drop_outlined),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final branchName = nameController.text.trim();
-              if (branchName.isEmpty) return;
-
-              final newBranch = BranchModel(
-                id: '',
-                organizationId: org.id,
-                name: branchName,
-                state: stateController.text.trim(),
-                city: cityController.text.trim(),
-                isActive: true,
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-              );
-
-              await ref.read(branchRepositoryProvider).createBranch(newBranch);
-              if (ctx.mounted) {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Branch "$branchName" created for ${org.name}',
-                    ),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              }
-            },
-            child: const Text('Add Branch'),
-          ),
-        ],
-      ),
-    );
+    AddBranchDialog.show(context, org);
   }
 
   void _showBranchDetailsDialog(BuildContext context, BranchModel branch) {

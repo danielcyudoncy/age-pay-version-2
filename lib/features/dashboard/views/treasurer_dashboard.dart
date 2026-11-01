@@ -15,7 +15,6 @@ import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dar
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/levies/controllers/levy_provider.dart'
     hide obligationRepositoryProvider;
-import 'package:cls/features/levies/views/create_levy_screen.dart';
 import 'package:cls/features/members/views/treasurer_member_detail_screen.dart';
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
 import 'package:cls/features/expenses/views/expense_form_screen.dart';
@@ -1328,8 +1327,6 @@ class _QuickActionsRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final membersAsync = ref.watch(membersStreamProvider);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1370,23 +1367,6 @@ class _QuickActionsRow extends ConsumerWidget {
                   MaterialPageRoute(
                     builder: (_) =>
                         PaymentVerificationScreen(verifiedBy: user.uid),
-                  ),
-                );
-              },
-            ),
-            QuickActionButton(
-              icon: Icons.assignment,
-              label: 'Create Levy',
-              onPressed: () {
-                final memberIds =
-                    membersAsync.valueOrNull?.map((m) => m.id).toList() ?? [];
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CreateLevyScreen(
-                      creatorId: user.uid,
-                      memberIds: memberIds,
-                    ),
                   ),
                 );
               },

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cls/features/admin/controllers/admin_provider.dart';
 import 'package:cls/features/admin/models/branch_model.dart';
 import 'package:cls/features/admin/models/organization_model.dart';
+import 'organization_verification_dialog.dart';
 
 class OrganizationListItem extends ConsumerWidget {
   final OrganizationModel organization;
@@ -84,6 +85,7 @@ class OrganizationListItem extends ConsumerWidget {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           _buildStatusPill(context, isActive: organization.isActive),
+                          _buildVerificationPill(context, status: organization.verificationStatus),
                           _buildJoinPill(context, openForJoin: organization.openForJoin),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -120,6 +122,12 @@ class OrganizationListItem extends ConsumerWidget {
                   ),
                   onSelected: (value) {
                     switch (value) {
+                      case 'verify':
+                        OrganizationVerificationDialog.show(
+                          context,
+                          organization: organization,
+                        );
+                        break;
                       case 'edit':
                         onEdit();
                         break;
@@ -135,6 +143,16 @@ class OrganizationListItem extends ConsumerWidget {
                     }
                   },
                   itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'verify',
+                      child: Row(
+                        children: [
+                          Icon(Icons.shield_outlined, size: 20, color: Colors.blue),
+                          SizedBox(width: 12),
+                          Expanded(child: Text('Review & Verify')),
+                        ],
+                      ),
+                    ),
                     const PopupMenuItem(
                       value: 'edit',
                       child: Row(
@@ -547,6 +565,51 @@ class OrganizationListItem extends ConsumerWidget {
               fontSize: 10,
               fontWeight: FontWeight.w600,
               color: openForJoin ? Colors.blue.shade700 : Colors.grey.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerificationPill(BuildContext context, {required String status}) {
+    final isVerified = status == 'verified';
+    final isRejected = status == 'rejected';
+    final color = isVerified
+        ? Colors.green
+        : (isRejected ? Colors.red : Colors.amber);
+    final label = isVerified
+        ? 'Verified'
+        : (isRejected ? 'Rejected' : 'Pending Review');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isVerified
+                ? Icons.verified
+                : (isRejected ? Icons.cancel : Icons.hourglass_top),
+            size: 11,
+            color: isVerified
+                ? Colors.green.shade800
+                : (isRejected ? Colors.red.shade800 : Colors.amber.shade900),
+          ),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: isVerified
+                  ? Colors.green.shade800
+                  : (isRejected ? Colors.red.shade800 : Colors.amber.shade900),
             ),
           ),
         ],

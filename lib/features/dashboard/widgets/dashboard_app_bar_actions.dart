@@ -12,6 +12,9 @@ import '../../notifications/views/notifications_screen.dart';
 import '../../settings/views/about_screen.dart';
 import '../../settings/views/help_screen.dart';
 import '../../settings/views/settings_screen.dart';
+import '../../admin/views/admin_profile_screen.dart';
+import '../../secretary/views/secretary_profile_screen.dart';
+import '../../members/views/member_profile_screen.dart';
 
 /// Standardized executive AppBar actions across all AgePay dashboards.
 /// Provides a consistent notifications badge, executive tier switcher, and a themed Material 3
@@ -167,6 +170,20 @@ class DashboardAppBarActions extends ConsumerWidget {
                   );
                 }
                 break;
+              case 'profile':
+                Widget profileScreen;
+                if (targetUser?.role == UserRole.superAdmin) {
+                  profileScreen = const AdminProfileScreen();
+                } else if (targetUser?.role == UserRole.secretary ||
+                    targetUser?.role == UserRole.viceSecretary) {
+                  profileScreen = const SecretaryProfileScreen();
+                } else {
+                  profileScreen = const MemberProfileScreen();
+                }
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => profileScreen),
+                );
+                break;
               case 'settings':
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),
@@ -273,6 +290,17 @@ class DashboardAppBarActions extends ConsumerWidget {
                   ],
                 ),
               ),
+            const PopupMenuItem<String>(
+              value: 'profile',
+              child: Row(
+                children: [
+                  Icon(Icons.person_outline,
+                      size: 20, color: AppTheme.brandGreen),
+                  SizedBox(width: 12),
+                  Text('My Profile'),
+                ],
+              ),
+            ),
             const PopupMenuItem<String>(
               value: 'settings',
               child: Row(

@@ -18,12 +18,15 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
 class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
   StreamSubscription<RemoteMessage>? _subscription;
   StreamSubscription<List<NotificationModel>>? _firestoreSubscription;
+  final NotificationService _service;
   final NotificationRepository? _repository;
   final String? _organizationId;
   final String? _userId;
   final dynamic _role;
   final String? _branchId;
   final bool _isNationalExecutive;
+  bool _initialLoadDone = false;
+  final Set<String> _knownIds = {};
 
   NotificationListNotifier(
     NotificationService service, {
@@ -33,7 +36,8 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
     dynamic role,
     String? branchId,
     bool isNationalExecutive = false,
-  })  : _repository = repository,
+  })  : _service = service,
+        _repository = repository,
         _organizationId = organizationId,
         _userId = userId,
         _role = role,
@@ -74,6 +78,19 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
           isNationalExecutive: _isNationalExecutive,
         )
         .listen((firestoreNotifications) {
+          if (_initialLoadDone) {
+            for (final notif in firestoreNotifications) {
+              if (!notif.read && !_knownIds.contains(notif.id)) {
+                _service.showNotification(
+                  title: notif.title,
+                  body: notif.body,
+                  payload: notif.payload,
+                );
+              }
+            }
+          }
+          _knownIds.addAll(firestoreNotifications.map((n) => n.id));
+          _initialLoadDone = true;
           state = firestoreNotifications;
         });
   }
@@ -84,6 +101,12 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
         !_repository.isNotificationForUser(notification, _userId, _role)) {
       return;
     }
+    _knownIds.add(notification.id);
+    _service.showNotification(
+      title: notification.title,
+      body: notification.body,
+      payload: notification.payload,
+    );
     state = [notification, ...state];
   }
 

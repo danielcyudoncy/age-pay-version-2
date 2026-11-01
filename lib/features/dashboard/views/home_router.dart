@@ -17,6 +17,8 @@ import '../../auth/views/organization_picker_screen.dart';
 import '../../auth/views/pending_approval_screen.dart';
 import '../../auth/views/co_founder_verification_dialog.dart';
 import '../../national/controllers/national_provider.dart';
+import '../../admin/controllers/admin_provider.dart';
+import '../../notifications/controllers/notification_provider.dart';
 
 class HomeRouter extends ConsumerWidget {
   const HomeRouter({super.key});
@@ -30,6 +32,9 @@ class HomeRouter extends ConsumerWidget {
         if (user == null) {
           return const LoginScreen();
         }
+
+        ref.watch(initializeNotificationsProvider);
+        ref.watch(notificationListProvider);
 
         // 1. Check if user has an incoming Co-Founder invitation for General Secretary
         if (user.phoneNumber.isNotEmpty) {
@@ -61,6 +66,48 @@ class HomeRouter extends ConsumerWidget {
 
         if (user.organizationId.isEmpty && user.role != UserRole.superAdmin) {
           return const OrganizationPickerScreen();
+        }
+
+        // Gate rejected organizations
+        if (user.role != UserRole.superAdmin) {
+          final orgAsync = ref.watch(currentOrganizationProvider);
+          final org = orgAsync.valueOrNull;
+          if (org != null && org.verificationStatus == 'rejected') {
+            return Scaffold(
+              appBar: AppBar(title: const Text('Organization Status')),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.gavel_rounded, size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Organization Verification Declined',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${org.name} was reviewed by the AgePay Platform Compliance Team and declined due to unverified community credentials or policy non-compliance.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.black54),
+                      ),
+                      const SizedBox(height: 24),
+                      OutlinedButton.icon(
+                        onPressed: () => ref.read(authProvider.notifier).signOut(),
+                        icon: const Icon(Icons.logout),
+                        label: const Text('Sign Out'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
         }
 
         final activeScope = ref.watch(activeExecutiveScopeProvider);
@@ -96,7 +143,8 @@ class HomeRouter extends ConsumerWidget {
             dashboard = const ProDashboard();
             break;
           case UserRole.provost:
-            return const ProvostDashboard();
+            dashboard = const ProvostDashboard();
+            break;
           case UserRole.auditor:
           case UserRole.executiveMember:
           case UserRole.committeeChair:
@@ -104,7 +152,41 @@ class HomeRouter extends ConsumerWidget {
             break;
         }
 
-        return _RootBackExitWrapper(child: dashboard);
+        Widget content = dashboard;
+        if (effectiveRole != UserRole.superAdmin && effectiveRole != UserRole.member) {
+          final org = ref.watch(currentOrganizationProvider).valueOrNull;
+          if (org != null && org.isPendingVerification) {
+            content = Column(
+              children: [
+                Material(
+                  color: Colors.amber.shade100,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.shield_outlined, size: 18, color: Colors.amber.shade900),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '🛡️ Compliance Notice: Organization is pending Platform SuperAdmin verification before opening for public join and payments.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.amber.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(child: dashboard),
+              ],
+            );
+          }
+        }
+
+        return _RootBackExitWrapper(child: content);
       },
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),

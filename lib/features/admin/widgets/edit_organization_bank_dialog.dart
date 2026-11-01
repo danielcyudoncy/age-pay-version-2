@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/organization_model.dart';
 import '../controllers/admin_provider.dart';
+import '../services/bank_verification_service.dart';
 
 class EditOrganizationBankDialog extends ConsumerStatefulWidget {
   final OrganizationModel organization;
@@ -84,6 +85,21 @@ class _EditOrganizationBankDialogState
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final matchResult = BankVerificationService.verifyAccount(
+      bankName: _bankNameController.text.trim(),
+      accountNumber: _accountNumberController.text.trim(),
+      organizationName: widget.organization.name,
+      accountName: _accountNameController.text.trim(),
+    );
+
+    if (!matchResult.isApproved) {
+      setState(() {
+        _errorMessage = matchResult.message;
+        _isLoading = false;
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -97,6 +113,8 @@ class _EditOrganizationBankDialogState
             bankName: _bankNameController.text.trim(),
             accountNumber: _accountNumberController.text.trim(),
             accountName: _accountNameController.text.trim(),
+            isBankVerified: true,
+            bankAccountType: 'association',
           );
 
       final currentUser = FirebaseAuth.instance.currentUser;
@@ -373,6 +391,66 @@ class _EditOrganizationBankDialogState
                       return 'Please enter account name';
                     }
                     return null;
+                  },
+                ),
+                const SizedBox(height: 10),
+
+                // Real-time Association Account Verification Helper
+                ListenableBuilder(
+                  listenable: Listenable.merge([
+                    _accountNameController,
+                    _accountNumberController,
+                    _bankNameController,
+                  ]),
+                  builder: (context, _) {
+                    final accNo = _accountNumberController.text.trim();
+                    final accName = _accountNameController.text.trim();
+                    if (accNo.length != 10 || accName.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    final res = BankVerificationService.verifyAccount(
+                      bankName: _bankNameController.text.trim(),
+                      accountNumber: accNo,
+                      organizationName: widget.organization.name,
+                      accountName: accName,
+                    );
+                    final isOk = res.isApproved;
+                    return Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isOk ? Colors.green.shade50 : Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isOk
+                              ? Colors.green.shade200
+                              : Colors.amber.shade300,
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            isOk ? Icons.verified : Icons.warning_amber_rounded,
+                            color: isOk
+                                ? Colors.green.shade700
+                                : Colors.amber.shade900,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              res.message,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isOk
+                                    ? Colors.green.shade900
+                                    : Colors.amber.shade900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(height: 24),

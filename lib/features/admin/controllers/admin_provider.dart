@@ -16,7 +16,8 @@ final branchRepositoryProvider = Provider<BranchRepository>((ref) {
   return BranchRepository();
 });
 
-final branchesStreamFamily = StreamProvider.family<List<BranchModel>, String>((
+final branchesStreamFamily =
+    StreamProvider.autoDispose.family<List<BranchModel>, String>((
   ref,
   organizationId,
 ) {
@@ -27,9 +28,12 @@ final organizationRepositoryProvider = Provider<OrganizationRepository>((ref) {
   return OrganizationRepository();
 });
 
-final organizationsStreamProvider = StreamProvider<List<OrganizationModel>>((
-  ref,
-) {
+final organizationsStreamProvider =
+    StreamProvider.autoDispose<List<OrganizationModel>>((ref) {
+  final user = ref.watch(authProvider).valueOrNull;
+  if (user == null) {
+    return const Stream.empty();
+  }
   return ref.watch(organizationRepositoryProvider).getOrganizations();
 });
 
@@ -42,12 +46,14 @@ final organizationsFutureProvider = FutureProvider<List<OrganizationModel>>((
       .first;
 });
 
-final totalOrganizationsProvider = Provider<AsyncValue<int>>((ref) {
+final totalOrganizationsProvider =
+    Provider.autoDispose<AsyncValue<int>>((ref) {
   final asyncOrgs = ref.watch(organizationsStreamProvider);
   return asyncOrgs.whenData((list) => list.length);
 });
 
-final activeOrganizationsProvider = Provider<AsyncValue<int>>((ref) {
+final activeOrganizationsProvider =
+    Provider.autoDispose<AsyncValue<int>>((ref) {
   final asyncOrgs = ref.watch(organizationsStreamProvider);
   return asyncOrgs.whenData((list) => list.where((o) => o.isActive).length);
 });
@@ -56,19 +62,31 @@ final adminUserRepositoryProvider = Provider<AdminUserRepository>((ref) {
   return AdminUserRepository();
 });
 
-final allUsersStreamProvider = StreamProvider<List<UserModel>>((ref) {
+final allUsersStreamProvider =
+    StreamProvider.autoDispose<List<UserModel>>((ref) {
+  final user = ref.watch(authProvider).valueOrNull;
+  if (user == null) {
+    return const Stream.empty();
+  }
   return ref.watch(adminUserRepositoryProvider).getUsersStream();
 });
 
-final systemSettingsRepositoryProvider = Provider<SystemSettingsRepository>((ref) {
+final systemSettingsRepositoryProvider =
+    Provider<SystemSettingsRepository>((ref) {
   return SystemSettingsRepository();
 });
 
-final systemSettingsStreamProvider = StreamProvider<SystemSettingsModel>((ref) {
+final systemSettingsStreamProvider =
+    StreamProvider.autoDispose<SystemSettingsModel>((ref) {
+  final user = ref.watch(authProvider).valueOrNull;
+  if (user == null) {
+    return const Stream.empty();
+  }
   return ref.watch(systemSettingsRepositoryProvider).streamSettings();
 });
 
-final adminDashboardProvider = Provider<AsyncValue<AdminDashboardData>>((ref) {
+final adminDashboardProvider =
+    Provider.autoDispose<AsyncValue<AdminDashboardData>>((ref) {
   final totalOrgsAsync = ref.watch(totalOrganizationsProvider);
   final activeOrgsAsync = ref.watch(activeOrganizationsProvider);
   final allUsersAsync = ref.watch(allUsersStreamProvider);
@@ -76,7 +94,12 @@ final adminDashboardProvider = Provider<AsyncValue<AdminDashboardData>>((ref) {
   return totalOrgsAsync.whenData((total) {
     final active = activeOrgsAsync.valueOrNull ?? 0;
     final users = allUsersAsync.valueOrNull ?? [];
-    final pending = users.where((u) => u.status == AccountStatus.pendingApproval || !u.isActive).length;
+    final pending = users
+        .where(
+          (u) =>
+              u.status == AccountStatus.pendingApproval || !u.isActive,
+        )
+        .length;
 
     return AdminDashboardData(
       totalOrganizations: total,

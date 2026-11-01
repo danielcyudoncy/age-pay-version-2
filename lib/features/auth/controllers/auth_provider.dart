@@ -106,6 +106,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     String? newBranchName,
     String? coFounderName,
     String? coFounderPhone,
+    String? founderNinOrBvn,
+    String? cacNumber,
+    String? townUnionName,
+    String? townUnionContact,
     MemberDuesStanding duesStanding = MemberDuesStanding.newMember,
     double? openingBalance,
   }) async {
@@ -126,6 +130,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         newBranchName: newBranchName,
         coFounderName: coFounderName,
         coFounderPhone: coFounderPhone,
+        founderNinOrBvn: founderNinOrBvn,
+        cacNumber: cacNumber,
+        townUnionName: townUnionName,
+        townUnionContact: townUnionContact,
         duesStanding: duesStanding,
         openingBalance: openingBalance,
       );
@@ -147,6 +155,23 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
+  }
+
+  Future<void> updateProfile({
+    required String displayName,
+    required String phoneNumber,
+    String? ninOrBvn,
+  }) async {
+    final currentUser = state.valueOrNull;
+    if (currentUser == null) return;
+
+    final updated = await _authService.updateUserProfile(
+      uid: currentUser.uid,
+      displayName: displayName,
+      phoneNumber: phoneNumber,
+      ninOrBvn: ninOrBvn,
+    );
+    state = AsyncValue.data(updated);
   }
 
   void setUser(UserModel user) {

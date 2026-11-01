@@ -17,9 +17,13 @@ class BranchRepository {
         .where('isActive', isEqualTo: true)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => BranchModel.fromFirestore(doc))
-              .toList(),
+          (snapshot) {
+            final branches = snapshot.docs
+                .map((doc) => BranchModel.fromFirestore(doc))
+                .toList();
+            branches.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+            return branches;
+          },
         );
   }
 
@@ -29,7 +33,9 @@ class BranchRepository {
         .where('organizationId', isEqualTo: organizationId)
         .where('isActive', isEqualTo: true)
         .get();
-    return snapshot.docs.map((doc) => BranchModel.fromFirestore(doc)).toList();
+    final branches = snapshot.docs.map((doc) => BranchModel.fromFirestore(doc)).toList();
+    branches.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return branches;
   }
 
   Future<BranchModel?> getBranchById(String id) async {
@@ -49,6 +55,27 @@ class BranchRepository {
     );
     await docRef.set(newBranch.toFirestore());
     return docRef.id;
+  }
+
+  Future<List<String>> createBranches(List<BranchModel> branches) async {
+    if (branches.isEmpty) return [];
+    final batch = _firestore.batch();
+    final ids = <String>[];
+    final now = DateTime.now();
+
+    for (final branch in branches) {
+      final docRef = _collection.doc();
+      final newBranch = branch.copyWith(
+        id: docRef.id,
+        createdAt: now,
+        updatedAt: now,
+      );
+      batch.set(docRef, newBranch.toFirestore());
+      ids.add(docRef.id);
+    }
+
+    await batch.commit();
+    return ids;
   }
 
   Future<void> updateBranch(BranchModel branch) async {

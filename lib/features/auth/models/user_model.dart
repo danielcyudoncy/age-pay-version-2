@@ -22,6 +22,8 @@ class UserModel {
   final bool isEnrolledInNational;
   final DateTime? enrolledInNationalAt;
   final String? enrolledInNationalBy;
+  final String? ninOrBvn;
+  final bool isIdentityVerified;
 
   const UserModel({
     required this.uid,
@@ -44,6 +46,8 @@ class UserModel {
     this.isEnrolledInNational = false,
     this.enrolledInNationalAt,
     this.enrolledInNationalBy,
+    this.ninOrBvn,
+    this.isIdentityVerified = false,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -137,6 +141,8 @@ class UserModel {
           ? _parseDate(data['enrolledInNationalAt'])
           : null,
       enrolledInNationalBy: data['enrolledInNationalBy'] as String?,
+      ninOrBvn: data['ninOrBvn'] as String?,
+      isIdentityVerified: data['isIdentityVerified'] == true,
     );
   }
 
@@ -163,6 +169,8 @@ class UserModel {
         'enrolledInNationalBy': enrolledInNationalBy,
       if (coFounderName != null) 'coFounderName': coFounderName,
       if (coFounderPhone != null) 'coFounderPhone': coFounderPhone,
+      if (ninOrBvn != null) 'ninOrBvn': ninOrBvn,
+      'isIdentityVerified': isIdentityVerified,
     };
   }
 
@@ -193,6 +201,8 @@ class UserModel {
     bool? isEnrolledInNational,
     DateTime? enrolledInNationalAt,
     String? enrolledInNationalBy,
+    String? ninOrBvn,
+    bool? isIdentityVerified,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -215,6 +225,8 @@ class UserModel {
       isEnrolledInNational: isEnrolledInNational ?? this.isEnrolledInNational,
       enrolledInNationalAt: enrolledInNationalAt ?? this.enrolledInNationalAt,
       enrolledInNationalBy: enrolledInNationalBy ?? this.enrolledInNationalBy,
+      ninOrBvn: ninOrBvn ?? this.ninOrBvn,
+      isIdentityVerified: isIdentityVerified ?? this.isIdentityVerified,
     );
   }
 

@@ -72,6 +72,10 @@ class DemoAuthService implements AuthService {
     String? newBranchName,
     String? coFounderName,
     String? coFounderPhone,
+    String? founderNinOrBvn,
+    String? cacNumber,
+    String? townUnionName,
+    String? townUnionContact,
     MemberDuesStanding duesStanding = MemberDuesStanding.newMember,
     double? openingBalance,
   }) async {
@@ -98,6 +102,27 @@ class DemoAuthService implements AuthService {
   @override
   Future<void> signOut() async {
     _currentUser = null;
+  }
+
+  @override
+  Future<UserModel> updateUserProfile({
+    required String uid,
+    required String displayName,
+    required String phoneNumber,
+    String? ninOrBvn,
+  }) async {
+    final current = _currentUser;
+    if (current == null) {
+      throw Exception('No active user session to update.');
+    }
+    final updated = current.copyWith(
+      displayName: displayName,
+      phoneNumber: phoneNumber,
+      ninOrBvn: ninOrBvn,
+    );
+    _currentUser = updated;
+    _users[updated.email] = updated;
+    return updated;
   }
 
   @override

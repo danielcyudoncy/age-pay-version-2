@@ -126,13 +126,15 @@ class _OrganizationPickerScreenState
                           textAlign: TextAlign.center,
                         );
                       }
+                      final sortedOrgs = List.of(orgs)
+                        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
                       return DropdownButtonFormField<String>(
                         initialValue: _selectedId,
                         decoration: const InputDecoration(
                           labelText: 'Organization',
                           prefixIcon: Icon(Icons.business_outlined),
                         ),
-                        items: orgs
+                        items: sortedOrgs
                             .map(
                               (org) => DropdownMenuItem(
                                 value: org.id,

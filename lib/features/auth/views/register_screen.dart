@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/enums.dart';
 import '../controllers/auth_provider.dart';
+import '../services/identity_verification_service.dart';
 import '../../admin/controllers/admin_provider.dart';
 import '../../dashboard/views/home_router.dart';
 
@@ -28,6 +29,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _newBranchNameController = TextEditingController();
   final _secretaryNameController = TextEditingController();
   final _secretaryPhoneController = TextEditingController();
+  final _founderNinController = TextEditingController();
+  final _cacNumberController = TextEditingController();
+  final _townUnionNameController = TextEditingController();
+  final _townUnionContactController = TextEditingController();
   final _openingBalanceController = TextEditingController();
   MemberDuesStanding _selectedDuesStanding = MemberDuesStanding.cleared;
 
@@ -53,6 +58,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _newBranchNameController.dispose();
     _secretaryNameController.dispose();
     _secretaryPhoneController.dispose();
+    _founderNinController.dispose();
+    _cacNumberController.dispose();
+    _townUnionNameController.dispose();
+    _townUnionContactController.dispose();
     _openingBalanceController.dispose();
     super.dispose();
   }
@@ -72,6 +81,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (_secretaryPhoneController.text.trim().isEmpty) {
         setState(() => _error =
             'Please provide your General Secretary\'s phone number for co-signing verification');
+        return;
+      }
+      if (_founderNinController.text.trim().isNotEmpty) {
+        final idResult = IdentityVerificationService.verifyNinOrBvn(
+          rawId: _founderNinController.text.trim(),
+          fullName: _nameController.text.trim(),
+        );
+        if (!idResult.isValid) {
+          setState(() => _error = idResult.message);
+          return;
+        }
+      } else {
+        setState(() => _error =
+            'Please enter your 11-digit NIN or BVN for executive identity verification');
         return;
       }
     } else {
@@ -128,6 +151,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 : null,
             coFounderPhone: _isCreatingNewOrg
                 ? _secretaryPhoneController.text.trim()
+                : null,
+            founderNinOrBvn: _isCreatingNewOrg
+                ? _founderNinController.text.trim()
+                : null,
+            cacNumber: _isCreatingNewOrg
+                ? _cacNumberController.text.trim()
+                : null,
+            townUnionName: _isCreatingNewOrg
+                ? _townUnionNameController.text.trim()
+                : null,
+            townUnionContact: _isCreatingNewOrg
+                ? _townUnionContactController.text.trim()
                 : null,
             duesStanding: _selectedDuesStanding,
             openingBalance: _selectedDuesStanding == MemberDuesStanding.openingBalance
@@ -447,6 +482,101 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         validator: (v) => _isCreatingNewOrg && (v == null || v.isEmpty)
                             ? 'Enter Secretary phone number for co-signing'
                             : null,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Executive Identity Verification Section
+                      Row(
+                        children: [
+                          Icon(Icons.fingerprint, size: 20, color: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Founder Identity Verification',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'To prevent impersonation, provide your valid 11-digit National Identity (NIN) or BVN.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: _founderNinController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 11,
+                        decoration: const InputDecoration(
+                          labelText: 'Founder NIN / BVN (11 Digits)',
+                          hintText: 'e.g. 22233344455',
+                          prefixIcon: Icon(Icons.security_outlined),
+                          counterText: '',
+                        ),
+                        validator: (v) {
+                          if (!_isCreatingNewOrg) return null;
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Enter your 11-digit NIN or BVN';
+                          }
+                          final res = IdentityVerificationService.verifyNinOrBvn(
+                            rawId: v.trim(),
+                            fullName: _nameController.text.trim(),
+                          );
+                          if (!res.isValid) return res.message;
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Community Verification Credentials
+                      Row(
+                        children: [
+                          Icon(Icons.verified_user_outlined, size: 20, color: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Community & Legal Credentials',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Provide your town union or CAC credentials for platform compliance verification.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: _cacNumberController,
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: const InputDecoration(
+                          labelText: 'CAC Registration Number (Optional)',
+                          hintText: 'e.g. IT/123456 or RC/Pending',
+                          prefixIcon: Icon(Icons.gavel_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: _townUnionNameController,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          labelText: 'Town Union / Apex Body Name',
+                          hintText: 'e.g. Abiriba Communal Improvement Union (ACIU)',
+                          prefixIcon: Icon(Icons.account_balance_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: _townUnionContactController,
+                        decoration: const InputDecoration(
+                          labelText: 'Town Union / Traditional Endorsement Contact',
+                          hintText: 'e.g. President-General: Chief Kalu (0803...)',
+                          prefixIcon: Icon(Icons.contact_phone_outlined),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       InputDecorator(
@@ -801,8 +931,11 @@ class _OrganizationPicker extends ConsumerWidget {
           );
         }
 
+        final sortedOrgs = List.of(orgs)
+          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
         final items = <DropdownMenuItem<String>>[
-          ...orgs.map(
+          ...sortedOrgs.map(
             (org) => DropdownMenuItem(
               value: org.id,
               child: Text(org.name),
@@ -891,8 +1024,11 @@ class _BranchPicker extends ConsumerWidget {
 
     return branchesAsync.when(
       data: (branches) {
+        final sortedBranches = List.of(branches)
+          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
         final items = <DropdownMenuItem<String>>[
-          ...branches.map(
+          ...sortedBranches.map(
             (b) => DropdownMenuItem(
               value: b.id,
               child: Text(b.name),
@@ -927,7 +1063,7 @@ class _BranchPicker extends ConsumerWidget {
             if (val == '__NEW__') {
               onChanged(null, null, true);
             } else if (val != null) {
-              final selected = branches.firstWhere((b) => b.id == val);
+              final selected = sortedBranches.firstWhere((b) => b.id == val);
               onChanged(selected.id, selected.name, false);
             }
           },

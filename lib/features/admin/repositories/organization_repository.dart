@@ -12,6 +12,9 @@ class OrganizationRepository {
   CollectionReference get _collection => _firestore.collection(collection);
 
   Stream<List<OrganizationModel>> getOrganizations() {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .orderBy('createdAt', descending: true)
         .snapshots()
@@ -19,7 +22,13 @@ class OrganizationRepository {
           (snapshot) => snapshot.docs
               .map((doc) => OrganizationModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((error) {
+          if (FirebaseAuth.instance.currentUser == null) {
+            return <OrganizationModel>[];
+          }
+          throw error;
+        });
   }
 
   /// Public org list used by the register / org-picker screens, which run
@@ -32,9 +41,13 @@ class OrganizationRepository {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => OrganizationModel.fromFirestore(doc))
-              .toList(),
+          (snapshot) {
+            final list = snapshot.docs
+                .map((doc) => OrganizationModel.fromFirestore(doc))
+                .toList();
+            list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+            return list;
+          },
         );
   }
 
@@ -62,10 +75,33 @@ class OrganizationRepository {
         .handleError((_) => null);
   }
 
-  Future<String> createOrganization(OrganizationModel organization) async {
+  Future<String> createOrganization(
+    OrganizationModel organization, {
+    String? initialBranchName,
+  }) async {
     final docRef = _collection.doc();
     final newOrg = organization.copyWith(id: docRef.id);
     await docRef.set(newOrg.toFirestore());
+
+    final effectiveBranchName =
+        (initialBranchName != null && initialBranchName.trim().isNotEmpty)
+            ? initialBranchName.trim()
+            : 'Headquarters / Main Branch';
+
+    final branchDoc = _firestore.collection('branches').doc();
+    await branchDoc.set({
+      'organizationId': docRef.id,
+      'name': effectiveBranchName,
+      'state': '',
+      'city': '',
+      'isActive': true,
+      'bankName': organization.bankName,
+      'accountNumber': organization.accountNumber,
+      'accountName': organization.accountName,
+      'createdAt': Timestamp.fromDate(DateTime.now()),
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+
     return docRef.id;
   }
 
@@ -114,11 +150,42 @@ class OrganizationRepository {
     required String bankName,
     required String accountNumber,
     required String accountName,
+    bool isBankVerified = false,
+    String? bankAccountType,
   }) async {
     await _collection.doc(organizationId).update({
       'bankName': bankName,
       'accountNumber': accountNumber,
       'accountName': accountName,
+      'isBankVerified': isBankVerified,
+      'bankAccountType': ?bankAccountType,
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
+  Future<void> verifyOrganization(
+    String id, {
+    String? verifiedBy,
+  }) async {
+    await _collection.doc(id).update({
+      'isActive': true,
+      'openForJoin': true,
+      'verificationStatus': 'verified',
+      'verifiedBy': ?verifiedBy,
+      'verifiedAt': Timestamp.fromDate(DateTime.now()),
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
+  Future<void> rejectOrganization(
+    String id, {
+    String? reason,
+  }) async {
+    await _collection.doc(id).update({
+      'isActive': false,
+      'openForJoin': false,
+      'verificationStatus': 'rejected',
+      'rejectionReason': ?reason,
       'updatedAt': Timestamp.fromDate(DateTime.now()),
     });
   }
