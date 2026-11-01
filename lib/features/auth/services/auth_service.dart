@@ -134,6 +134,10 @@ class AuthService {
     String? newBranchName,
     String? coFounderName,
     String? coFounderPhone,
+    String? founderNinOrBvn,
+    String? cacNumber,
+    String? townUnionName,
+    String? townUnionContact,
     MemberDuesStanding duesStanding = MemberDuesStanding.newMember,
     double? openingBalance,
   }) async {
@@ -164,9 +168,15 @@ class AuthService {
           'contactEmail': email,
           'contactPhone': phoneNumber,
           'address': '',
-          'isActive': false, // Inactive until co-founder verification
-          'openForJoin': false,
+          'isActive': false, // Inactive until co-founder verification and SuperAdmin platform verification
+          'openForJoin': false, // Hidden from public join until SuperAdmin platform verification
+          'verificationStatus': 'pending_verification',
           'memberCount': 1,
+          if (cacNumber != null && cacNumber.isNotEmpty) 'cacNumber': cacNumber,
+          if (townUnionName != null && townUnionName.isNotEmpty) 'townUnionName': townUnionName,
+          if (townUnionContact != null && townUnionContact.isNotEmpty) 'townUnionContact': townUnionContact,
+          if (founderNinOrBvn != null && founderNinOrBvn.isNotEmpty) 'founderNinOrBvn': founderNinOrBvn,
+          'isBankVerified': false,
           'createdAt': Timestamp.fromDate(DateTime.now()),
           'updatedAt': Timestamp.fromDate(DateTime.now()),
         }));
@@ -262,6 +272,8 @@ class AuthService {
         branchName: finalBranchName,
         coFounderName: coFounderName,
         coFounderPhone: coFounderPhone,
+        ninOrBvn: founderNinOrBvn,
+        isIdentityVerified: founderNinOrBvn != null && founderNinOrBvn.isNotEmpty,
         duesStanding: duesStanding,
         openingBalance: openingBalance,
         createdAt: DateTime.now(),

@@ -156,6 +156,15 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
                               'Invited Secretary',
                               '${widget.user.coFounderName ?? 'General Secretary'} (${widget.user.coFounderPhone})',
                             ),
+                            if (widget.user.ninOrBvn != null && widget.user.ninOrBvn!.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              _buildDetailRow(
+                                context,
+                                'Executive Identity',
+                                'NIN/BVN Verified (${widget.user.ninOrBvn!.length == 11 ? "${widget.user.ninOrBvn!.substring(0, 3)}****${widget.user.ninOrBvn!.substring(7)}" : widget.user.ninOrBvn!})',
+                                valueColor: Colors.green.shade700,
+                              ),
+                            ],
                           ],
                           const SizedBox(height: 12),
                           _buildDetailRow(

@@ -106,6 +106,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     String? newBranchName,
     String? coFounderName,
     String? coFounderPhone,
+    String? founderNinOrBvn,
+    String? cacNumber,
+    String? townUnionName,
+    String? townUnionContact,
     MemberDuesStanding duesStanding = MemberDuesStanding.newMember,
     double? openingBalance,
   }) async {
@@ -126,6 +130,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         newBranchName: newBranchName,
         coFounderName: coFounderName,
         coFounderPhone: coFounderPhone,
+        founderNinOrBvn: founderNinOrBvn,
+        cacNumber: cacNumber,
+        townUnionName: townUnionName,
+        townUnionContact: townUnionContact,
         duesStanding: duesStanding,
         openingBalance: openingBalance,
       );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../models/branch_model.dart';
 import '../../national/controllers/national_provider.dart';
+import '../services/bank_verification_service.dart';
 
 class EditBranchBankDialog extends ConsumerStatefulWidget {
   final BranchModel branch;
@@ -52,6 +53,23 @@ class _EditBranchBankDialogState extends ConsumerState<EditBranchBankDialog> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final matchResult = BankVerificationService.verifyAccount(
+      bankName: _bankNameController.text.trim(),
+      accountNumber: _accountNumberController.text.trim(),
+      organizationName: widget.branch.name,
+      accountName: _accountNameController.text.trim(),
+    );
+    if (!matchResult.isApproved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(matchResult.message),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {

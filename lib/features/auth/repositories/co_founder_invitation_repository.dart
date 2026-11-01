@@ -93,6 +93,7 @@ class CoFounderInvitationRepository {
     required String secretaryUid,
     required String secretaryName,
     required String secretaryEmail,
+    String? secretaryNinOrBvn,
   }) async {
     final invDoc = await _collection.doc(invitationId).get();
     if (!invDoc.exists) {
@@ -105,14 +106,20 @@ class CoFounderInvitationRepository {
     // 1. Mark invitation approved
     batch.update(_collection.doc(invitationId), {
       'status': 'approved',
+      if (secretaryNinOrBvn != null && secretaryNinOrBvn.isNotEmpty)
+        'secretaryNinOrBvn': secretaryNinOrBvn,
       'updatedAt': Timestamp.fromDate(DateTime.now()),
     });
 
-    // 2. Activate Organization
+    // 2. Update Organization: co-founders verified, pending SuperAdmin platform gate
     final orgRef = _firestore.collection('organizations').doc(inv.organizationId);
     batch.update(orgRef, {
       'isActive': true,
-      'openForJoin': true,
+      'openForJoin': false, // Opens for public join once SuperAdmin approves
+      'verificationStatus': 'pending_verification',
+      'coFounderVerified': true,
+      if (secretaryNinOrBvn != null && secretaryNinOrBvn.isNotEmpty)
+        'secretaryNinOrBvn': secretaryNinOrBvn,
       'updatedAt': Timestamp.fromDate(DateTime.now()),
     });
 
@@ -139,13 +146,18 @@ class CoFounderInvitationRepository {
 
     // 4. Update Secretary User
     final secUserRef = _firestore.collection('users').doc(secretaryUid);
-    batch.update(secUserRef, {
+    final secUpdates = <String, dynamic>{
       'organizationId': inv.organizationId,
       'role': UserRole.secretary.name,
       'status': AccountStatus.approved.name,
       'isActive': true,
       'branchName': inv.branchName,
-    });
+    };
+    if (secretaryNinOrBvn != null && secretaryNinOrBvn.isNotEmpty) {
+      secUpdates['ninOrBvn'] = secretaryNinOrBvn;
+      secUpdates['isIdentityVerified'] = true;
+    }
+    batch.update(secUserRef, secUpdates);
 
     // Update or create Secretary Member record
     final secMembers = await _firestore

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/co_founder_invitation_model.dart';
 import '../models/user_model.dart';
 import '../controllers/auth_provider.dart';
+import '../services/identity_verification_service.dart';
 
 class CoFounderVerificationDialog extends ConsumerStatefulWidget {
   final CoFounderInvitationModel invitation;
@@ -21,10 +22,32 @@ class CoFounderVerificationDialog extends ConsumerStatefulWidget {
 
 class _CoFounderVerificationDialogState
     extends ConsumerState<CoFounderVerificationDialog> {
+  final _ninController = TextEditingController();
   bool _isLoading = false;
   String? _error;
 
+  @override
+  void dispose() {
+    _ninController.dispose();
+    super.dispose();
+  }
+
   Future<void> _approve() async {
+    final rawNin = _ninController.text.trim();
+    if (rawNin.isNotEmpty) {
+      final res = IdentityVerificationService.verifyNinOrBvn(
+        rawId: rawNin,
+        fullName: widget.user.displayName,
+      );
+      if (!res.isValid) {
+        setState(() => _error = res.message);
+        return;
+      }
+    } else {
+      setState(() => _error = 'Please enter your 11-digit NIN or BVN to verify your executive identity.');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -36,6 +59,7 @@ class _CoFounderVerificationDialogState
         secretaryUid: widget.user.uid,
         secretaryName: widget.user.displayName,
         secretaryEmail: widget.user.email,
+        secretaryNinOrBvn: rawNin,
       );
       await ref.read(authProvider.notifier).refreshUser();
       if (mounted) {
@@ -44,7 +68,7 @@ class _CoFounderVerificationDialogState
           SnackBar(
             backgroundColor: Colors.green.shade700,
             content: Text(
-              '${widget.invitation.organizationName} is now active! Welcome, General Secretary.',
+              '${widget.invitation.organizationName} co-signed! Organization submitted for SuperAdmin platform verification.',
             ),
           ),
         );
@@ -175,6 +199,19 @@ class _CoFounderVerificationDialogState
                     const SizedBox(height: 8),
                     _infoRow('Your Role', 'General Secretary'),
                   ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _ninController,
+                keyboardType: TextInputType.number,
+                maxLength: 11,
+                decoration: const InputDecoration(
+                  labelText: 'Your NIN or BVN (11 Digits)',
+                  hintText: 'e.g. 22233344455',
+                  prefixIcon: Icon(Icons.security_outlined),
+                  counterText: '',
+                  helperText: 'Required for platform anti-fraud compliance',
                 ),
               ),
               const SizedBox(height: 16),

@@ -114,11 +114,42 @@ class OrganizationRepository {
     required String bankName,
     required String accountNumber,
     required String accountName,
+    bool isBankVerified = false,
+    String? bankAccountType,
   }) async {
     await _collection.doc(organizationId).update({
       'bankName': bankName,
       'accountNumber': accountNumber,
       'accountName': accountName,
+      'isBankVerified': isBankVerified,
+      'bankAccountType': ?bankAccountType,
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
+  Future<void> verifyOrganization(
+    String id, {
+    String? verifiedBy,
+  }) async {
+    await _collection.doc(id).update({
+      'isActive': true,
+      'openForJoin': true,
+      'verificationStatus': 'verified',
+      'verifiedBy': ?verifiedBy,
+      'verifiedAt': Timestamp.fromDate(DateTime.now()),
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
+  Future<void> rejectOrganization(
+    String id, {
+    String? reason,
+  }) async {
+    await _collection.doc(id).update({
+      'isActive': false,
+      'openForJoin': false,
+      'verificationStatus': 'rejected',
+      'rejectionReason': ?reason,
       'updatedAt': Timestamp.fromDate(DateTime.now()),
     });
   }
