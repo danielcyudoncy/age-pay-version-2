@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:intl/intl.dart';
+import '../../../core/constants/enums.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../auth/models/user_model.dart';
 import '../../auth/services/identity_verification_service.dart';
@@ -494,6 +495,24 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
               icon: Icons.calendar_today_outlined,
               label: 'Account Established',
               value: createdAtFormatted,
+              theme: theme,
+            ),
+            const SizedBox(height: 12),
+            _buildDetailTile(
+              icon: Icons.location_on_outlined,
+              label: 'Local Branch Member',
+              value: user.branchName?.isNotEmpty == true
+                  ? user.branchName!
+                  : 'Branch Member',
+              theme: theme,
+            ),
+            const SizedBox(height: 12),
+            _buildDetailTile(
+              icon: Icons.public_outlined,
+              label: 'National Branch Standing',
+              value: user.nationalRole != null
+                  ? 'National Executive (${user.nationalRole!.displayName})'
+                  : 'National Assembly & Council',
               theme: theme,
             ),
           ],
