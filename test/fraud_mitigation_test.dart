@@ -227,4 +227,33 @@ void main() {
       expect(find.text('123****7890'), findsOneWidget);
     });
   });
+
+  group('5. Super Admin Pre-Verified Organization Provisioning Tests', () {
+    test('Super Admin provisioned org defaults to active, openForJoin, and verified', () {
+      final now = DateTime(2026, 11, 1);
+      final org = OrganizationModel(
+        id: 'org-admin-1',
+        name: 'Umuahia Progressive Age Grade',
+        slug: 'umuahia-progressive',
+        contactEmail: 'admin@umuahia.org',
+        contactPhone: '08039876543',
+        isActive: true,
+        openForJoin: true,
+        verificationStatus: 'verified',
+        isBankVerified: true,
+        bankAccountType: 'association',
+        bankName: 'First Bank of Nigeria',
+        accountNumber: '0123456789',
+        accountName: 'Umuahia Progressive Association',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      expect(org.isActive, isTrue);
+      expect(org.openForJoin, isTrue);
+      expect(org.isVerified, isTrue);
+      expect(org.isBankVerified, isTrue);
+      expect(org.bankName, 'First Bank of Nigeria');
+    });
+  });
 }

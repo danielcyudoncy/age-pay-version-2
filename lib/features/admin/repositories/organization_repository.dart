@@ -62,10 +62,33 @@ class OrganizationRepository {
         .handleError((_) => null);
   }
 
-  Future<String> createOrganization(OrganizationModel organization) async {
+  Future<String> createOrganization(
+    OrganizationModel organization, {
+    String? initialBranchName,
+  }) async {
     final docRef = _collection.doc();
     final newOrg = organization.copyWith(id: docRef.id);
     await docRef.set(newOrg.toFirestore());
+
+    final effectiveBranchName =
+        (initialBranchName != null && initialBranchName.trim().isNotEmpty)
+            ? initialBranchName.trim()
+            : 'Headquarters / Main Branch';
+
+    final branchDoc = _firestore.collection('branches').doc();
+    await branchDoc.set({
+      'organizationId': docRef.id,
+      'name': effectiveBranchName,
+      'state': '',
+      'city': '',
+      'isActive': true,
+      'bankName': organization.bankName,
+      'accountNumber': organization.accountNumber,
+      'accountName': organization.accountName,
+      'createdAt': Timestamp.fromDate(DateTime.now()),
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+
     return docRef.id;
   }
 
