@@ -755,16 +755,28 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: FilledButton.icon(
+                    child: FilledButton(
                       onPressed: _isSaving ? null : _saveProfile,
-                      icon: _isSaving
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      child: _isSaving
                           ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          : const Icon(Icons.save_outlined, size: 18),
-                      label: const Text('Save Changes'),
+                          : const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Save Changes',
+                                maxLines: 1,
+                                softWrap: false,
+                              ),
+                            ),
                     ),
                   ),
                 ],
