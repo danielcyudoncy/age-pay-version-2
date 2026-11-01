@@ -5,6 +5,8 @@ import 'package:cls/features/secretary/controllers/member_management_provider.da
 import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/members/views/edit_member_screen.dart';
 import 'package:cls/features/members/views/member_profile_screen.dart';
+import 'package:cls/features/calling/views/branch_directory_screen.dart';
+import 'package:cls/features/calling/widgets/member_call_button.dart';
 
 class MembersManagementScreen extends ConsumerStatefulWidget {
   const MembersManagementScreen({super.key});
@@ -84,6 +86,18 @@ class _MembersManagementScreenState extends ConsumerState<MembersManagementScree
       appBar: AppBar(
         title: const Text('Members'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.phone_in_talk, color: Colors.green),
+            tooltip: 'Branch Calling Directory',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const BranchDirectoryScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(icon: const Icon(Icons.person), onPressed: () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const MemberProfileScreen()));
           }),
@@ -133,6 +147,7 @@ class _MembersManagementScreenState extends ConsumerState<MembersManagementScree
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
+                                MemberCallButton(member: member, isCompact: true),
                                 IconButton(icon: Icon(member.isActive ? Icons.block : Icons.check, color: member.isActive ? Colors.red : Colors.green), onPressed: () => _toggleStatus(member)),
                                 IconButton(icon: const Icon(Icons.edit), onPressed: () {
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => EditMemberScreen(member: member)));

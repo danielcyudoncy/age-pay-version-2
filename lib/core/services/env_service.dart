@@ -10,4 +10,6 @@ class EnvService {
   static String get firebaseAndroidAppId => dotenv.env['FIREBASE_ANDROID_APP_ID'] ?? '';
   static String get firebaseIosAppId => dotenv.env['FIREBASE_IOS_APP_ID'] ?? '';
   static String get firebaseIosClientId => dotenv.env['FIREBASE_IOS_CLIENT_ID'] ?? '';
+  static int get zegoAppId => int.tryParse(dotenv.env['ZEGO_APP_ID']?.trim() ?? '0') ?? 0;
+  static String get zegoAppSign => dotenv.env['ZEGO_APP_SIGN']?.trim() ?? '';
 }

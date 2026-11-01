@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/enums.dart';
 import '../../auth/models/user_model.dart';
+import '../../calling/views/branch_directory_screen.dart';
 import '../controllers/admin_provider.dart';
 import '../widgets/edit_user_role_dialog.dart';
 import '../widgets/reassign_branch_dialog.dart';
@@ -57,6 +58,13 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.phone_in_talk_outlined),
+            tooltip: 'Branch Calls',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const BranchDirectoryScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.restore, color: Colors.red),
             tooltip: 'Reset System Data',

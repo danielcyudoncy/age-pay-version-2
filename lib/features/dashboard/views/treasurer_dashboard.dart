@@ -26,6 +26,7 @@ import 'package:cls/features/payments/views/cash_payment_screen.dart';
 import 'package:cls/features/payments/views/payment_verification_screen.dart';
 import 'package:cls/features/payments/views/make_payment_screen.dart';
 import 'package:cls/features/payments/models/payment_model.dart';
+import 'package:cls/features/calling/views/branch_directory_screen.dart';
 
 class TreasurerDashboard extends ConsumerStatefulWidget {
   const TreasurerDashboard({super.key});
@@ -1406,6 +1407,18 @@ class _QuickActionsRow extends ConsumerWidget {
               label: 'Receiving Account',
               onPressed: () {
                 ReceivingAccountDetailsDialog.show(context);
+              },
+            ),
+            QuickActionButton(
+              icon: Icons.phone_in_talk,
+              label: 'Branch Calls',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const BranchDirectoryScreen(),
+                  ),
+                );
               },
             ),
           ],

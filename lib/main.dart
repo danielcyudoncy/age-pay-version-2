@@ -11,6 +11,8 @@ import 'features/notifications/services/notification_service.dart';
 import 'core/services/env_service.dart';
 import 'features/settings/controllers/settings_provider.dart';
 import 'package:flutter/foundation.dart';
+import 'features/calling/widgets/incoming_call_listener.dart';
+import 'features/dashboard/views/home_router.dart';
 
 /// Top-level background message handler required by Firebase Cloud Messaging.
 @pragma('vm:entry-point')
@@ -63,16 +65,26 @@ void main() async {
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'AgePay',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       home: const SplashScreen(),
+      onUnknownRoute: (settings) => MaterialPageRoute(
+        builder: (_) => const HomeRouter(),
+      ),
+      builder: (context, child) => IncomingCallListener(
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

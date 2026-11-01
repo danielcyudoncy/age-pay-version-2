@@ -15,6 +15,8 @@ import 'package:cls/features/notifications/views/notifications_screen.dart';
 import 'package:cls/features/settings/views/settings_screen.dart';
 import 'package:cls/features/settings/views/help_screen.dart';
 import 'package:cls/features/settings/views/about_screen.dart';
+import '../../calling/views/branch_directory_screen.dart';
+import '../../calling/widgets/member_call_button.dart';
 
 class PresidentMembersListScreen extends ConsumerStatefulWidget {
   const PresidentMembersListScreen({super.key});
@@ -94,13 +96,23 @@ class _MembersListTab extends ConsumerWidget {
         AppBar(
           title: const Text('All Registered Members'),
           centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.phone_in_talk_outlined),
+              tooltip: 'Branch Calls',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BranchDirectoryScreen()),
+              ),
+            ),
+          ],
         ),
         Padding(
           padding: const EdgeInsets.all(16),
           child: TextField(
             controller: searchController,
             decoration: InputDecoration(
-              hintText: 'Search by name or email...',
+              hintText: 'Search by name, email, or phone...',
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -121,7 +133,8 @@ class _MembersListTab extends ConsumerWidget {
                   : members.where((m) {
                       final q = query;
                       return m.fullName.toLowerCase().contains(q) ||
-                          m.email.toLowerCase().contains(q);
+                          m.email.toLowerCase().contains(q) ||
+                          m.phoneNumber.toLowerCase().contains(q);
                     }).toList();
 
               if (filtered.isEmpty) {
@@ -133,6 +146,7 @@ class _MembersListTab extends ConsumerWidget {
                 );
               }
 
+              final theme = Theme.of(context);
               return ListView.builder(
                 padding: EdgeInsets.fromLTRB(
                   16,
@@ -143,21 +157,26 @@ class _MembersListTab extends ConsumerWidget {
                 itemCount: filtered.length,
                 itemBuilder: (context, index) {
                   final member = filtered[index];
+                  final secondaryContact = member.phoneNumber.isNotEmpty
+                      ? member.phoneNumber
+                      : (member.email.isNotEmpty
+                          ? member.email
+                          : 'No contact provided');
+
                   return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        child: Text(
-                          member.fullName.isNotEmpty
-                              ? member.fullName[0]
-                              : '?',
+                    elevation: 0,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
                         ),
                       ),
-                      title: Text(member.fullName),
-                      subtitle: Text(
-                        'Joined ${dateFormat.format(member.joinedDate)}',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
+                    ),
+                    color: theme.colorScheme.surface,
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
                       onTap: () {
                         Navigator.push(
                           context,
@@ -169,6 +188,110 @@ class _MembersListTab extends ConsumerWidget {
                           ),
                         );
                       },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor:
+                                  theme.colorScheme.primaryContainer,
+                              child: Text(
+                                member.fullName.isNotEmpty
+                                    ? member.fullName[0].toUpperCase()
+                                    : '?',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    member.fullName,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          secondaryContact,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: theme
+                                                .colorScheme.onSurfaceVariant,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (member.branchName != null &&
+                                          member.branchName!
+                                              .trim()
+                                              .isNotEmpty) ...[
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 5,
+                                          ),
+                                          child: Text(
+                                            '•',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: theme
+                                                  .colorScheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        ),
+                                        Flexible(
+                                          child: Text(
+                                            member.branchName!,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    'Joined ${dateFormat.format(member.joinedDate)}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: theme.colorScheme.onSurfaceVariant
+                                          .withValues(alpha: 0.8),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            MemberCallButton(member: member, isCompact: true),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.chevron_right,
+                              size: 20,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   );
                 },
@@ -198,6 +321,15 @@ class _MoreTab extends ConsumerWidget {
     final user = authState.valueOrNull;
 
     final items = [
+      _MoreItem(
+        title: 'Branch Calls',
+        icon: Icons.phone_in_talk,
+        color: Colors.green,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const BranchDirectoryScreen()),
+        ),
+      ),
       _MoreItem(
         title: 'Calendar',
         icon: Icons.calendar_today,

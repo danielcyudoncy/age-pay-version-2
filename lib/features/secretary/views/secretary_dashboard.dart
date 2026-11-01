@@ -29,6 +29,7 @@ import 'package:cls/features/settings/views/about_screen.dart';
 import 'package:cls/features/reports/views/reports_screen.dart';
 import 'package:cls/features/notifications/views/notifications_screen.dart';
 import 'package:cls/features/expenses/widgets/expense_approval_queue_card.dart';
+import 'package:cls/features/calling/views/branch_directory_screen.dart';
 
 class SecretaryDashboard extends ConsumerStatefulWidget {
   const SecretaryDashboard({super.key});
@@ -390,6 +391,14 @@ class _HomeTab extends ConsumerWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
+              QuickActionButton(
+                icon: Icons.phone_in_talk,
+                label: 'Branch Calls',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BranchDirectoryScreen()),
+                ),
+              ),
               QuickActionButton(
                 icon: Icons.campaign,
                 label: 'Announcement',

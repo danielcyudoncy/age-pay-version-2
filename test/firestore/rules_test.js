@@ -412,3 +412,384 @@ describe('Receipts collection', () => {
     }));
   });
 });
+
+// ─── Calls collection ────────────────────────────────────────────────────
+describe('Calls collection', () => {
+  const callerId = 'caller1';
+  const receiverId = 'receiver1';
+  const callId = 'call123';
+
+  it('allows receiver or caller to read calls', async () => {
+    const db = getFirestore({ uid: receiverId });
+    const ref = db.collection('calls').doc(callId);
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().collection('calls').doc(callId).set({
+        id: callId,
+        organizationId: 'org1',
+        callerId: callerId,
+        receiverId: receiverId,
+        status: 'calling',
+        createdAt: new Date(),
+      });
+    });
+    await assertSucceeds(ref.get());
+
+    const callerDb = getFirestore({ uid: callerId });
+    await assertSucceeds(callerDb.collection('calls').doc(callId).get());
+  });
+
+  it('denies third-party user from reading call of others', async () => {
+    const db = getFirestore({ uid: 'stranger' });
+    const ref = db.collection('calls').doc(callId);
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().collection('calls').doc(callId).set({
+        id: callId,
+        organizationId: 'org1',
+        callerId: callerId,
+        receiverId: receiverId,
+        status: 'calling',
+        createdAt: new Date(),
+      });
+    });
+    await assertFails(ref.get());
+  });
+
+  it('allows superAdmin to read any call', async () => {
+    const db = getFirestore({ uid: 'superadmin1', token: { email: 'danielcyudoncy@gmail.com' } });
+    const ref = db.collection('calls').doc(callId);
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().collection('calls').doc(callId).set({
+        id: callId,
+        organizationId: 'org1',
+        callerId: callerId,
+        receiverId: receiverId,
+        status: 'calling',
+        createdAt: new Date(),
+      });
+    });
+    await assertSucceeds(ref.get());
+  });
+
+  it('denies unauthenticated read', async () => {
+    const db = getUnauthenticatedFirestore();
+    const ref = db.collection('calls').doc(callId);
+    await assertFails(ref.get());
+  });
+
+  it('allows caller to create a call session with their callerId', async () => {
+    const db = getFirestore({ uid: callerId });
+    const ref = db.collection('calls').doc('newCall');
+    await assertSucceeds(ref.set({
+      id: 'newCall',
+      organizationId: 'org1',
+      callerId: callerId,
+      callerName: 'Caller User',
+      callerRole: 'member',
+      receiverId: receiverId,
+      receiverName: 'Receiver User',
+      status: 'calling',
+      callType: 'audio',
+      createdAt: new Date(),
+    }));
+  });
+
+  it('denies user from creating call with another user callerId', async () => {
+    const db = getFirestore({ uid: 'impostor' });
+    const ref = db.collection('calls').doc('spoofedCall');
+    await assertFails(ref.set({
+      id: 'spoofedCall',
+      organizationId: 'org1',
+      callerId: callerId,
+      receiverId: receiverId,
+      status: 'calling',
+      callType: 'audio',
+      createdAt: new Date(),
+    }));
+  });
+
+  it('allows receiver to update call status', async () => {
+    const db = getFirestore({ uid: receiverId });
+    const ref = db.collection('calls').doc(callId);
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().collection('calls').doc(callId).set({
+        id: callId,
+        organizationId: 'org1',
+        callerId: callerId,
+        receiverId: receiverId,
+        status: 'calling',
+        createdAt: new Date(),
+      });
+    });
+    await assertSucceeds(ref.update({
+      status: 'active',
+      updatedAt: new Date(),
+    }));
+  });
+
+  it('allows caller to update call status (e.g. end call)', async () => {
+    const db = getFirestore({ uid: callerId });
+    const ref = db.collection('calls').doc(callId);
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().collection('calls').doc(callId).set({
+        id: callId,
+        organizationId: 'org1',
+        callerId: callerId,
+        receiverId: receiverId,
+        status: 'active',
+        createdAt: new Date(),
+      });
+    });
+    await assertSucceeds(ref.update({
+      status: 'ended',
+      endedAt: new Date(),
+    }));
+  });
+
+  it('denies third-party non-admin user from updating call', async () => {
+    const db = getFirestore({ uid: 'stranger' });
+    const ref = db.collection('calls').doc(callId);
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().collection('calls').doc(callId).set({
+        id: callId,
+        organizationId: 'org1',
+        callerId: callerId,
+        receiverId: receiverId,
+        status: 'calling',
+        createdAt: new Date(),
+      });
+    });
+    await assertFails(ref.update({
+      status: 'rejected',
+    }));
+  });
+
+  it('denies non-superAdmin from deleting calls', async () => {
+    const db = getFirestore({ uid: callerId });
+    const ref = db.collection('calls').doc(callId);
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().collection('calls').doc(callId).set({
+        id: callId,
+        organizationId: 'org1',
+        callerId: callerId,
+        receiverId: receiverId,
+        status: 'ended',
+        createdAt: new Date(),
+      });
+    });
+    await assertFails(ref.delete());
+  });
+
+  it('allows superAdmin to delete calls', async () => {
+    const db = getFirestore({ uid: 'superadmin1', token: { email: 'danielcyudoncy@gmail.com' } });
+    const ref = db.collection('calls').doc(callId);
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().collection('calls').doc(callId).set({
+        id: callId,
+        organizationId: 'org1',
+        callerId: callerId,
+        receiverId: receiverId,
+        status: 'ended',
+        createdAt: new Date(),
+      });
+    });
+    await assertSucceeds(ref.delete());
+  });
+});
+
+// ─── Announcements collection ────────────────────────────────────────────
+describe('Announcements collection', () => {
+  const orgId = 'org1';
+  const announcementId = 'announcement1';
+
+  async function seedUser(uid, role, nationalRole = null) {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const data = {
+        role: role,
+        email: `${uid}@test.com`,
+        createdAt: new Date(),
+      };
+      if (nationalRole) {
+        data.nationalRole = nationalRole;
+      }
+      await context.firestore().collection('users').doc(uid).set(data);
+    });
+  }
+
+  it('allows PRO, Secretary, President, and SuperAdmin to create, update, and delete announcements', async () => {
+    const rolesToTest = [
+      { uid: 'pro1', role: 'publicRelationsOfficer' },
+      { uid: 'sec1', role: 'secretary' },
+      { uid: 'pres1', role: 'president' },
+      { uid: 'admin1', role: 'superAdmin' },
+      { uid: 'nationalPro', role: 'member', nationalRole: 'publicRelationsOfficer' },
+    ];
+
+    for (const testUser of rolesToTest) {
+      await seedUser(testUser.uid, testUser.role, testUser.nationalRole);
+      const db = getFirestore({ uid: testUser.uid });
+      const docId = `ann_${testUser.uid}`;
+      const ref = db.collection('announcements').doc(docId);
+
+      // Create
+      await assertSucceeds(ref.set({
+        organizationId: orgId,
+        title: 'Meeting Notice',
+        body: 'Important update',
+        category: 'general',
+        createdBy: testUser.uid,
+        targetAudience: 'all',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+
+      // Update
+      await assertSucceeds(ref.update({
+        title: 'Updated Meeting Notice',
+        updatedAt: new Date(),
+      }));
+
+      // Delete
+      await assertSucceeds(ref.delete());
+    }
+  });
+
+  it('denies regular member from creating, updating, or deleting announcements', async () => {
+    const memberUid = 'regularMember';
+    await seedUser(memberUid, 'member');
+    const db = getFirestore({ uid: memberUid });
+    const ref = db.collection('announcements').doc(announcementId);
+
+    // Create should fail
+    await assertFails(ref.set({
+      organizationId: orgId,
+      title: 'Unauthorized announcement',
+      body: 'Should not succeed',
+      category: 'general',
+      createdBy: memberUid,
+      targetAudience: 'all',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+
+    // Seed existing announcement
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().collection('announcements').doc(announcementId).set({
+        organizationId: orgId,
+        title: 'Official announcement',
+        body: 'Valid notice',
+        category: 'general',
+        createdBy: 'sec1',
+        targetAudience: 'all',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    });
+
+    // Update should fail
+    await assertFails(ref.update({
+      title: 'Hacked title',
+    }));
+
+    // Delete should fail
+    await assertFails(ref.delete());
+  });
+});
+
+// ─── Notifications collection ────────────────────────────────────────────
+describe('Notifications collection', () => {
+  const orgId = 'org1';
+
+  async function seedUser(uid, role, nationalRole = null) {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const data = {
+        role: role,
+        email: `${uid}@test.com`,
+        createdAt: new Date(),
+      };
+      if (nationalRole) {
+        data.nationalRole = nationalRole;
+      }
+      await context.firestore().collection('users').doc(uid).set(data);
+    });
+  }
+
+  async function seedNotification(id, data) {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().collection('notifications').doc(id).set({
+        organizationId: orgId,
+        title: 'Test Notification',
+        body: 'Test Body',
+        type: 'general',
+        read: false,
+        receivedAt: new Date(),
+        ...data,
+      });
+    });
+  }
+
+  it('allows authenticated user to delete a notification targeted to them (targetUserId == request.auth.uid)', async () => {
+    const userId = 'user1';
+    await seedUser(userId, 'member');
+    await seedNotification('notif_own', { targetUserId: userId });
+
+    const db = getFirestore({ uid: userId });
+    const ref = db.collection('notifications').doc('notif_own');
+
+    await assertSucceeds(ref.delete());
+  });
+
+  it('denies authenticated user from deleting a notification targeted to another user unless admin/treasurer/superAdmin', async () => {
+    const userId = 'user1';
+    const otherUserId = 'otherUser';
+    await seedUser(userId, 'member');
+    await seedUser(otherUserId, 'member');
+    await seedNotification('notif_other', { targetUserId: otherUserId });
+
+    // Regular authenticated user cannot delete another user's notification
+    const db = getFirestore({ uid: userId });
+    const ref = db.collection('notifications').doc('notif_other');
+    await assertFails(ref.delete());
+
+    // Unauthenticated user cannot delete
+    const unauthDb = getUnauthenticatedFirestore();
+    const unauthRef = unauthDb.collection('notifications').doc('notif_other');
+    await assertFails(unauthRef.delete());
+  });
+
+  it('allows Admin, Treasurer, or SuperAdmin to delete any notification', async () => {
+    const privilegedRoles = [
+      { uid: 'treasurerUser', role: 'treasurer' },
+      { uid: 'presidentUser', role: 'president' },
+      { uid: 'adminUser', role: 'superAdmin' },
+    ];
+
+    for (const pUser of privilegedRoles) {
+      await seedUser(pUser.uid, pUser.role);
+      const docId = `notif_for_${pUser.uid}`;
+      await seedNotification(docId, { targetUserId: 'otherUser' });
+
+      const db = getFirestore({ uid: pUser.uid });
+      const ref = db.collection('notifications').doc(docId);
+      await assertSucceeds(ref.delete());
+    }
+
+    // SuperAdmin via bootstrap email can also delete any notification
+    const bootstrapUid = 'bootstrapAdmin';
+    const bootstrapDocId = 'notif_for_bootstrap';
+    await seedNotification(bootstrapDocId, { targetUserId: 'otherUser' });
+
+    const bootstrapDb = getFirestore({
+      uid: bootstrapUid,
+      token: { email: 'danielcyudoncy@gmail.com' },
+    });
+    const bootstrapRef = bootstrapDb.collection('notifications').doc(bootstrapDocId);
+    await assertSucceeds(bootstrapRef.delete());
+
+    // Privileged users can also delete notifications without a targetUserId (broadcast notifications)
+    const broadcastDocId = 'notif_broadcast';
+    await seedNotification(broadcastDocId, { targetRole: 'all' });
+    const adminDb = getFirestore({ uid: 'adminUser' });
+    const broadcastRef = adminDb.collection('notifications').doc(broadcastDocId);
+    await assertSucceeds(broadcastRef.delete());
+  });
+});

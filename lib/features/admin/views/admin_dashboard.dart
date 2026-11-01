@@ -17,6 +17,7 @@ import 'package:cls/features/dashboard/views/member_dashboard.dart';
 import 'package:cls/features/national/views/national_hub_screen.dart';
 import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
 import 'package:cls/features/dashboard/widgets/dashboard_tab_pop_scope.dart';
+import 'package:cls/features/calling/views/branch_directory_screen.dart';
 
 class AdminDashboard extends ConsumerStatefulWidget {
   const AdminDashboard({super.key});
@@ -258,6 +259,21 @@ class _AdminConsoleTab extends ConsumerWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          QuickActionCard(
+                            title: 'Branch Calls',
+                            subtitle: 'Calling directory',
+                            icon: Icons.phone_in_talk,
+                            color: Colors.teal,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const BranchDirectoryScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 12),
                           QuickActionCard(
                             title: 'Organizations',
                             subtitle: 'Manage organizations',

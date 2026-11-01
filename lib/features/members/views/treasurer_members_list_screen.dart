@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/members/views/treasurer_member_detail_screen.dart';
@@ -16,6 +17,8 @@ import 'package:cls/features/notifications/views/notifications_screen.dart';
 import 'package:cls/features/settings/views/settings_screen.dart';
 import 'package:cls/features/settings/views/help_screen.dart';
 import 'package:cls/features/settings/views/about_screen.dart';
+import 'package:cls/features/calling/views/branch_directory_screen.dart';
+import 'package:cls/features/calling/widgets/member_call_button.dart';
 
 class TreasurerMembersListScreen extends ConsumerStatefulWidget {
   const TreasurerMembersListScreen({super.key});
@@ -96,13 +99,27 @@ class _MembersListTab extends ConsumerWidget {
         AppBar(
           title: const Text('All Registered Members'),
           centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.phone_in_talk, color: Colors.green),
+              tooltip: 'Branch Calling Directory',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const BranchDirectoryScreen(),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         Padding(
           padding: const EdgeInsets.all(16),
           child: TextField(
             controller: searchController,
             decoration: InputDecoration(
-              hintText: 'Search by name or email...',
+              hintText: 'Search by name, email, or phone...',
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -123,7 +140,8 @@ class _MembersListTab extends ConsumerWidget {
                   : members.where((m) {
                       final q = query;
                       return m.fullName.toLowerCase().contains(q) ||
-                          m.email.toLowerCase().contains(q);
+                          m.email.toLowerCase().contains(q) ||
+                          m.phoneNumber.toLowerCase().contains(q);
                     }).toList();
 
               if (filtered.isEmpty) {
@@ -145,42 +163,20 @@ class _MembersListTab extends ConsumerWidget {
                 itemCount: filtered.length,
                 itemBuilder: (context, index) {
                   final member = filtered[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        child: Text(
-                          member.fullName.isNotEmpty
-                              ? member.fullName[0]
-                              : '?',
-                        ),
-                      ),
-                      title: Text(member.fullName),
-                      subtitle: Text(
-                        'Joined ${dateFormat.format(member.joinedDate)}',
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _MemberOwingBadge(
+                  return _MemberLedgerCard(
+                    member: member,
+                    dateFormat: dateFormat,
+                    currency: currency,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TreasurerMemberDetailScreen(
                             memberId: member.userId,
-                            currency: currency,
                           ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.chevron_right),
-                        ],
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => TreasurerMemberDetailScreen(
-                              memberId: member.userId,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   );
                 },
               );
@@ -365,39 +361,242 @@ class _MemberOwingBadge extends ConsumerWidget {
         );
         if (totalOwed <= 0) {
           return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
             decoration: BoxDecoration(
               color: Colors.green.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Text(
-              'No Dues',
-              style: TextStyle(
-                color: Colors.green,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Colors.green.withValues(alpha: 0.25),
               ),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle, size: 13, color: Colors.green),
+                SizedBox(width: 4),
+                Text(
+                  'Dues Cleared',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           );
         }
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.red.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            'Owes ${currency.format(totalOwed)}',
-            style: const TextStyle(
-              color: Colors.red,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Colors.red.withValues(alpha: 0.25),
             ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.warning_amber_rounded, size: 13, color: Colors.red),
+              const SizedBox(width: 4),
+              Text(
+                'Owes ${currency.format(totalOwed)}',
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         );
       },
-      loading: () => const SizedBox.shrink(),
+      loading: () => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.grey.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: const Text(
+          '...',
+          style: TextStyle(color: Colors.grey, fontSize: 11),
+        ),
+      ),
       error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _MemberLedgerCard extends StatelessWidget {
+  final MemberModel member;
+  final DateFormat dateFormat;
+  final NumberFormat currency;
+  final VoidCallback onTap;
+
+  const _MemberLedgerCard({
+    required this.member,
+    required this.dateFormat,
+    required this.currency,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final secondaryContact = member.phoneNumber.isNotEmpty
+        ? member.phoneNumber
+        : (member.email.isNotEmpty ? member.email : 'No contact provided');
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      color: theme.colorScheme.surface,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Tier: Avatar, Name, Secondary Info, and Call Button
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    child: Text(
+                      member.fullName.isNotEmpty
+                          ? member.fullName[0].toUpperCase()
+                          : '?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          member.fullName,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                secondaryContact,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (member.branchName != null &&
+                                member.branchName!.trim().isNotEmpty) ...[
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 5),
+                                child: Text(
+                                  '•',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              Flexible(
+                                child: Text(
+                                  member.branchName!,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Dedicated Call Action
+                  MemberCallButton(member: member, isCompact: true),
+                ],
+              ),
+
+              const SizedBox(height: 10),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+              ),
+              const SizedBox(height: 10),
+
+              // Bottom Tier: Dues Status Badge, Joined Date, and Ledger Affordance
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _MemberOwingBadge(
+                    memberId: member.userId,
+                    currency: currency,
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Joined ${dateFormat.format(member.joinedDate)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Ledger',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 16,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,4 +1,63 @@
 rules_version = '2';
+
+// ===============================================================
+// Assumed Data Models
+// ===============================================================
+//
+// Collection: calls
+// Document ID: {callId} (e.g. roomId or UUID)
+// Fields:
+//   - callerId: string (required, max 128 chars, immutable)
+//   - receiverId: string (required, max 128 chars, immutable)
+//   - organizationId: string (required, max 100 chars, immutable)
+//   - status: string (required, ['calling', 'active', 'ended', 'rejected', 'missed'])
+//   - id: string (optional, max 128 chars)
+//   - branchId: string (optional, max 100 chars)
+//   - callerName: string (optional, max 150 chars)
+//   - callerRole: string (optional, max 100 chars)
+//   - receiverName: string (optional, max 150 chars)
+//   - receiverPhone: string (optional, max 50 chars)
+//   - callType: string (optional, max 50 chars)
+//   - createdAt: timestamp (optional/system-set)
+//   - updatedAt: timestamp (optional/system-set)
+//   - endedAt: timestamp (optional)
+//
+// Collection: announcements
+// Document ID: {announcementId}
+// Fields:
+//   - organizationId: string (required)
+//   - title: string (required)
+//   - body: string (required)
+//   - category: string (required)
+//   - createdBy: string (required)
+//   - targetAudience: string (required)
+//   - createdAt: timestamp (required)
+//   - updatedAt: timestamp (required)
+//   - isPinned: bool (optional)
+//   - isScheduled: bool (optional)
+//   - scheduledAt: timestamp (optional)
+//   - announcementDate: timestamp (optional)
+//   - attachments: list (optional)
+//   - targetBranchId: string (optional)
+//   - targetBranchName: string (optional)
+//
+// Collection: notifications
+// Document ID: {notificationId}
+// Fields:
+//   - organizationId: string (required)
+//   - title: string (required)
+//   - body: string (required)
+//   - type: string (required, ['levy', 'payment', 'reminder', 'general'])
+//   - receivedAt: timestamp (required)
+//   - read: bool (optional)
+//   - targetUserId: string (optional)
+//   - targetRole: string (optional)
+//   - targetBranchId: string (optional)
+//   - payload: string (optional)
+//   - imageUrl: string (optional)
+//
+// ===============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
     // ── Helper functions ────────────────────────────────
@@ -8,40 +67,41 @@ service cloud.firestore {
     }
 
     function getUserRole(uid) {
-      return exists(/databases/$(database)/documents/users/$(uid))
+      return exists(/databases/$(database)/documents/users/$(uid)) &&
+        'role' in get(/databases/$(database)/documents/users/$(uid)).data
         ? get(/databases/$(database)/documents/users/$(uid)).data.role
+        : '';
+    }
+
+    function getUserNationalRole(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid)) &&
+        'nationalRole' in get(/databases/$(database)/documents/users/$(uid)).data
+        ? get(/databases/$(database)/documents/users/$(uid)).data.nationalRole
         : '';
     }
 
     function isMember() {
       return isAuthenticated() &&
-        (getUserRole(request.auth.uid) == 'member' ||
-         getUserRole(request.auth.uid) == 'Member');
+        (getUserRole(request.auth.uid) in ['member', 'Member']);
     }
 
     function isTreasurer() {
       return isAuthenticated() &&
-        (getUserRole(request.auth.uid) == 'treasurer' ||
-         getUserRole(request.auth.uid) == 'Treasurer' ||
-         getUserRole(request.auth.uid) == 'viceTreasurer' ||
-         getUserRole(request.auth.uid) == 'ViceTreasurer' ||
-         getUserRole(request.auth.uid) == 'financialSecretary' ||
-         getUserRole(request.auth.uid) == 'FinancialSecretary');
+        (getUserRole(request.auth.uid) in ['treasurer', 'Treasurer', 'viceTreasurer', 'ViceTreasurer', 'financialSecretary', 'FinancialSecretary'] ||
+         getUserNationalRole(request.auth.uid) in ['treasurer', 'Treasurer', 'viceTreasurer', 'ViceTreasurer', 'financialSecretary', 'FinancialSecretary']);
     }
 
     function isPresident() {
       return isAuthenticated() &&
-        (getUserRole(request.auth.uid) == 'president' ||
-         getUserRole(request.auth.uid) == 'President' ||
-         getUserRole(request.auth.uid) == 'vicePresident' ||
-         getUserRole(request.auth.uid) == 'VicePresident');
+        (getUserRole(request.auth.uid) in ['president', 'President', 'vicePresident', 'VicePresident'] ||
+         getUserNationalRole(request.auth.uid) in ['president', 'President', 'vicePresident', 'VicePresident']);
     }
 
     function isSuperAdmin() {
       return isAuthenticated() &&
         (request.auth.token.email == 'danielcyudoncy@gmail.com' ||
-         getUserRole(request.auth.uid) == 'superAdmin' ||
-         getUserRole(request.auth.uid) == 'SuperAdmin');
+         getUserRole(request.auth.uid) in ['superAdmin', 'SuperAdmin'] ||
+         getUserNationalRole(request.auth.uid) in ['superAdmin', 'SuperAdmin']);
     }
 
     function isAdminOrTreasurer() {
@@ -50,30 +110,39 @@ service cloud.firestore {
 
     function isSecretary() {
       return isAuthenticated() &&
-        (getUserRole(request.auth.uid) == 'secretary' ||
-         getUserRole(request.auth.uid) == 'Secretary' ||
-         getUserRole(request.auth.uid) == 'viceSecretary' ||
-         getUserRole(request.auth.uid) == 'ViceSecretary');
+        (getUserRole(request.auth.uid) in ['secretary', 'Secretary', 'viceSecretary', 'ViceSecretary'] ||
+         getUserNationalRole(request.auth.uid) in ['secretary', 'Secretary', 'viceSecretary', 'ViceSecretary']);
     }
 
     function isPRO() {
       return isAuthenticated() &&
-        (getUserRole(request.auth.uid) == 'publicRelationsOfficer' ||
-         getUserRole(request.auth.uid) == 'PublicRelationsOfficer' ||
-         getUserRole(request.auth.uid) == 'pro' ||
-         getUserRole(request.auth.uid) == 'PRO');
+        (getUserRole(request.auth.uid) in ['publicRelationsOfficer', 'PublicRelationsOfficer', 'public_relations_officer', 'pro', 'PRO'] ||
+         getUserNationalRole(request.auth.uid) in ['publicRelationsOfficer', 'PublicRelationsOfficer', 'public_relations_officer', 'pro', 'PRO']);
     }
 
     function isProvost() {
       return isAuthenticated() &&
-        (getUserRole(request.auth.uid) == 'provost' ||
-         getUserRole(request.auth.uid) == 'Provost' ||
-         getUserRole(request.auth.uid) == 'chief_provost' ||
-         getUserRole(request.auth.uid) == 'Chief Provost');
+        (getUserRole(request.auth.uid) in ['provost', 'Provost', 'chief_provost', 'Chief Provost'] ||
+         getUserNationalRole(request.auth.uid) in ['provost', 'Provost', 'chief_provost', 'Chief Provost']);
     }
 
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Call session validation
+    function isValidCall(data) {
+      return ('callerId' in data) && data.callerId is string && data.callerId.size() > 0 && data.callerId.size() <= 128 &&
+             ('receiverId' in data) && data.receiverId is string && data.receiverId.size() > 0 && data.receiverId.size() <= 128 &&
+             ('organizationId' in data) && data.organizationId is string && data.organizationId.size() > 0 && data.organizationId.size() <= 100 &&
+             ('status' in data) && data.status is string && data.status in ['calling', 'active', 'ended', 'rejected', 'missed'] &&
+             (!('callerName' in data) || (data.callerName is string && data.callerName.size() <= 150)) &&
+             (!('receiverName' in data) || (data.receiverName is string && data.receiverName.size() <= 150)) &&
+             (!('callerRole' in data) || (data.callerRole is string && data.callerRole.size() <= 100)) &&
+             (!('callType' in data) || (data.callType is string && data.callType.size() <= 50)) &&
+             (!('branchId' in data) || (data.branchId is string && data.branchId.size() <= 100)) &&
+             (!('receiverPhone' in data) || (data.receiverPhone is string && data.receiverPhone.size() <= 50)) &&
+             (!('id' in data) || (data.id is string && data.id.size() <= 128));
     }
 
     // ── Organizations collection ─────────────────────────
@@ -243,7 +312,30 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated();
-      allow delete: if isAdminOrTreasurer() || isSuperAdmin();
+      allow delete: if (isAuthenticated() && 'targetUserId' in resource.data && resource.data.targetUserId == request.auth.uid) ||
+        isAdminOrTreasurer() || isSuperAdmin();
+    }
+
+    // ── Calls collection ────────────────────────────────
+    match /calls/{callId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.callerId == request.auth.uid ||
+         resource.data.receiverId == request.auth.uid ||
+         isSuperAdmin());
+      allow create: if isAuthenticated() &&
+        isValidCall(request.resource.data) &&
+        (request.resource.data.callerId == request.auth.uid || isSuperAdmin());
+      allow update: if isAuthenticated() &&
+        isValidCall(request.resource.data) &&
+        (resource.data.callerId == request.auth.uid ||
+         resource.data.receiverId == request.auth.uid ||
+         isSuperAdmin()) &&
+        (isSuperAdmin() || (
+          request.resource.data.callerId == resource.data.callerId &&
+          request.resource.data.receiverId == resource.data.receiverId &&
+          request.resource.data.organizationId == resource.data.organizationId
+        ));
+      allow delete: if isSuperAdmin();
     }
 
     // ── System Settings collection ───────────────────────

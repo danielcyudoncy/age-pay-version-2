@@ -50,6 +50,35 @@ class NotificationsScreen extends ConsumerWidget {
     );
   }
 
+  void _confirmDelete({
+    required BuildContext context,
+    required String title,
+    required String message,
+    required VoidCallback onConfirm,
+  }) {
+    showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              Navigator.of(ctx).pop(true);
+              onConfirm();
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifications = ref.watch(notificationListProvider);
@@ -57,27 +86,162 @@ class NotificationsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Notifications'),
-            if (unreadCount > 0) ...[
-              const SizedBox(width: 8),
-              Badge(
-                label: Text('$unreadCount'),
-                child: const SizedBox(width: 16, height: 16),
-              ),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Notifications'),
+              if (unreadCount > 0) ...[
+                const SizedBox(width: 8),
+                Badge(
+                  label: Text('$unreadCount'),
+                  child: const SizedBox(width: 16, height: 16),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
         actions: [
-          if (notifications.isNotEmpty)
-            TextButton(
-              onPressed: () {
-                ref.read(notificationListProvider.notifier).markAllAsRead();
+          if (notifications.isNotEmpty) ...[
+            if (unreadCount > 0)
+              IconButton(
+                icon: const Icon(Icons.done_all),
+                tooltip: 'Mark all as read',
+                onPressed: () {
+                  ref.read(notificationListProvider.notifier).markAllAsRead();
+                },
+              ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              tooltip: 'Notification options',
+              onSelected: (value) {
+                final notifier = ref.read(notificationListProvider.notifier);
+                switch (value) {
+                  case 'mark_all_read':
+                    notifier.markAllAsRead();
+                    break;
+                  case 'delete_read':
+                    final readCount = notifications.where((n) => n.read).length;
+                    if (readCount == 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No read notifications to delete.')),
+                      );
+                      return;
+                    }
+                    _confirmDelete(
+                      context: context,
+                      title: 'Delete Read Notifications',
+                      message: 'Are you sure you want to delete all $readCount read notifications?',
+                      onConfirm: () => notifier.deleteReadNotifications(),
+                    );
+                    break;
+                  case 'delete_7_days':
+                    final weekAgo = DateTime.now().subtract(const Duration(days: 7));
+                    final oldCount = notifications.where((n) => n.receivedAt.isBefore(weekAgo)).length;
+                    if (oldCount == 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No notifications older than 7 days.')),
+                      );
+                      return;
+                    }
+                    _confirmDelete(
+                      context: context,
+                      title: 'Delete Older Notifications',
+                      message: 'Delete $oldCount notifications older than 7 days?',
+                      onConfirm: () => notifier.deleteOlderThan(const Duration(days: 7)),
+                    );
+                    break;
+                  case 'delete_30_days':
+                    final monthAgo = DateTime.now().subtract(const Duration(days: 30));
+                    final oldCount = notifications.where((n) => n.receivedAt.isBefore(monthAgo)).length;
+                    if (oldCount == 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No notifications older than 30 days.')),
+                      );
+                      return;
+                    }
+                    _confirmDelete(
+                      context: context,
+                      title: 'Delete Older Notifications',
+                      message: 'Delete $oldCount notifications older than 30 days?',
+                      onConfirm: () => notifier.deleteOlderThan(const Duration(days: 30)),
+                    );
+                    break;
+                  case 'delete_all':
+                    _confirmDelete(
+                      context: context,
+                      title: 'Clear All Notifications',
+                      message: 'Are you sure you want to delete all ${notifications.length} notifications? This cannot be undone.',
+                      onConfirm: () => notifier.deleteAllNotifications(),
+                    );
+                    break;
+                }
               },
-              child: const Text('Mark all read'),
+              itemBuilder: (context) => [
+                if (unreadCount > 0) ...[
+                  const PopupMenuItem(
+                    value: 'mark_all_read',
+                    child: Row(
+                      children: [
+                        Icon(Icons.done_all, size: 20),
+                        SizedBox(width: 10),
+                        Expanded(child: Text('Mark all as read')),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                ],
+                const PopupMenuItem(
+                  value: 'delete_read',
+                  child: Row(
+                    children: [
+                      Icon(Icons.mark_email_read_outlined, size: 20),
+                      SizedBox(width: 10),
+                      Expanded(child: Text('Delete read notifications')),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete_7_days',
+                  child: Row(
+                    children: [
+                      Icon(Icons.history, size: 20),
+                      SizedBox(width: 10),
+                      Expanded(child: Text('Delete older than 7 days')),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete_30_days',
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_month, size: 20),
+                      SizedBox(width: 10),
+                      Expanded(child: Text('Delete older than 30 days')),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'delete_all',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_sweep, size: 20, color: Colors.red),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Clear all notifications',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+          ],
         ],
       ),
       body: RefreshIndicator(

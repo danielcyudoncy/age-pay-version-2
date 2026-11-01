@@ -20,6 +20,7 @@ import 'package:cls/features/meetings/controllers/meeting_rsvp_provider.dart';
 import 'package:cls/features/meetings/views/meeting_detail_screen.dart';
 import 'package:cls/features/reports/views/reports_screen.dart';
 import 'package:cls/features/expenses/views/expense_list_screen.dart';
+import 'package:cls/features/calling/views/branch_directory_screen.dart';
 import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
 
@@ -872,6 +873,18 @@ class _QuickActionsRow extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const MemberAnnouncementsScreen(),
+                  ),
+                );
+              },
+            ),
+            QuickActionButton(
+              icon: Icons.phone_in_talk,
+              label: 'Branch Calls',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const BranchDirectoryScreen(),
                   ),
                 );
               },
