@@ -931,8 +931,11 @@ class _OrganizationPicker extends ConsumerWidget {
           );
         }
 
+        final sortedOrgs = List.of(orgs)
+          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
         final items = <DropdownMenuItem<String>>[
-          ...orgs.map(
+          ...sortedOrgs.map(
             (org) => DropdownMenuItem(
               value: org.id,
               child: Text(org.name),
@@ -1021,8 +1024,11 @@ class _BranchPicker extends ConsumerWidget {
 
     return branchesAsync.when(
       data: (branches) {
+        final sortedBranches = List.of(branches)
+          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
         final items = <DropdownMenuItem<String>>[
-          ...branches.map(
+          ...sortedBranches.map(
             (b) => DropdownMenuItem(
               value: b.id,
               child: Text(b.name),
@@ -1057,7 +1063,7 @@ class _BranchPicker extends ConsumerWidget {
             if (val == '__NEW__') {
               onChanged(null, null, true);
             } else if (val != null) {
-              final selected = branches.firstWhere((b) => b.id == val);
+              final selected = sortedBranches.firstWhere((b) => b.id == val);
               onChanged(selected.id, selected.name, false);
             }
           },

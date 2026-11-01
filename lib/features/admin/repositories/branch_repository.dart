@@ -17,9 +17,13 @@ class BranchRepository {
         .where('isActive', isEqualTo: true)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => BranchModel.fromFirestore(doc))
-              .toList(),
+          (snapshot) {
+            final branches = snapshot.docs
+                .map((doc) => BranchModel.fromFirestore(doc))
+                .toList();
+            branches.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+            return branches;
+          },
         );
   }
 
@@ -29,7 +33,9 @@ class BranchRepository {
         .where('organizationId', isEqualTo: organizationId)
         .where('isActive', isEqualTo: true)
         .get();
-    return snapshot.docs.map((doc) => BranchModel.fromFirestore(doc)).toList();
+    final branches = snapshot.docs.map((doc) => BranchModel.fromFirestore(doc)).toList();
+    branches.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return branches;
   }
 
   Future<BranchModel?> getBranchById(String id) async {

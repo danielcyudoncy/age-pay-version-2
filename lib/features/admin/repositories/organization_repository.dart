@@ -41,9 +41,13 @@ class OrganizationRepository {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => OrganizationModel.fromFirestore(doc))
-              .toList(),
+          (snapshot) {
+            final list = snapshot.docs
+                .map((doc) => OrganizationModel.fromFirestore(doc))
+                .toList();
+            list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+            return list;
+          },
         );
   }
 
