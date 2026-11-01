@@ -234,15 +234,17 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                 TextField(controller: bodyController, decoration: const InputDecoration(labelText: 'Body'), maxLines: 4),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<AnnouncementCategory>(
+                  isExpanded: true,
                   initialValue: selectedCategory,
                   decoration: const InputDecoration(labelText: 'Category'),
                   items: AnnouncementCategory.values
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c.name.replaceAll('_', ' ').toUpperCase())))
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c.name.replaceAll('_', ' ').toUpperCase(), overflow: TextOverflow.ellipsis)))
                       .toList(),
                   onChanged: (v) { if (v != null) setDialogState(() => selectedCategory = v); },
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: selectedAudience,
                   decoration: const InputDecoration(
                     labelText: 'Target Audience',
@@ -276,6 +278,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                             selectedBranchName = branches.first.name;
                           }
                           return DropdownButtonFormField<String>(
+                            isExpanded: true,
                             initialValue: currentBranch,
                             decoration: const InputDecoration(
                               labelText: 'Target Branch',
@@ -285,7 +288,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                                 .map(
                                   (b) => DropdownMenuItem(
                                     value: b.id,
-                                    child: Text(b.name),
+                                    child: Text(b.name, overflow: TextOverflow.ellipsis),
                                   ),
                                 )
                                 .toList(),
@@ -448,15 +451,17 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                 TextField(controller: bodyController, decoration: const InputDecoration(labelText: 'Body'), maxLines: 4),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<AnnouncementCategory>(
+                  isExpanded: true,
                   initialValue: selectedCategory,
                   decoration: const InputDecoration(labelText: 'Category'),
                   items: AnnouncementCategory.values
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c.name.replaceAll('_', ' ').toUpperCase())))
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c.name.replaceAll('_', ' ').toUpperCase(), overflow: TextOverflow.ellipsis)))
                       .toList(),
                   onChanged: (v) { if (v != null) setDialogState(() => selectedCategory = v); },
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: selectedAudience,
                   decoration: const InputDecoration(
                     labelText: 'Target Audience',
@@ -490,6 +495,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                             selectedBranchName = branches.first.name;
                           }
                           return DropdownButtonFormField<String>(
+                            isExpanded: true,
                             initialValue: currentBranch,
                             decoration: const InputDecoration(
                               labelText: 'Target Branch',
@@ -499,7 +505,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                                 .map(
                                   (b) => DropdownMenuItem(
                                     value: b.id,
-                                    child: Text(b.name),
+                                    child: Text(b.name, overflow: TextOverflow.ellipsis),
                                   ),
                                 )
                                 .toList(),
@@ -667,15 +673,24 @@ class _MonthCalendar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
+                  visualDensity: VisualDensity.compact,
                   icon: const Icon(Icons.chevron_left),
                   onPressed: () =>
                       onDaySelected(DateTime(selectedDate.year, selectedDate.month - 1, 1)),
                 ),
-                Text(
-                  DateFormat('MMMM yyyy').format(selectedDate),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        DateFormat('MMMM yyyy').format(selectedDate),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
                 ),
                 IconButton(
+                  visualDensity: VisualDensity.compact,
                   icon: const Icon(Icons.chevron_right),
                   onPressed: () =>
                       onDaySelected(DateTime(selectedDate.year, selectedDate.month + 1, 1)),
@@ -807,25 +822,36 @@ class _AnnouncementCard extends StatelessWidget {
           backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
           child: Icon(Icons.campaign, color: theme.colorScheme.primary),
         ),
-        title: Text(announcement.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          announcement.title,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 2),
             Text(
               '${announcement.category.name.toUpperCase()} • ${announcement.announcementDate != null ? dateFormat.format(announcement.announcementDate!) : dateFormat.format(announcement.createdAt)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
             Row(
               children: [
                 Icon(Icons.people_alt_outlined, size: 13, color: theme.colorScheme.primary),
                 const SizedBox(width: 4),
-                Text(
-                  announcement.audienceLabel,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
+                Expanded(
+                  child: Text(
+                    announcement.audienceLabel,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -835,9 +861,21 @@ class _AnnouncementCard extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (announcement.isPinned) const Icon(Icons.push_pin, size: 16, color: Colors.red),
-            IconButton(icon: const Icon(Icons.edit, size: 18), onPressed: onEdit),
-            IconButton(icon: const Icon(Icons.delete, size: 18), onPressed: onDelete),
+            if (announcement.isPinned)
+              const Padding(
+                padding: EdgeInsets.only(right: 2),
+                child: Icon(Icons.push_pin, size: 16, color: Colors.red),
+              ),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.edit, size: 18),
+              onPressed: onEdit,
+            ),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.delete, size: 18),
+              onPressed: onDelete,
+            ),
           ],
         ),
       ),
