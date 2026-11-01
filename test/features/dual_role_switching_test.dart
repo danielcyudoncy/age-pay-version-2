@@ -231,5 +231,19 @@ void main() {
       expect(find.byType(ProDashboard), findsOneWidget);
       expect(find.text('Go to National'), findsOneWidget);
     });
+
+    testWidgets('renders cleanly on narrow screen without any RenderFlex overflow', (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(createTestApp(initialScope: ExecutiveScope.national));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DualRoleSwitcherCard), findsOneWidget);
+      expect(find.text('Viewing: National Body'), findsOneWidget);
+      expect(find.text('Go to Lagos Branch'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   });
 }
