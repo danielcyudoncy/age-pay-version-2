@@ -1168,40 +1168,78 @@ class _LeviesTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
     final dashboardAsync = ref.watch(financialSecretaryDashboardProvider);
+
+    void openCreateLevy() {
+      final auth = ref.read(authProvider).valueOrNull;
+      final memberIds = ref
+              .read(membersStreamProvider)
+              .valueOrNull
+              ?.map((m) => m.id)
+              .toList() ??
+          [];
+      if (auth != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CreateLevyScreen(
+              creatorId: auth.uid,
+              memberIds: memberIds,
+            ),
+          ),
+        );
+      }
+    }
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'finsec_create_levy_fab',
         icon: const Icon(Icons.add),
-        label: const Text('Create Levy'),
-        onPressed: () {
-          final auth = ref.read(authProvider).valueOrNull;
-          final memberIds = ref
-                  .read(membersStreamProvider)
-                  .valueOrNull
-                  ?.map((m) => m.id)
-                  .toList() ??
-              [];
-          if (auth != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CreateLevyScreen(
-                  creatorId: auth.uid,
-                  memberIds: memberIds,
-                ),
-              ),
-            );
-          }
-        },
+        label: const Text('Create Levy / Due'),
+        onPressed: openCreateLevy,
       ),
       body: dashboardAsync.when(
         data: (data) {
           final summaries = data.levySummaries;
           if (summaries.isEmpty) {
-            return const Center(child: Text('No active levies found.'));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.assignment_outlined,
+                      size: 64,
+                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No Active Levies or Dues',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'As Financial Secretary, you can designate and create new dues and levies for all members.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      onPressed: openCreateLevy,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Create New Levy / Due'),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
           return ListView.builder(

@@ -7,6 +7,21 @@ import 'package:cls/features/obligations/repositories/obligation_repository.dart
 import 'package:cls/features/levies/views/create_levy_screen.dart';
 import 'package:cls/features/levies/controllers/levy_provider.dart';
 
+import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/auth/models/user_model.dart';
+import 'package:cls/features/auth/services/auth_service.dart';
+
+class _MockAuthService implements AuthService {
+  final UserModel? user;
+  _MockAuthService(this.user);
+
+  @override
+  Future<UserModel?> getCurrentUser() async => user;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 class _MockLevyRepository implements LevyRepository {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -23,17 +38,39 @@ void main() {
   group('CreateLevyScreen', () {
     const testCreatorId = 'treasurer1';
     const testMemberIds = ['member1', 'member2', 'member3'];
+    final testUser = UserModel(
+      uid: testCreatorId,
+      organizationId: 'org1',
+      email: 'finsec@test.com',
+      displayName: 'Fin Sec',
+      phoneNumber: '08000000000',
+      role: UserRole.financialSecretary,
+      createdAt: DateTime(2025, 1, 1),
+    );
 
     Widget buildScreen() {
+      final mockAuth = _MockAuthService(testUser);
       final mockLevyRepo = _MockLevyRepository();
       final mockObligationRepo = _MockObligationRepository();
 
       return ProviderScope(
         overrides: [
+          authServiceProvider.overrideWith((ref) => mockAuth),
+          authProvider.overrideWith((ref) {
+            final notifier = AuthNotifier(ref.watch(authServiceProvider));
+            notifier.state = AsyncValue.data(testUser);
+            return notifier;
+          }),
           levyRepositoryProvider.overrideWith((ref) => mockLevyRepo),
           obligationRepositoryProvider.overrideWith(
             (ref) => mockObligationRepo,
           ),
+          levyCreationProvider.overrideWith((ref) {
+            return LevyCreationNotifier(
+              levyRepository: mockLevyRepo,
+              obligationRepository: mockObligationRepo,
+            );
+          }),
         ],
         child: MaterialApp(
           home: MediaQuery(
