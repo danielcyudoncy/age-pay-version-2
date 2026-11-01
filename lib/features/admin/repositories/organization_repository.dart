@@ -12,6 +12,9 @@ class OrganizationRepository {
   CollectionReference get _collection => _firestore.collection(collection);
 
   Stream<List<OrganizationModel>> getOrganizations() {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
     return _collection
         .orderBy('createdAt', descending: true)
         .snapshots()
@@ -19,7 +22,13 @@ class OrganizationRepository {
           (snapshot) => snapshot.docs
               .map((doc) => OrganizationModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((error) {
+          if (FirebaseAuth.instance.currentUser == null) {
+            return <OrganizationModel>[];
+          }
+          throw error;
+        });
   }
 
   /// Public org list used by the register / org-picker screens, which run

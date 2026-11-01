@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../auth/models/user_model.dart';
 import '../../../core/constants/enums.dart';
 
@@ -12,11 +13,22 @@ class AdminUserRepository {
   CollectionReference get _collection => _firestore.collection(collection);
 
   Stream<List<UserModel>> getUsersStream() {
-    return _collection.snapshots().map(
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
+    return _collection
+        .snapshots()
+        .map(
           (snapshot) => snapshot.docs
               .map((doc) => UserModel.fromFirestore(doc))
               .toList(),
-        );
+        )
+        .handleError((error) {
+          if (FirebaseAuth.instance.currentUser == null) {
+            return <UserModel>[];
+          }
+          throw error;
+        });
   }
 
   Future<List<UserModel>> getUsers() async {
