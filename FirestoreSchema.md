@@ -780,6 +780,42 @@ Controls platform-wide system operational configuration, gateway switches, and s
 
 ---
 
+## In-App Audio Calling Schema
+
+### Collection: `calls`
+
+Path: `calls/{callId}`
+
+Manages WebRTC signaling and active call sessions between members within an organization:
+
+```json
+{
+  "id": "call_12345",
+  "organizationId": "org_abc",
+  "branchId": "branch_xyz",
+  "callerId": "user_caller_uid",
+  "callerName": "John Doe",
+  "callerRole": "President",
+  "receiverId": "user_receiver_uid",
+  "receiverName": "Jane Smith",
+  "receiverPhone": "+2348012345678",
+  "status": "calling",
+  "callType": "audio",
+  "createdAt": "Timestamp",
+  "updatedAt": "Timestamp",
+  "endedAt": "Timestamp"
+}
+```
+
+**Security Rules Summary:**
+* **Read:** Call participants (`callerId` or `receiverId`) and Super Admin only (allows participant collection queries filtering by `receiverId` or `callerId`).
+* **Create:** Authenticated callers whose `callerId` matches `request.auth.uid` (or Super Admin) with mandatory schema validation (`callerId`, `receiverId`, `organizationId`, `status`).
+* **Update:** Authenticated participants (`callerId` or `receiverId`) or Super Admin (with schema validation and immutable participant/organization IDs).
+* **Delete:** Strictly restricted to Super Admin.
+
+
+---
+
 ## Related Documents
 
 * BusinessRules.md

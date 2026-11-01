@@ -106,16 +106,30 @@ class NotificationCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (!notification.read)
-                  Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.only(left: 8, top: 4),
-                    decoration: const BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!notification.read)
+                      Container(
+                        width: 8,
+                        height: 8,
+                        margin: const EdgeInsets.only(bottom: 4, top: 4),
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      tooltip: 'Delete notification',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      onPressed: onDismiss,
                     ),
-                  ),
+                  ],
+                ),
               ],
             ),
           ),

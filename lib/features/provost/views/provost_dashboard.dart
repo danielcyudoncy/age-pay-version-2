@@ -19,6 +19,7 @@ import 'waiver_audit_ledger_screen.dart';
 import '../../dashboard/widgets/dashboard_app_bar_actions.dart';
 import '../../dashboard/widgets/dashboard_tab_pop_scope.dart';
 import '../../dashboard/widgets/dual_role_switcher_card.dart';
+import '../../calling/views/branch_directory_screen.dart';
 
 class ProvostDashboard extends ConsumerStatefulWidget {
   const ProvostDashboard({super.key});
@@ -322,6 +323,35 @@ class _ProvostHomeTab extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                ),
+              ),
+            ),
+
+            // Branch Calls Button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.phone_in_talk, color: Colors.green),
+                  label: const Text(
+                    'Branch Calls Directory',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BranchDirectoryScreen(),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

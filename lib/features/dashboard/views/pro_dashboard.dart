@@ -19,6 +19,7 @@ import 'package:cls/features/secretary/views/search_screen.dart';
 import 'package:cls/features/meetings/controllers/meeting_provider.dart';
 import 'package:cls/features/pro/views/pro_communication_hub_screen.dart';
 import 'package:cls/features/pro/widgets/pro_member_contact_card.dart';
+import 'package:cls/features/calling/views/branch_directory_screen.dart';
 
 class ProDashboard extends ConsumerStatefulWidget {
   const ProDashboard({super.key});
@@ -489,6 +490,19 @@ class _ProHomeTab extends ConsumerWidget {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
+                QuickActionButton(
+                  icon: Icons.phone_in_talk,
+                  label: 'Branch Calls',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BranchDirectoryScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 12),
                 QuickActionButton(
                   icon: Icons.podcasts,
                   label: 'Omnichannel Hub',

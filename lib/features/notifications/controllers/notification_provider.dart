@@ -131,6 +131,35 @@ class NotificationListNotifier extends StateNotifier<List<NotificationModel>> {
     await _repository?.deleteNotification(id);
   }
 
+  Future<void> deleteNotifications(List<String> ids) async {
+    if (ids.isEmpty) return;
+    final idSet = ids.toSet();
+    state = state.where((n) => !idSet.contains(n.id)).toList();
+    await _repository?.deleteMultipleNotifications(ids);
+  }
+
+  Future<void> deleteReadNotifications() async {
+    final readIds = state.where((n) => n.read).map((n) => n.id).toList();
+    if (readIds.isEmpty) return;
+    await deleteNotifications(readIds);
+  }
+
+  Future<void> deleteOlderThan(Duration age) async {
+    final threshold = DateTime.now().subtract(age);
+    final oldIds = state
+        .where((n) => n.receivedAt.isBefore(threshold))
+        .map((n) => n.id)
+        .toList();
+    if (oldIds.isEmpty) return;
+    await deleteNotifications(oldIds);
+  }
+
+  Future<void> deleteAllNotifications() async {
+    final allIds = state.map((n) => n.id).toList();
+    if (allIds.isEmpty) return;
+    await deleteNotifications(allIds);
+  }
+
   void refresh() {
     _subscribeToFirestore();
   }

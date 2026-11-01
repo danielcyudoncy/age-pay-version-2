@@ -49,6 +49,8 @@ dependencies:
   integration_test:
     sdk: flutter
   flutter_local_notifications: ^21.0.0
+  zego_express_engine: ^3.25.0
+  audioplayers: ^6.1.0
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +66,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/logo.png
+    - assets/sounds/ringtone.mp3
     - .env
 
   fonts:

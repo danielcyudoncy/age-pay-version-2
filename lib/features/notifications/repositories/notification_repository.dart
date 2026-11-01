@@ -315,4 +315,29 @@ class NotificationRepository {
       log('Failed to delete notification: $e');
     }
   }
+
+  /// Delete multiple notifications in batch.
+  Future<void> deleteMultipleNotifications(List<String> notificationIds) async {
+    if (notificationIds.isEmpty) return;
+    try {
+      final chunks = <List<String>>[];
+      for (var i = 0; i < notificationIds.length; i += 450) {
+        chunks.add(
+          notificationIds.sublist(
+            i,
+            i + 450 > notificationIds.length ? notificationIds.length : i + 450,
+          ),
+        );
+      }
+      for (final chunk in chunks) {
+        final batch = _fs.batch();
+        for (final id in chunk) {
+          batch.delete(_collection.doc(id));
+        }
+        await batch.commit();
+      }
+    } catch (e) {
+      log('Failed to delete multiple notifications: $e');
+    }
+  }
 }

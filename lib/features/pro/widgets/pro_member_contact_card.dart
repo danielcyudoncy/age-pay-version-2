@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/pro/controllers/pro_communication_provider.dart';
+import 'package:cls/features/calling/widgets/member_call_button.dart';
 
 class ProMemberContactCard extends ConsumerWidget {
   final MemberModel member;
@@ -72,6 +73,8 @@ class ProMemberContactCard extends ConsumerWidget {
               ),
             ),
             if (hasPhone) ...[
+              // In-app audio call button
+              MemberCallButton(member: member, isCompact: true),
               // WhatsApp button
               IconButton(
                 visualDensity: VisualDensity.compact,

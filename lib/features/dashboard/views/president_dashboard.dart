@@ -30,6 +30,7 @@ import 'package:cls/features/expenses/widgets/expense_approval_queue_card.dart';
 import 'package:cls/features/provost/widgets/penalty_waiver_approval_queue_card.dart';
 import 'package:cls/features/national/controllers/national_provider.dart';
 import 'package:cls/features/national/views/national_hub_screen.dart';
+import 'package:cls/features/calling/views/branch_directory_screen.dart';
 
 class PresidentDashboard extends ConsumerStatefulWidget {
   const PresidentDashboard({super.key});
@@ -312,6 +313,33 @@ class _HomeTab extends ConsumerWidget {
               isNationalScope: isNationalScope,
               onNavigate: onNavigate,
             ),
+            const SizedBox(height: 10),
+
+            // Branch Calls Action
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.phone_in_talk, color: Colors.green, size: 20),
+                label: const Text(
+                  'Branch Calls Directory',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const BranchDirectoryScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
             const SizedBox(height: 24),
 
             // Treasury Overview Cards
@@ -543,6 +571,13 @@ class _ExecutiveQuickActionsDropdown extends StatelessWidget {
         subtitle: 'Member roster & directories',
         colorScheme: colorScheme,
       ),
+      _buildMenuItem(
+        value: 'branch_calls',
+        icon: Icons.phone_in_talk_outlined,
+        label: 'Branch Calls',
+        subtitle: 'Audio calling directory',
+        colorScheme: colorScheme,
+      ),
       if (isNationalScope) ...[
         const PopupMenuDivider(),
         _buildMenuItem(
@@ -646,6 +681,12 @@ class _ExecutiveQuickActionsDropdown extends StatelessWidget {
         break;
       case 'members':
         onNavigate(3);
+        break;
+      case 'branch_calls':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const BranchDirectoryScreen()),
+        );
         break;
       case 'compliance':
         Navigator.push(

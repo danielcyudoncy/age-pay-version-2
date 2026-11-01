@@ -6,6 +6,8 @@ import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/meetings/models/meeting_model.dart';
 import 'package:cls/features/secretary/models/announcement_model.dart';
 import 'package:cls/features/secretary/models/document_model.dart';
+import 'package:cls/features/calling/views/branch_directory_screen.dart';
+import 'package:cls/features/calling/widgets/member_call_button.dart';
 import 'package:intl/intl.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -27,6 +29,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Search'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.phone_in_talk, color: Colors.green),
+            tooltip: 'Branch Calling Directory',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const BranchDirectoryScreen(),
+                ),
+              );
+            },
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Padding(
@@ -65,6 +81,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       leading: const CircleAvatar(child: Icon(Icons.person)),
                       title: Text(item.fullName, style: const TextStyle(fontWeight: FontWeight.w600)),
                       subtitle: Text(item.email),
+                      trailing: MemberCallButton(member: item, isCompact: true),
                     ),
                   );
                 } else if (item is MeetingModel) {

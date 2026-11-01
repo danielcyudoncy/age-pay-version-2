@@ -25,6 +25,7 @@ import 'package:cls/features/levies/controllers/levy_provider.dart'
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart'
     show allPaymentsStreamProvider, membersStreamProvider;
 import 'package:cls/features/expenses/widgets/expense_approval_queue_card.dart';
+import 'package:cls/features/calling/views/branch_directory_screen.dart';
 
 class FinancialSecretaryDashboard extends ConsumerStatefulWidget {
   const FinancialSecretaryDashboard({super.key});
@@ -386,6 +387,16 @@ class _HomeTab extends ConsumerWidget {
                 spacing: 10,
                 runSpacing: 10,
                 children: [
+                  QuickActionButton(
+                    icon: Icons.phone_in_talk,
+                    label: 'Branch Calls',
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BranchDirectoryScreen(),
+                      ),
+                    ),
+                  ),
                   QuickActionButton(
                     icon: Icons.point_of_sale,
                     label: 'Record Cash',

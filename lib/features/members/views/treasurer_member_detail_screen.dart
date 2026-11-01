@@ -11,6 +11,7 @@ import 'package:cls/features/dashboard/controllers/president_dashboard_provider.
 import 'package:cls/features/obligations/models/obligation_model.dart';
 import 'edit_member_screen.dart';
 import '../widgets/member_widgets.dart';
+import 'package:cls/features/calling/widgets/member_call_button.dart';
 
 class TreasurerMemberDetailScreen extends ConsumerWidget {
   final String memberId;
@@ -86,6 +87,33 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                     onEdit: canEdit
                         ? () => _navigateToEditScreen(context, ref, member)
                         : null,
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    margin: EdgeInsets.zero,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.phone_in_talk, color: Colors.green, size: 20),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              'In-App Audio Call',
+                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                          ),
+                          MemberCallButton(member: member),
+                        ],
+                      ),
+                    ),
                   ),
                   if (canManageNationalEnrollment) ...[
                     const SizedBox(height: 16),

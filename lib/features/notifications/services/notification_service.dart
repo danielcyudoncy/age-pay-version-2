@@ -38,6 +38,18 @@ class NotificationService {
     showBadge: true,
   );
 
+  static const AndroidNotificationChannel incomingCallChannel =
+      AndroidNotificationChannel(
+    'agepay_incoming_call_channel',
+    'Incoming Calls',
+    description:
+        'Urgent ringing alerts for incoming real-time audio calls.',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+    showBadge: true,
+  );
+
   /// Top-level background message handler.
   static Future<void> firebaseMessagingBackgroundHandler(
     RemoteMessage message,
@@ -73,6 +85,7 @@ class NotificationService {
               AndroidFlutterLocalNotificationsPlugin>();
       if (androidPlugin != null) {
         await androidPlugin.createNotificationChannel(defaultChannel);
+        await androidPlugin.createNotificationChannel(incomingCallChannel);
         await androidPlugin.requestNotificationsPermission();
       }
     } catch (e) {
@@ -181,6 +194,60 @@ class NotificationService {
     } catch (e) {
       log('Local notification display note: $e');
     }
+  }
+
+  /// Displays a high-priority heads-up call banner with full-screen intent and ringtone
+  Future<void> showCallNotification({
+    required String callId,
+    required String callerName,
+    required String callerRole,
+  }) async {
+    try {
+      final notifId = callId.hashCode.remainder(100000).abs();
+      const androidDetails = AndroidNotificationDetails(
+        'agepay_incoming_call_channel',
+        'Incoming Calls',
+        channelDescription:
+            'Urgent ringing alerts for incoming real-time audio calls.',
+        importance: Importance.max,
+        priority: Priority.max,
+        category: AndroidNotificationCategory.call,
+        fullScreenIntent: true,
+        ongoing: true,
+        autoCancel: false,
+        playSound: true,
+        enableVibration: true,
+        channelShowBadge: true,
+        icon: '@mipmap/ic_launcher',
+      );
+      const darwinDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+      const details = NotificationDetails(
+        android: androidDetails,
+        iOS: darwinDetails,
+      );
+
+      await _localNotificationsInstance.show(
+        id: notifId,
+        title: 'Incoming Audio Call',
+        body: '$callerName ($callerRole) is calling...',
+        notificationDetails: details,
+        payload: callId,
+      );
+    } catch (e) {
+      log('Call notification display note: $e');
+    }
+  }
+
+  /// Cancels any active incoming call notification
+  Future<void> cancelCallNotification(String callId) async {
+    try {
+      final notifId = callId.hashCode.remainder(100000).abs();
+      await _localNotificationsInstance.cancel(id: notifId);
+    } catch (_) {}
   }
 
   Future<String?> getToken() async {

@@ -273,6 +273,24 @@ void main() {
       expect(find.text('Emeka Anya has registered and is awaiting approval.'), findsOneWidget);
       expect(find.byIcon(Icons.person_add_alt_1), findsOneWidget);
     });
+
+    testWidgets('shows delete options in popup menu and individual card delete icon', (tester) async {
+      await tester.pumpWidget(buildScreen(notifications: testNotifications));
+      await tester.pumpAndSettle();
+
+      // Verify individual delete icons exist on cards
+      expect(find.byIcon(Icons.delete_outline), findsNWidgets(testNotifications.length));
+
+      // Verify options menu exists in AppBar
+      expect(find.byIcon(Icons.more_vert), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete read notifications'), findsOneWidget);
+      expect(find.text('Delete older than 7 days'), findsOneWidget);
+      expect(find.text('Delete older than 30 days'), findsOneWidget);
+      expect(find.text('Clear all notifications'), findsOneWidget);
+    });
   });
 
   group('NotificationModel serialization', () {

@@ -15,6 +15,7 @@ import '../../settings/views/settings_screen.dart';
 import '../../admin/views/admin_profile_screen.dart';
 import '../../secretary/views/secretary_profile_screen.dart';
 import '../../members/views/member_profile_screen.dart';
+import '../../calling/views/branch_directory_screen.dart';
 
 /// Standardized executive AppBar actions across all AgePay dashboards.
 /// Provides a consistent notifications badge, executive tier switcher, and a themed Material 3
@@ -93,6 +94,22 @@ class DashboardAppBarActions extends ConsumerWidget {
             ),
           ),
         if (extraActions != null) ...extraActions!,
+        IconButton(
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(
+            Icons.phone_in_talk_outlined,
+            color: AppTheme.brandGreen,
+          ),
+          tooltip: 'Branch Calls',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const BranchDirectoryScreen(),
+              ),
+            );
+          },
+        ),
         if (showNotifications)
           IconButton(
             visualDensity: VisualDensity.compact,
@@ -124,6 +141,13 @@ class DashboardAppBarActions extends ConsumerWidget {
           ),
           onSelected: (value) async {
             switch (value) {
+              case 'branch_calls':
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const BranchDirectoryScreen(),
+                  ),
+                );
+                break;
               case 'refresh':
                 if (onRefresh != null) {
                   await onRefresh!();
@@ -279,6 +303,17 @@ class DashboardAppBarActions extends ConsumerWidget {
                   ],
                 ),
               ),
+            const PopupMenuItem<String>(
+              value: 'branch_calls',
+              child: Row(
+                children: [
+                  Icon(Icons.phone_in_talk_outlined,
+                      size: 20, color: AppTheme.brandGreen),
+                  SizedBox(width: 12),
+                  Text('Branch Calls'),
+                ],
+              ),
+            ),
             if (onRefresh != null)
               const PopupMenuItem<String>(
                 value: 'refresh',
