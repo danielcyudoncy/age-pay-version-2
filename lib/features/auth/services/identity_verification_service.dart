@@ -45,12 +45,20 @@ class IdentityVerificationService {
       );
     }
 
-    final masked = '${cleanId.substring(0, 3)}****${cleanId.substring(7)}';
+    final masked = maskNinOrBvn(cleanId);
 
     return IdentityVerificationResult(
       isValid: true,
       message: 'Government Identity Verified for $fullName ($masked)',
       maskedId: masked,
     );
+  }
+
+  static String maskNinOrBvn(String id) {
+    final clean = id.replaceAll(RegExp(r'\D'), '');
+    if (clean.length >= 7) {
+      return '${clean.substring(0, 3)}****${clean.substring(clean.length - 4)}';
+    }
+    return id;
   }
 }

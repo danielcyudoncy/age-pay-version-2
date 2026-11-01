@@ -5,6 +5,7 @@ import 'package:cls/features/admin/controllers/admin_provider.dart';
 import 'package:cls/features/admin/views/admin_users_screen.dart';
 import 'package:cls/features/admin/views/organization_management_screen.dart';
 import 'package:cls/features/admin/views/system_configuration_screen.dart';
+import 'package:cls/features/admin/views/admin_profile_screen.dart';
 import 'package:cls/features/admin/widgets/admin_metric_card.dart';
 import 'package:cls/features/admin/widgets/quick_action_card.dart';
 import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
@@ -22,6 +23,29 @@ class AdminDashboard extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         actions: [
+          IconButton(
+            icon: CircleAvatar(
+              radius: 15,
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              child: Text(
+                user?.displayName.isNotEmpty == true
+                    ? user!.displayName[0].toUpperCase()
+                    : 'A',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
+            ),
+            tooltip: 'Super Admin Profile',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminProfileScreen()),
+              );
+            },
+          ),
           DashboardAppBarActions(
             user: user,
             onRefresh: () async {
@@ -49,13 +73,54 @@ class AdminDashboard extends ConsumerWidget {
                 MediaQuery.paddingOf(context).bottom + 24,
               ),
               children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Welcome, ${user?.displayName ?? 'Admin'}',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AdminProfileScreen()),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Welcome, ${user?.displayName ?? 'Admin'}',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.shield_rounded, size: 14, color: theme.colorScheme.primary),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Profile',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -182,6 +247,22 @@ class AdminDashboard extends ConsumerWidget {
                                   MaterialPageRoute(
                                     builder: (_) =>
                                         const SystemConfigurationScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 12),
+                            QuickActionCard(
+                              title: 'My Profile',
+                              subtitle: 'Super Admin profile',
+                              icon: Icons.person_outline,
+                              color: Colors.indigo,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const AdminProfileScreen(),
                                   ),
                                 );
                               },

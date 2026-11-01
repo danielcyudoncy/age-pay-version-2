@@ -157,6 +157,23 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     }
   }
 
+  Future<void> updateProfile({
+    required String displayName,
+    required String phoneNumber,
+    String? ninOrBvn,
+  }) async {
+    final currentUser = state.valueOrNull;
+    if (currentUser == null) return;
+
+    final updated = await _authService.updateUserProfile(
+      uid: currentUser.uid,
+      displayName: displayName,
+      phoneNumber: phoneNumber,
+      ninOrBvn: ninOrBvn,
+    );
+    state = AsyncValue.data(updated);
+  }
+
   void setUser(UserModel user) {
     state = AsyncValue.data(user);
   }

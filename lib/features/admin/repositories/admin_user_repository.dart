@@ -85,4 +85,21 @@ class AdminUserRepository {
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
+
+  Future<void> updateUserProfile(
+    String uid, {
+    required String displayName,
+    required String phoneNumber,
+    String? ninOrBvn,
+  }) async {
+    final Map<String, dynamic> updates = {
+      'displayName': displayName.trim(),
+      'phoneNumber': phoneNumber.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+    if (ninOrBvn != null && ninOrBvn.trim().isNotEmpty) {
+      updates['ninOrBvn'] = ninOrBvn.trim();
+    }
+    await _collection.doc(uid).update(updates);
+  }
 }

@@ -840,6 +840,34 @@ class AuthService {
     await _auth.signOut();
   }
 
+  Future<UserModel> updateUserProfile({
+    required String uid,
+    required String displayName,
+    required String phoneNumber,
+    String? ninOrBvn,
+  }) async {
+    final Map<String, dynamic> updates = {
+      'displayName': displayName.trim(),
+      'phoneNumber': phoneNumber.trim(),
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    };
+    if (ninOrBvn != null && ninOrBvn.trim().isNotEmpty) {
+      updates['ninOrBvn'] = ninOrBvn.trim();
+    }
+
+    await _firestore.collection('users').doc(uid).update(updates);
+
+    try {
+      final user = _auth.currentUser;
+      if (user != null && user.uid == uid) {
+        await user.updateDisplayName(displayName.trim());
+      }
+    } catch (_) {}
+
+    final updated = await _getUserData(uid);
+    return updated!;
+  }
+
   Future<UserModel?> getCurrentUser() async {
     try {
       final user = _auth.currentUser;
