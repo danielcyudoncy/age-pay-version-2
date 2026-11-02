@@ -357,7 +357,7 @@ class _ProHomeTab extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const SearchScreen(),
+                        builder: (_) => const BranchDirectoryScreen(),
                       ),
                     );
                   },
@@ -546,7 +546,7 @@ class _ProHomeTab extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const SearchScreen(),
+                        builder: (_) => const BranchDirectoryScreen(),
                       ),
                     );
                   },
@@ -768,7 +768,7 @@ class _ProHomeTab extends ConsumerWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const SearchScreen(),
+                      builder: (_) => const BranchDirectoryScreen(),
                     ),
                   );
                 },
