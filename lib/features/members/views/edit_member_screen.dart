@@ -8,6 +8,7 @@ import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/national/widgets/assign_national_office_dialog.dart';
+import '../widgets/delete_member_dialog.dart';
 
 class EditMemberScreen extends ConsumerStatefulWidget {
   final MemberModel member;
@@ -404,6 +405,47 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
                           style: TextStyle(fontSize: 16),
                         ),
                 ),
+              ),
+              Builder(
+                builder: (context) {
+                  final currentUser = ref.watch(authProvider).valueOrNull;
+                  if (currentUser?.role != UserRole.superAdmin) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red.shade700,
+                          side: BorderSide(color: Colors.red.shade300),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final deleted = await DeleteMemberDialog.show(
+                            context,
+                            member: widget.member,
+                          );
+                          if (deleted == true && context.mounted) {
+                            Navigator.of(context).pop(true);
+                          }
+                        },
+                        icon: const Icon(Icons.delete_forever_rounded, size: 20),
+                        label: const Text(
+                          'Delete Member (SuperAdmin)',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
               SizedBox(height: MediaQuery.paddingOf(context).bottom + 24),
             ],

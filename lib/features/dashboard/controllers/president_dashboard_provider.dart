@@ -36,6 +36,9 @@ final presidentMembersStreamProvider =
       final isNationalScope = _isNationalScope(activeScope, user);
 
       return ref.watch(memberRepositoryProvider).getMembers().map((members) {
+        if (user.role == UserRole.superAdmin) {
+          return members;
+        }
         if (isNationalScope) {
           return members
               .where((m) =>
@@ -43,9 +46,6 @@ final presidentMembersStreamProvider =
                   m.nationalRole != null ||
                   m.branchId == 'national')
               .toList();
-        }
-        if (user.role == UserRole.superAdmin) {
-          return members;
         }
         if (user.branchId != null && user.branchId!.isNotEmpty) {
           return members.where((m) => m.branchId == user.branchId).toList();
