@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../models/organization_model.dart';
 import '../controllers/admin_provider.dart';
 
@@ -18,6 +20,7 @@ class OrganizationVerificationDialog extends ConsumerStatefulWidget {
   }) {
     return showDialog<bool>(
       context: context,
+      barrierDismissible: true,
       builder: (_) => OrganizationVerificationDialog(organization: organization),
     );
   }
@@ -31,6 +34,19 @@ class _OrganizationVerificationDialogState
     extends ConsumerState<OrganizationVerificationDialog> {
   bool _isLoading = false;
   String? _error;
+
+  void _copyToClipboard(String text, String label) {
+    if (text.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label copied to clipboard'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   Future<void> _approve() async {
     setState(() {
@@ -50,6 +66,7 @@ class _OrganizationVerificationDialogState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
             content: Text(
               '${widget.organization.name} has been verified and activated for public join & payments!',
             ),
@@ -71,21 +88,30 @@ class _OrganizationVerificationDialogState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reject Organization?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Reject Organization?'),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'This will mark the organization as rejected and prevent it from appearing publicly or accepting payments.',
+              'This will mark the organization as rejected and prevent it from appearing publicly or accepting member payments.',
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextField(
               controller: reasonController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Rejection Reason (Optional)',
                 hintText: 'e.g. Unverified identity or suspicious name',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
+              maxLines: 2,
             ),
           ],
         ),
@@ -94,8 +120,8 @@ class _OrganizationVerificationDialogState
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Confirm Reject'),
           ),
@@ -120,7 +146,8 @@ class _OrganizationVerificationDialogState
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.red.shade700,
-              content: Text('${widget.organization.name} has been rejected.'),
+              behavior: SnackBarBehavior.floating,
+              content: Text('${widget.organization.name} has been marked as rejected.'),
             ),
           );
         }
@@ -142,287 +169,638 @@ class _OrganizationVerificationDialogState
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      clipBehavior: Clip.antiAlias,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.shield_outlined,
-                      color: theme.colorScheme.primary,
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Platform Verification Review',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'Zero-Trust Organization Compliance',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 12),
+        constraints: BoxConstraints(
+          maxWidth: 540,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.88,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Pinned Dialog Header
+            _buildDialogHeader(theme),
+            const Divider(height: 1),
 
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: theme.colorScheme.outlineVariant),
-                ),
+            // Scrollable Dossier Body
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _infoRow('Age Grade', org.name, isBold: true),
-                    const SizedBox(height: 8),
-                    _infoRow('Platform Slug', '@${org.slug}'),
-                    const SizedBox(height: 8),
-                    _infoRow(
-                      'Verification Status',
-                      org.verificationStatus.toUpperCase().replaceAll('_', ' '),
-                      color: org.isVerified
-                          ? Colors.green.shade800
-                          : (org.verificationStatus == 'rejected'
-                              ? Colors.red.shade800
-                              : Colors.amber.shade900),
-                    ),
+                    _buildOrganizationHeroCard(theme, org),
+                    const SizedBox(height: 16),
+                    _buildExecutiveIdentificationSection(theme, org),
+                    const SizedBox(height: 16),
+                    _buildCommunityCredentialsSection(theme, org),
+                    const SizedBox(height: 16),
+                    _buildReceivingBankAuditSection(theme, org),
+                    if (_error != null) ...[
+                      const SizedBox(height: 16),
+                      _buildErrorBanner(theme, _error!),
+                    ],
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+            ),
 
-              // Executive Identity Credentials
-              Text(
-                'EXECUTIVE IDENTIFICATION',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Column(
-                  children: [
-                    _infoRow(
-                      'Founder (President) NIN/BVN',
-                      org.founderNinOrBvn?.isNotEmpty == true
-                          ? org.founderNinOrBvn!
-                          : 'Not Provided (Unverified)',
-                      color: org.founderNinOrBvn?.isNotEmpty == true
-                          ? Colors.black87
-                          : Colors.red,
-                    ),
-                    const SizedBox(height: 8),
-                    _infoRow(
-                      'General Secretary NIN/BVN',
-                      org.secretaryNinOrBvn?.isNotEmpty == true
-                          ? org.secretaryNinOrBvn!
-                          : 'Pending Co-Sign Verification',
-                      color: org.secretaryNinOrBvn?.isNotEmpty == true
-                          ? Colors.black87
-                          : Colors.grey.shade700,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Community & Legal Credentials
-              Text(
-                'COMMUNITY & LEGAL CREDENTIALS',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Column(
-                  children: [
-                    _infoRow(
-                      'CAC Registration Number',
-                      org.cacNumber?.isNotEmpty == true
-                          ? org.cacNumber!
-                          : 'Not Provided',
-                    ),
-                    const SizedBox(height: 8),
-                    _infoRow(
-                      'Town Union / Apex Body',
-                      org.townUnionName?.isNotEmpty == true
-                          ? org.townUnionName!
-                          : 'Not Specified',
-                    ),
-                    const SizedBox(height: 8),
-                    _infoRow(
-                      'Town Union Endorsement Contact',
-                      org.townUnionContact?.isNotEmpty == true
-                          ? org.townUnionContact!
-                          : 'Not Specified',
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Bank Account Matching Credentials
-              Text(
-                'RECEIVING BANK ACCOUNT AUDIT',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Column(
-                  children: [
-                    _infoRow(
-                      'Bank & Account Number',
-                      '${org.bankName ?? "Not Configured"} - ${org.accountNumber ?? ""}',
-                    ),
-                    const SizedBox(height: 8),
-                    _infoRow(
-                      'Account Name',
-                      org.accountName ?? 'Not Configured',
-                    ),
-                    const SizedBox(height: 8),
-                    _infoRow(
-                      'Association Match Status',
-                      org.isBankVerified
-                          ? '✓ Verified Association Match'
-                          : '⚠️ Pending Association Check',
-                      color: org.isBankVerified ? Colors.green.shade700 : Colors.amber.shade900,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    _error!,
-                    style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
-                  ),
-                ),
-
-              // Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
-                      child: const Text('Close'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  if (org.verificationStatus != 'rejected')
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                        onPressed: _isLoading ? null : _reject,
-                        child: const Text('Reject'),
-                      ),
-                    ),
-                  const SizedBox(width: 8),
-                  if (!org.isVerified)
-                    Expanded(
-                      flex: 2,
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(backgroundColor: Colors.green.shade700),
-                        onPressed: _isLoading ? null : _approve,
-                        icon: _isLoading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : const Icon(Icons.check_circle_outline, size: 18),
-                        label: const Text('Verify & Activate'),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
+            // Pinned Bottom Actions
+            const Divider(height: 1),
+            _buildBottomActionBar(theme, org),
+          ],
         ),
       ),
     );
   }
 
-  Widget _infoRow(String label, String value, {bool isBold = false, Color? color}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black54),
-        ),
-        const SizedBox(width: 12),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-              color: color ?? Colors.black87,
+  Widget _buildDialogHeader(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: AppTheme.brandGreen.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: const Icon(
+              Icons.shield_outlined,
+              color: AppTheme.brandGreen,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Platform Verification Review',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Close dialog',
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            icon: const Icon(Icons.close_rounded, size: 20),
+            onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrganizationHeroCard(ThemeData theme, OrganizationModel org) {
+    final (statusColor, statusBg, statusIcon, statusText) = switch (org.verificationStatus) {
+      'verified' => (
+          Colors.green.shade800,
+          Colors.green.shade50,
+          Icons.verified_rounded,
+          'VERIFIED & ACTIVE'
+        ),
+      'rejected' => (
+          Colors.red.shade800,
+          Colors.red.shade50,
+          Icons.cancel_rounded,
+          'REJECTED'
+        ),
+      _ => (
+          Colors.amber.shade900,
+          Colors.amber.shade50,
+          Icons.hourglass_top_rounded,
+          'PENDING REVIEW'
+        ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppTheme.brandGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.account_balance,
+                  color: AppTheme.brandGreen,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      org.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        InkWell(
+                          onTap: () => _copyToClipboard('@${org.slug}', 'Slug'),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '@${org.slug}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.copy_rounded,
+                                  size: 11,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: statusBg,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(statusIcon, size: 12, color: statusColor),
+                              const SizedBox(width: 4),
+                              Text(
+                                statusText,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: statusColor,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExecutiveIdentificationSection(ThemeData theme, OrganizationModel org) {
+    final founderHasId = org.founderNinOrBvn?.trim().isNotEmpty == true;
+    final secretaryHasId = org.secretaryNinOrBvn?.trim().isNotEmpty == true;
+
+    return _buildSectionCard(
+      theme: theme,
+      title: 'Executive Identification',
+      icon: Icons.badge_outlined,
+      children: [
+        _buildCredentialTile(
+          theme: theme,
+          label: 'FOUNDER (PRESIDENT) IDENTITY',
+          value: founderHasId ? org.founderNinOrBvn! : 'Not Provided (Unverified)',
+          isVerified: founderHasId,
+          statusLabel: founderHasId ? 'Captured' : 'Missing',
+          onCopy: founderHasId ? () => _copyToClipboard(org.founderNinOrBvn!, 'Founder NIN/BVN') : null,
+        ),
+        const Divider(height: 16),
+        _buildCredentialTile(
+          theme: theme,
+          label: 'GENERAL SECRETARY IDENTITY',
+          value: secretaryHasId ? org.secretaryNinOrBvn! : 'Pending Co-Sign Verification',
+          isVerified: secretaryHasId,
+          statusLabel: secretaryHasId ? 'Co-Signed' : 'Pending Co-Sign',
+          isPendingNotice: !secretaryHasId,
+          onCopy: secretaryHasId ? () => _copyToClipboard(org.secretaryNinOrBvn!, 'Secretary NIN/BVN') : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCommunityCredentialsSection(ThemeData theme, OrganizationModel org) {
+    final hasCac = org.cacNumber?.trim().isNotEmpty == true;
+    final hasTownUnion = org.townUnionName?.trim().isNotEmpty == true;
+    final hasContact = org.townUnionContact?.trim().isNotEmpty == true;
+
+    return _buildSectionCard(
+      theme: theme,
+      title: 'Community & Legal Credentials',
+      icon: Icons.gavel_outlined,
+      children: [
+        _buildCredentialTile(
+          theme: theme,
+          label: 'CAC REGISTRATION NUMBER',
+          value: hasCac ? org.cacNumber! : 'Not Provided',
+          isVerified: hasCac,
+          statusLabel: hasCac ? 'Registered' : 'Unregistered',
+          onCopy: hasCac ? () => _copyToClipboard(org.cacNumber!, 'CAC Number') : null,
+        ),
+        const Divider(height: 16),
+        _buildCredentialTile(
+          theme: theme,
+          label: 'TOWN UNION / APEX BODY',
+          value: hasTownUnion ? org.townUnionName! : 'Not Specified',
+          isVerified: hasTownUnion,
+          statusLabel: hasTownUnion ? 'Specified' : null,
+          onCopy: hasTownUnion ? () => _copyToClipboard(org.townUnionName!, 'Town Union') : null,
+        ),
+        if (hasContact) ...[
+          const Divider(height: 16),
+          _buildCredentialTile(
+            theme: theme,
+            label: 'TOWN UNION ENDORSEMENT CONTACT',
+            value: org.townUnionContact!,
+            isVerified: true,
+            statusLabel: 'Contact Provided',
+            onCopy: () => _copyToClipboard(org.townUnionContact!, 'Endorsement Contact'),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildReceivingBankAuditSection(ThemeData theme, OrganizationModel org) {
+    final hasBankConfigured = org.bankName?.trim().isNotEmpty == true &&
+        org.accountNumber?.trim().isNotEmpty == true;
+    final bankInfo = hasBankConfigured
+        ? '${org.bankName}  •  ${org.accountNumber}'
+        : 'Not Configured';
+
+    return _buildSectionCard(
+      theme: theme,
+      title: 'Receiving Bank Account Audit',
+      icon: Icons.account_balance_wallet_outlined,
+      children: [
+        _buildCredentialTile(
+          theme: theme,
+          label: 'BANK & ACCOUNT NUMBER',
+          value: bankInfo,
+          isVerified: hasBankConfigured,
+          onCopy: hasBankConfigured && org.accountNumber != null
+              ? () => _copyToClipboard(org.accountNumber!, 'Account Number')
+              : null,
+        ),
+        const Divider(height: 16),
+        _buildCredentialTile(
+          theme: theme,
+          label: 'ACCOUNT BENEFICIARY NAME',
+          value: org.accountName?.trim().isNotEmpty == true
+              ? org.accountName!
+              : 'Not Configured',
+          isVerified: org.accountName?.trim().isNotEmpty == true,
+          onCopy: org.accountName != null
+              ? () => _copyToClipboard(org.accountName!, 'Account Name')
+              : null,
+        ),
+        const SizedBox(height: 12),
+        // Association Name Match Callout Card
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: org.isBankVerified
+                ? Colors.green.shade50
+                : Colors.amber.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: org.isBankVerified
+                  ? Colors.green.shade300
+                  : Colors.amber.shade300,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                org.isBankVerified
+                    ? Icons.check_circle_outline
+                    : Icons.info_outline,
+                size: 18,
+                color: org.isBankVerified
+                    ? Colors.green.shade800
+                    : Colors.amber.shade900,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  org.isBankVerified
+                      ? 'Association Name Verified: Bank account name matches registered Age Grade records.'
+                      : 'Association Check Pending: Ensure registered bank account belongs to ${org.name} prior to activating.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: org.isBankVerified
+                        ? Colors.green.shade900
+                        : Colors.amber.shade900,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
+
+  Widget _buildSectionCard({
+    required ThemeData theme,
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Card Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            child: Row(
+              children: [
+                Icon(icon, size: 16, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // Section Card Content
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCredentialTile({
+    required ThemeData theme,
+    required String label,
+    required String value,
+    required bool isVerified,
+    String? statusLabel,
+    bool isPendingNotice = false,
+    VoidCallback? onCopy,
+  }) {
+    final statusColor = isPendingNotice
+        ? Colors.amber.shade800
+        : (isVerified ? Colors.green.shade800 : Colors.red.shade700);
+
+    final statusBg = isPendingNotice
+        ? Colors.amber.shade50
+        : (isVerified ? Colors.green.shade50 : Colors.red.shade50);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isVerified
+                      ? theme.colorScheme.onSurface
+                      : (isPendingNotice
+                          ? theme.colorScheme.onSurfaceVariant
+                          : Colors.red.shade700),
+                ),
+              ),
+            ),
+            if (onCopy != null)
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                tooltip: 'Copy',
+                icon: Icon(
+                  Icons.copy_rounded,
+                  size: 14,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                onPressed: onCopy,
+              ),
+            if (statusLabel != null) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: statusBg,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: statusColor,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorBanner(ThemeData theme, String errorMessage) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.colorScheme.error.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: theme.colorScheme.error, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              errorMessage,
+              style: TextStyle(
+                color: theme.colorScheme.onErrorContainer,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomActionBar(ThemeData theme, OrganizationModel org) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 530;
+
+          final closeButton = OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
+            child: const Text('Close'),
+          );
+
+          final rejectButton = org.verificationStatus != 'rejected'
+              ? OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade700,
+                    side: BorderSide(color: Colors.red.shade300),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: _isLoading ? null : _reject,
+                  icon: const Icon(Icons.cancel_outlined, size: 16),
+                  label: const Text('Reject'),
+                )
+              : null;
+
+          final verifyButton = !org.isVerified
+              ? FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.brandGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: _isLoading ? null : _approve,
+                  icon: _isLoading
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.verified_user_rounded, size: 16),
+                  label: const Text(
+                    'Verify & Activate',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                )
+              : null;
+
+          if (isCompact) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ?verifyButton,
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(child: closeButton),
+                    if (rejectButton != null) ...[
+                      const SizedBox(width: 8),
+                      Expanded(child: rejectButton),
+                    ],
+                  ],
+                ),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              closeButton,
+              const Spacer(),
+              if (rejectButton != null) ...[
+                rejectButton,
+                const SizedBox(width: 8),
+              ],
+              ?verifyButton,
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
+

@@ -34,6 +34,9 @@ final membersStreamProvider = StreamProvider.autoDispose<List<MemberModel>>((
       (user.nationalRole != null || user.role == UserRole.superAdmin);
 
   return ref.watch(memberRepositoryProvider).getMembers().map((members) {
+    if (user.role == UserRole.superAdmin) {
+      return members;
+    }
     if (isNationalScope) {
       return members
           .where((m) =>
@@ -41,9 +44,6 @@ final membersStreamProvider = StreamProvider.autoDispose<List<MemberModel>>((
               m.nationalRole != null ||
               m.branchId == 'national')
           .toList();
-    }
-    if (user.role == UserRole.superAdmin) {
-      return members;
     }
     if (user.branchId != null && user.branchId!.isNotEmpty) {
       return members.where((m) => m.branchId == user.branchId).toList();

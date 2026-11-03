@@ -11,6 +11,7 @@ import 'package:cls/features/dashboard/controllers/president_dashboard_provider.
 import 'package:cls/features/obligations/models/obligation_model.dart';
 import 'edit_member_screen.dart';
 import '../widgets/member_widgets.dart';
+import '../widgets/delete_member_dialog.dart';
 import 'package:cls/features/calling/widgets/member_call_button.dart';
 
 class TreasurerMemberDetailScreen extends ConsumerWidget {
@@ -41,9 +42,38 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
     final canManageNationalEnrollment = !isReadOnly &&
         (currentUserRole == UserRole.president ||
             currentUserRole == UserRole.superAdmin);
+    final isSuperAdmin = currentUserRole == UserRole.superAdmin;
+
+    final resolvedMember = membersAsync.valueOrNull?.firstWhere(
+      (m) => m.userId == memberId || m.id == memberId,
+      orElse: () => MemberModel(
+        id: memberId,
+        userId: memberId,
+        fullName: 'Unknown Member',
+        email: '',
+        phoneNumber: '',
+        dateOfBirth: DateTime(2000),
+        joinedDate: DateTime(2000),
+        createdAt: DateTime(2000),
+        updatedAt: DateTime(2000),
+      ),
+    );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Member Details'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('Member Details'),
+        centerTitle: true,
+        actions: [
+          if (isSuperAdmin &&
+              resolvedMember != null &&
+              resolvedMember.fullName != 'Unknown Member')
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              tooltip: 'Delete Member (SuperAdmin)',
+              onPressed: () => _confirmDeleteMember(context, resolvedMember),
+            ),
+        ],
+      ),
       body: membersAsync.when(
         data: (members) {
           final member = members.firstWhere(
@@ -465,6 +495,13 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                         );
                       }).toList(),
                     ),
+                  if (isSuperAdmin) ...[
+                    const SizedBox(height: 24),
+                    _SuperAdminMemberGovernanceCard(
+                      member: member,
+                      onDelete: () => _confirmDeleteMember(context, member),
+                    ),
+                  ],
                 ],
               );
             },
@@ -499,6 +536,16 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
     );
     if (result == true) {
       ref.invalidate(membersStreamProvider);
+    }
+  }
+
+  Future<void> _confirmDeleteMember(
+    BuildContext context,
+    MemberModel member,
+  ) async {
+    final deleted = await DeleteMemberDialog.show(context, member: member);
+    if (deleted == true && context.mounted) {
+      Navigator.of(context).pop(true);
     }
   }
 
@@ -1231,4 +1278,104 @@ class _NationalBranchEnrollmentCard extends StatelessWidget {
     );
   }
 }
+
+class _SuperAdminMemberGovernanceCard extends StatelessWidget {
+  final MemberModel member;
+  final VoidCallback onDelete;
+
+  const _SuperAdminMemberGovernanceCard({
+    required this.member,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.red.shade50.withValues(alpha: 0.6),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.red.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.admin_panel_settings_outlined,
+                    color: Colors.red.shade800,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'SuperAdmin Member Governance',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Colors.red.shade900,
+                        ),
+                      ),
+                      Text(
+                        'Sovereign cross-branch management rights',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'As a SuperAdmin, you have cross-branch authority to manage or remove this member. '
+              'If the member has past payments, they will be safely archived without orphaning financial ledger records.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red.shade900.withValues(alpha: 0.8),
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red.shade700,
+                  side: BorderSide(color: Colors.red.shade400),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete_forever_rounded, size: 18),
+                label: const Text(
+                  'Delete / Deactivate Member',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 
