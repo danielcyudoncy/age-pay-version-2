@@ -192,7 +192,10 @@ void main() {
 
       // Should be on ProvostDashboard
       expect(find.byType(ProvostDashboard), findsOneWidget);
-      expect(find.text('Provost Disciplinary Officer'), findsOneWidget);
+      expect(
+        find.text('Chief Provost • Order & Disciplinary Enforcement'),
+        findsOneWidget,
+      );
 
       // Should display DualRoleSwitcherCard with branch info
       expect(find.byType(DualRoleSwitcherCard), findsOneWidget);

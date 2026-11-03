@@ -42,7 +42,7 @@ class _FinancialSecretaryDashboardState
   String _appBarTitle(int index) {
     switch (index) {
       case 0:
-        return 'Financial Secretary';
+        return '';
       case 1:
         return 'Collections';
       case 2:
@@ -82,14 +82,17 @@ class _FinancialSecretaryDashboardState
         appBar: _selectedIndex == 4
             ? null
             : AppBar(
-                title: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(_appBarTitle(_selectedIndex)),
-                ),
+                title: _selectedIndex == 0
+                    ? DashboardScopeTitle(user: user)
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(_appBarTitle(_selectedIndex)),
+                      ),
                 actions: [
                   DashboardAppBarActions(
                     user: user,
+                    showScopeChip: _selectedIndex != 0,
                     onRefresh: () async {
                       ref.invalidate(allPaymentsStreamProvider);
                       ref.invalidate(allObligationsProvider);

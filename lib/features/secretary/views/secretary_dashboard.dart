@@ -74,10 +74,11 @@ class _SecretaryDashboardState extends ConsumerState<SecretaryDashboard> {
       child: Scaffold(
         appBar: _selectedIndex == 0
             ? AppBar(
-                title: const Text('Secretary Dashboard'),
+                title: DashboardScopeTitle(user: user),
                 actions: [
                   DashboardAppBarActions(
                     user: user,
+                    showScopeChip: false,
                     extraActions: [
                       IconButton(
                         visualDensity: VisualDensity.compact,

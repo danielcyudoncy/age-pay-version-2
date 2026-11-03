@@ -38,7 +38,7 @@ class _ProvostDashboardState extends ConsumerState<ProvostDashboard> {
   String _appBarTitle(int index) {
     switch (index) {
       case 0:
-        return 'Provost Disciplinary Officer';
+        return '';
       case 1:
         return 'Meeting Decorum';
       case 2:
@@ -79,14 +79,17 @@ class _ProvostDashboardState extends ConsumerState<ProvostDashboard> {
                 (_selectedIndex == 1 && activeMeeting != null))
             ? null
             : AppBar(
-                title: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(_appBarTitle(_selectedIndex)),
-                ),
+                title: _selectedIndex == 0
+                    ? DashboardScopeTitle(user: user)
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(_appBarTitle(_selectedIndex)),
+                      ),
                 actions: [
                   DashboardAppBarActions(
                     user: user,
+                    showScopeChip: _selectedIndex != 0,
                     onRefresh: () async {
                       ref.invalidate(provostPenaltiesStreamProvider(user.organizationId));
                       ref.invalidate(provostWaiversStreamProvider(user.organizationId));

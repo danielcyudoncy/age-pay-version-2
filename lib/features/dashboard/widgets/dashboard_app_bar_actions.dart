@@ -25,6 +25,7 @@ class DashboardAppBarActions extends ConsumerWidget {
   final Future<void> Function()? onRefresh;
   final List<Widget>? extraActions;
   final bool showNotifications;
+  final bool showScopeChip;
   final String refreshSuccessMessage;
 
   const DashboardAppBarActions({
@@ -33,6 +34,7 @@ class DashboardAppBarActions extends ConsumerWidget {
     this.onRefresh,
     this.extraActions,
     this.showNotifications = true,
+    this.showScopeChip = true,
     this.refreshSuccessMessage = 'Dashboard refreshed',
   });
 
@@ -45,7 +47,7 @@ class DashboardAppBarActions extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (hasNationalRole)
+        if (hasNationalRole && showScopeChip)
           Padding(
             padding: const EdgeInsets.only(right: 6),
             child: ActionChip(
@@ -389,6 +391,121 @@ class DashboardAppBarActions extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// An expanded scope button designed for executive dashboard AppBars.
+/// Fills the left/title area of the AppBar so it is not empty, showing the
+/// current branch (or national) scope with a clean, touchable pill design.
+class DashboardScopeTitle extends ConsumerWidget {
+  final UserModel? user;
+
+  const DashboardScopeTitle({super.key, this.user});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final targetUser = user ?? ref.watch(authProvider).valueOrNull;
+    final activeScope = ref.watch(activeExecutiveScopeProvider);
+    final theme = Theme.of(context);
+    final isNational = activeScope == ExecutiveScope.national;
+    final hasNationalRole = targetUser?.nationalRole != null;
+
+    final userBranch = targetUser?.branchName?.trim();
+    final branchName = (userBranch != null && userBranch.isNotEmpty)
+        ? userBranch
+        : null;
+
+    final label = isNational
+        ? 'National'
+        : (branchName != null ? 'Branch • $branchName' : 'Branch');
+
+    void onSwitch() {
+      if (!hasNationalRole) return;
+      final newScope = activeScope == ExecutiveScope.branch
+          ? ExecutiveScope.national
+          : ExecutiveScope.branch;
+      ref.read(activeExecutiveScopeProvider.notifier).state = newScope;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(milliseconds: 1500),
+          backgroundColor: AppTheme.brandGreen,
+          content: Text(
+            newScope == ExecutiveScope.national
+                ? 'Switched to National View (${targetUser?.nationalRole?.displayName})'
+                : 'Switched to Branch View (${targetUser?.branchName ?? 'Local'})',
+          ),
+        ),
+      );
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          if (hasNationalRole) {
+            onSwitch();
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const BranchDirectoryScreen(),
+              ),
+            );
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isNational
+                ? AppTheme.brandGreen.withValues(alpha: 0.15)
+                : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isNational
+                  ? AppTheme.brandGreen.withValues(alpha: 0.3)
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Icon(
+                isNational ? Icons.stars_rounded : Icons.location_on_outlined,
+                size: 18,
+                color: isNational
+                    ? AppTheme.brandGreen
+                    : theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: isNational
+                        ? AppTheme.brandGreen
+                        : theme.colorScheme.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (hasNationalRole) ...[
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.unfold_more,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

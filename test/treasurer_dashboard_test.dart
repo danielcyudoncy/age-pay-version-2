@@ -485,7 +485,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Treasurer Dashboard'), findsOneWidget);
+      expect(find.byType(TreasurerDashboard), findsOneWidget);
       expect(find.text('Total Collected'), findsOneWidget);
       expect(find.text('Total Outstanding'), findsOneWidget);
       expect(find.text('Pending Payments'), findsOneWidget);

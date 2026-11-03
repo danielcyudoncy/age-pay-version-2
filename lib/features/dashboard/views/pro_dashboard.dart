@@ -35,23 +35,6 @@ class _ProDashboardState extends ConsumerState<ProDashboard> {
     setState(() => _selectedIndex = index);
   }
 
-  String _appBarTitle(int index) {
-    switch (index) {
-      case 0:
-        return 'Public Relations (PRO)';
-      case 1:
-        return 'Broadcasts & Announcements';
-      case 2:
-        return 'Community Calendar';
-      case 3:
-        return 'Media & Documents';
-      case 4:
-        return 'My Dues & Payments';
-      default:
-        return 'PRO Dashboard';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -76,14 +59,11 @@ class _ProDashboardState extends ConsumerState<ProDashboard> {
         appBar: (_selectedIndex == 1 || _selectedIndex == 2 || _selectedIndex == 3 || _selectedIndex == 4)
             ? null
             : AppBar(
-                title: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(_appBarTitle(_selectedIndex)),
-                ),
+                title: DashboardScopeTitle(user: user),
                 actions: [
                   DashboardAppBarActions(
                     user: user,
+                    showScopeChip: false,
                     extraActions: [
                       IconButton(
                         visualDensity: VisualDensity.compact,
