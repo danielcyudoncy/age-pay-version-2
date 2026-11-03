@@ -92,14 +92,17 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
             appBar: (_selectedIndex == 1 || _selectedIndex == 4)
                 ? null
                 : AppBar(
-                    title: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(_appBarTitle(_selectedIndex)),
-                    ),
+                    title: _selectedIndex == 0
+                        ? DashboardScopeTitle(user: user)
+                        : FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(_appBarTitle(_selectedIndex)),
+                          ),
                     actions: [
                       DashboardAppBarActions(
                         user: user,
+                        showScopeChip: _selectedIndex != 0,
                         onRefresh: () async {
                           ref.invalidate(presidentAllPaymentsStreamProvider);
                           ref.invalidate(allObligationsProvider);
@@ -155,7 +158,7 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
   String _appBarTitle(int index) {
     switch (index) {
       case 0:
-        return 'President Dashboard';
+        return '';
       case 1:
         return 'Expenses & Requisitions';
       case 2:

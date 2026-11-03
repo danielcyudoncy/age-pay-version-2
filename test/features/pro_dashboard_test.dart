@@ -21,7 +21,7 @@ import 'package:cls/features/secretary/models/document_model.dart';
 import 'package:cls/features/secretary/repositories/announcement_repository.dart';
 import 'package:cls/features/secretary/repositories/calendar_event_repository.dart';
 import 'package:cls/features/secretary/repositories/document_repository.dart';
-import 'package:cls/features/secretary/views/search_screen.dart';
+import 'package:cls/features/calling/views/branch_directory_screen.dart';
 import 'package:cls/features/payments/repositories/payment_repository.dart';
 import 'package:cls/features/obligations/repositories/obligation_repository.dart';
 import 'package:cls/features/payments/models/payment_model.dart';
@@ -323,8 +323,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // App bar & Header
-      expect(find.text('Public Relations (PRO)'), findsOneWidget);
+      // Header Card
       expect(find.text('Chief Emeka PRO'), findsOneWidget);
       expect(find.text('PRO'), findsOneWidget);
       expect(
@@ -509,10 +508,10 @@ void main() {
       await tester.tap(find.text('Overview'));
       await tester.pumpAndSettle();
 
-      // Tap Roster Members metric card (opens SearchScreen)
+      // Tap Roster Members metric card (opens BranchDirectoryScreen)
       await tester.tap(find.text('Roster Members'));
       await tester.pumpAndSettle();
-      expect(find.byType(SearchScreen), findsOneWidget);
+      expect(find.byType(BranchDirectoryScreen), findsOneWidget);
     });
 
     testWidgets('displays Omnichannel Communication Center and navigates to Hub', (tester) async {

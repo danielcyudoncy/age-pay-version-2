@@ -27,6 +27,22 @@ class MemberRepository {
         .handleError((_) => <MemberModel>[]);
   }
 
+  /// Returns all members including active and suspended/inactive records.
+  Stream<List<MemberModel>> getAllMembers() {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
+    return _collection
+        .orderBy('createdAt', descending: false)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => MemberModel.fromFirestore(doc))
+              .toList(),
+        )
+        .handleError((_) => <MemberModel>[]);
+  }
+
   Future<MemberModel?> getMemberById(String id) async {
     final doc = await _collection.doc(id).get();
     if (doc.exists) {

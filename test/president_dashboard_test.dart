@@ -518,7 +518,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('President Dashboard'), findsOneWidget);
+      expect(find.byType(PresidentDashboard), findsOneWidget);
       expect(find.text('Total Members'), findsOneWidget);
       expect(find.text('Total Collections'), findsOneWidget);
       expect(find.text('Total Disbursed'), findsOneWidget);

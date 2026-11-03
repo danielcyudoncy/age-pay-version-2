@@ -6,8 +6,6 @@ class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   static const String _appVersion = '1.0.0';
-  static const String _tagline =
-      'Age Grade Association Financial Management System';
 
   static const List<_AboutItem> _items = [
     _AboutItem(
@@ -55,45 +53,62 @@ class AboutScreen extends StatelessWidget {
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             decoration: BoxDecoration(
               color: AppTheme.brandGreen,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    width: MediaQuery.sizeOf(context).width * 0.6,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Icon(
-                      Icons.account_balance_wallet,
-                      size: MediaQuery.sizeOf(context).width * 0.5,
-                      color: Colors.white,
+                SizedBox(
+                  height: 52,
+                  width: 220,
+                  child: ClipRect(
+                    child: OverflowBox(
+                      maxHeight: 315,
+                      maxWidth: 315,
+                      alignment: const Alignment(-0.22, -0.11),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
+                              Icons.account_balance_wallet,
+                              size: 48,
+                              color: Colors.white,
+                            ),
+                      ),
                     ),
                   ),
                 ),
-                Transform.translate(
-                  offset: const Offset(0, -72),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Version $_appVersion',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        _tagline,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 16),
+
+                Text(
+                  'Financial Management System',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Version $_appVersion',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],

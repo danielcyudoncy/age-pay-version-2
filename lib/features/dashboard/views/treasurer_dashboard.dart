@@ -45,7 +45,7 @@ class _TreasurerDashboardState extends ConsumerState<TreasurerDashboard> {
   String _appBarTitle(int index) {
     switch (index) {
       case 0:
-        return 'Treasurer Dashboard';
+        return '';
       case 1:
         return 'Expenses & Disbursements';
       case 2:
@@ -88,14 +88,17 @@ class _TreasurerDashboardState extends ConsumerState<TreasurerDashboard> {
             appBar: (_selectedIndex == 1 || _selectedIndex == 4)
                 ? null
                 : AppBar(
-                    title: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(_appBarTitle(_selectedIndex)),
-                    ),
+                    title: _selectedIndex == 0
+                        ? DashboardScopeTitle(user: user)
+                        : FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(_appBarTitle(_selectedIndex)),
+                          ),
                     actions: [
                       DashboardAppBarActions(
                         user: user,
+                        showScopeChip: _selectedIndex != 0,
                         extraActions: [
                           IconButton(
                             visualDensity: VisualDensity.compact,
