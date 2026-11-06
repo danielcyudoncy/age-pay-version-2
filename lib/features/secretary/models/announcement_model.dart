@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/constants/enums.dart';
 
 enum AnnouncementCategory {
@@ -21,6 +22,7 @@ class AnnouncementModel {
   final bool isScheduled;
   final DateTime? scheduledAt;
   final DateTime? announcementDate;
+  final String? venue;
   final List<String> attachments;
   final String createdBy;
   final String targetAudience;
@@ -80,6 +82,25 @@ class AnnouncementModel {
     return 'Everyone';
   }
 
+  /// Returns the explicit venue or parses venue from body formatted by meeting detail screen
+  String? get effectiveVenue {
+    if (venue != null && venue!.trim().isNotEmpty) return venue!.trim();
+    final match = RegExp(r'📍\s*Venue:\s*([^\n\r]+)').firstMatch(body);
+    if (match != null) return match.group(1)?.trim();
+    return null;
+  }
+
+  /// Formatted time string (e.g. "10:00 AM")
+  String? get formattedTime {
+    if (announcementDate != null &&
+        (announcementDate!.hour != 0 || announcementDate!.minute != 0)) {
+      return DateFormat('hh:mm a').format(announcementDate!);
+    }
+    final match = RegExp(r'\b(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\b').firstMatch(body);
+    if (match != null) return match.group(1);
+    return null;
+  }
+
   bool isVisibleTo(dynamic user) {
     if (user == null) return false;
 
@@ -134,7 +155,13 @@ class AnnouncementModel {
           audience == 'nationalexecutives' ||
           audience == 'national_executives' ||
           audience == 'allexecutives' ||
-          audience == 'all_executives';
+          audience == 'all_executives' ||
+          (audience == 'all' &&
+              (effectiveTargetBranchId == null ||
+                  effectiveTargetBranchId.isEmpty) &&
+              (userBranchId == null ||
+                  userBranchId.isEmpty ||
+                  user.isNationalExecutive));
 
       if (!isExplicitNational) {
         // If user belongs to a branch, the meeting announcement MUST belong to their branch:
@@ -232,6 +259,7 @@ class AnnouncementModel {
     this.isScheduled = false,
     this.scheduledAt,
     this.announcementDate,
+    this.venue,
     this.attachments = const [],
     required this.createdBy,
     this.targetAudience = 'all',
@@ -260,6 +288,7 @@ class AnnouncementModel {
       announcementDate: data['announcementDate'] != null
           ? (data['announcementDate'] as Timestamp).toDate()
           : null,
+      venue: data['venue'] as String?,
       attachments: List<String>.from(data['attachments'] ?? []),
       createdBy: data['createdBy'] ?? '',
       targetAudience: data['targetAudience'] ?? 'all',
@@ -284,6 +313,7 @@ class AnnouncementModel {
       'announcementDate': announcementDate != null
           ? Timestamp.fromDate(announcementDate!)
           : null,
+      if (venue != null && venue!.isNotEmpty) 'venue': venue,
       'attachments': attachments,
       'createdBy': createdBy,
       'targetAudience': targetAudience,
@@ -304,6 +334,7 @@ class AnnouncementModel {
     bool? isScheduled,
     DateTime? scheduledAt,
     DateTime? announcementDate,
+    String? venue,
     List<String>? attachments,
     String? createdBy,
     String? targetAudience,
@@ -322,6 +353,7 @@ class AnnouncementModel {
       isScheduled: isScheduled ?? this.isScheduled,
       scheduledAt: scheduledAt ?? this.scheduledAt,
       announcementDate: announcementDate ?? this.announcementDate,
+      venue: venue ?? this.venue,
       attachments: attachments ?? this.attachments,
       createdBy: createdBy ?? this.createdBy,
       targetAudience: targetAudience ?? this.targetAudience,

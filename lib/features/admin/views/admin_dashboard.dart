@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
@@ -7,6 +8,7 @@ import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/admin/controllers/admin_provider.dart';
 import 'package:cls/features/admin/models/admin_dashboard_data.dart';
 import 'package:cls/features/admin/models/organization_model.dart';
+import 'package:cls/features/admin/views/admin_payments_screen.dart';
 import 'package:cls/features/admin/views/admin_users_screen.dart';
 import 'package:cls/features/admin/views/organization_management_screen.dart';
 import 'package:cls/features/admin/views/system_configuration_screen.dart';
@@ -147,6 +149,7 @@ class _AdminConsoleTab extends ConsumerWidget {
     final theme = Theme.of(context);
     final orgAsync = ref.watch(currentOrganizationProvider);
     final currentOrg = orgAsync.valueOrNull;
+    final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -185,6 +188,21 @@ class _AdminConsoleTab extends ConsumerWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      AdminMetricCard(
+                        label: 'Collections',
+                        value: currency.format(data.totalCollections),
+                        icon: Icons.account_balance_wallet,
+                        color: Colors.teal,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AdminPaymentsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 12),
                       AdminMetricCard(
                         label: 'Organizations',
                         value: data.totalOrganizations.toString(),
@@ -260,15 +278,30 @@ class _AdminConsoleTab extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           QuickActionCard(
-                            title: 'Branch Calls',
-                            subtitle: 'Calling directory',
-                            icon: Icons.phone_in_talk,
+                            title: 'Manage Members',
+                            subtitle: 'All members & orgs',
+                            icon: Icons.people_alt_outlined,
+                            color: Colors.blue,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AdminUsersScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 12),
+                          QuickActionCard(
+                            title: 'Payment Ledger',
+                            subtitle: 'Track all payments',
+                            icon: Icons.account_balance_wallet_outlined,
                             color: Colors.teal,
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const BranchDirectoryScreen(),
+                                  builder: (_) => const AdminPaymentsScreen(),
                                 ),
                               );
                             },
@@ -291,15 +324,15 @@ class _AdminConsoleTab extends ConsumerWidget {
                           ),
                           const SizedBox(width: 12),
                           QuickActionCard(
-                            title: 'Users',
-                            subtitle: 'Manage users & roles',
-                            icon: Icons.people,
-                            color: Colors.green,
+                            title: 'Branch Calls',
+                            subtitle: 'Calling directory',
+                            icon: Icons.phone_in_talk,
+                            color: Colors.deepPurple,
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const AdminUsersScreen(),
+                                  builder: (_) => const BranchDirectoryScreen(),
                                 ),
                               );
                             },

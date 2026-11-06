@@ -144,7 +144,7 @@ final allCalendarEventsProvider =
                 startDate: date,
                 endDate: date.add(const Duration(hours: 1)),
                 allDay: false,
-                location: null,
+                location: a.effectiveVenue,
                 createdBy: a.createdBy,
                 createdAt: a.createdAt,
                 updatedAt: a.updatedAt,

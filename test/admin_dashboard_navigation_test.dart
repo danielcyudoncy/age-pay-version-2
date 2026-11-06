@@ -11,6 +11,7 @@ import 'package:cls/features/admin/models/organization_model.dart';
 import 'package:cls/features/admin/views/admin_dashboard.dart';
 import 'package:cls/features/national/controllers/national_provider.dart';
 import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dart';
+import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/secretary/controllers/secretary_dashboard_provider.dart';
 
@@ -80,9 +81,13 @@ void main() {
               activeOrganizations: 2,
               pendingApprovals: 1,
               recentOrganizations: [],
+              totalCollections: 175000.0,
+              totalPaymentsCount: 12,
             ),
           ),
         ),
+        allPaymentsStreamProvider.overrideWith((ref) => Stream.value([])),
+        allUsersStreamProvider.overrideWith((ref) => Stream.value([])),
         // Member dashboard mock providers
         memberTotalPaidProvider('admin-123').overrideWithValue(const AsyncValue.data(50000.0)),
         memberTotalOutstandingProvider('admin-123').overrideWithValue(const AsyncValue.data(0.0)),
@@ -207,5 +212,31 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Member Affiliations'), findsOneWidget);
+  });
+
+  testWidgets('AdminDashboard displays Collections card, Manage Members, and Payment Ledger quick actions', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    await tester.pumpWidget(buildDashboardTestWidget());
+    await tester.pumpAndSettle();
+
+    // Verify Collections metric card
+    expect(find.text('Collections'), findsOneWidget);
+    expect(find.text('₦175,000'), findsOneWidget);
+
+    // Verify Quick Action Cards
+    expect(find.text('Manage Members'), findsOneWidget);
+    expect(find.text('All members & orgs'), findsOneWidget);
+    expect(find.text('Payment Ledger'), findsOneWidget);
+    expect(find.text('Track all payments'), findsOneWidget);
+
+    // Tap "Payment Ledger" Quick Action Card to navigate
+    await tester.tap(find.text('Payment Ledger'));
+    await tester.pumpAndSettle();
+
+    // Verify AdminPaymentsScreen appears
+    expect(find.text('Payment Ledger & Audits'), findsOneWidget);
   });
 }

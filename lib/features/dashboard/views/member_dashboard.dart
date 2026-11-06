@@ -18,6 +18,7 @@ import 'package:cls/features/meetings/controllers/meeting_provider.dart';
 import 'package:cls/features/meetings/models/meeting_rsvp_model.dart';
 import 'package:cls/features/meetings/controllers/meeting_rsvp_provider.dart';
 import 'package:cls/features/meetings/views/meeting_detail_screen.dart';
+import 'package:cls/features/meetings/views/meeting_list_screen.dart';
 import 'package:cls/features/reports/views/reports_screen.dart';
 import 'package:cls/features/expenses/views/expense_list_screen.dart';
 import 'package:cls/features/calling/views/branch_directory_screen.dart';
@@ -916,6 +917,18 @@ class _QuickActionsRow extends StatelessWidget {
                 );
               },
             ),
+            QuickActionButton(
+              icon: Icons.history_edu,
+              label: 'Meeting Minutes',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MeetingListScreen(initialTabIndex: 1),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ],
@@ -958,12 +971,68 @@ class _UpcomingMeetingCard extends ConsumerWidget {
             }).toList()
               ..sort((a, b) => a.meetingDate.compareTo(b.meetingDate));
 
+        final theme = Theme.of(context);
+
         if (upcomingMeetings.isEmpty) {
-          return const SizedBox.shrink();
+          return Card(
+            elevation: 1.5,
+            margin: const EdgeInsets.only(bottom: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: theme.colorScheme.primary.withValues(alpha: 0.15),
+              ),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MeetingListScreen(initialTabIndex: 1),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      child: Icon(Icons.history_edu, color: theme.colorScheme.primary),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Meeting Minutes & Archive',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Browse recorded proceedings, decisions, and files',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                  ],
+                ),
+              ),
+            ),
+          );
         }
 
         final meeting = upcomingMeetings.first;
-        final theme = Theme.of(context);
         final dateTimeFormat = DateFormat('EEE, MMM dd, yyyy \u2022 hh:mm a');
 
         final myRsvp = user != null
@@ -1194,6 +1263,53 @@ class _UpcomingMeetingCard extends ConsumerWidget {
                         ),
                       ],
                     ),
+                  const SizedBox(height: 10),
+                  const Divider(height: 1),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Meeting Proceedings & Agenda',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MeetingListScreen(initialTabIndex: 1),
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Minutes Archive',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(Icons.arrow_forward_ios, size: 10, color: theme.colorScheme.primary),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

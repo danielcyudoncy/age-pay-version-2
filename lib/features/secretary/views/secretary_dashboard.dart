@@ -28,6 +28,7 @@ import 'package:cls/features/settings/views/help_screen.dart';
 import 'package:cls/features/settings/views/about_screen.dart';
 import 'package:cls/features/reports/views/reports_screen.dart';
 import 'package:cls/features/notifications/views/notifications_screen.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
 import 'package:cls/features/expenses/widgets/expense_approval_queue_card.dart';
 import 'package:cls/features/calling/views/branch_directory_screen.dart';
 
@@ -602,14 +603,22 @@ class _MeetingsTab extends ConsumerWidget {
     final dateFormat = DateFormat('MMM dd, yyyy');
     final authState = ref.watch(authProvider);
     final user = authState.valueOrNull;
-    final canEdit =
-        user != null &&
-        (user.role == UserRole.secretary ||
-            user.role == UserRole.viceSecretary);
+    final activeScope = ref.watch(activeExecutiveScopeProvider);
+    final isNational = activeScope == ExecutiveScope.national &&
+        (user?.nationalRole != null || user?.role == UserRole.superAdmin);
+    final effectiveRole = (activeScope == ExecutiveScope.national && user?.nationalRole != null)
+        ? user!.nationalRole!
+        : (user?.role ?? UserRole.member);
+    final canEdit = user != null &&
+        (effectiveRole == UserRole.secretary ||
+            effectiveRole == UserRole.viceSecretary ||
+            effectiveRole == UserRole.president ||
+            effectiveRole == UserRole.vicePresident ||
+            user.role == UserRole.superAdmin);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Meetings'),
+        title: Text(isNational ? 'National Meetings & Minutes' : 'Branch Meetings & Minutes'),
         actions: [
           if (canEdit)
             IconButton(
@@ -790,20 +799,18 @@ class _MeetingsTab extends ConsumerWidget {
                             ],
                           ],
                         ),
-                        trailing: canEdit
-                            ? const Icon(Icons.arrow_forward_ios, size: 16)
-                            : null,
-                        onTap: canEdit
-                            ? () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        MeetingDetailScreen(meeting: meeting),
-                                  ),
-                                );
-                              }
-                            : null,
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MeetingDetailScreen(
+                                meeting: meeting,
+                                readOnly: !canEdit,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     );
                   }),

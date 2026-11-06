@@ -8,6 +8,9 @@ import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/secretary/controllers/announcement_provider.dart';
 import 'package:cls/features/secretary/models/announcement_model.dart';
 import 'package:cls/features/secretary/controllers/secretary_dashboard_provider.dart';
+import 'package:cls/features/notifications/controllers/notification_provider.dart';
+import 'package:cls/features/notifications/models/notification_model.dart';
+import '../widgets/announcement_detail_dialog.dart';
 
 class AnnouncementsScreen extends ConsumerStatefulWidget {
   const AnnouncementsScreen({super.key});
@@ -157,9 +160,11 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
     if (user == null) return;
     final titleController = TextEditingController();
     final bodyController = TextEditingController();
-    AnnouncementCategory selectedCategory = AnnouncementCategory.general;
+    final venueController = TextEditingController();
+    AnnouncementCategory selectedCategory = AnnouncementCategory.meeting;
     bool isPinned = false;
     DateTime announcementDate = date;
+    TimeOfDay announcementTime = const TimeOfDay(hour: 10, minute: 0);
 
     final isNationalOrAdmin = user.isNationalExecutive ||
         (user.role == UserRole.superAdmin &&
@@ -212,165 +217,324 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('New Announcement'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                InkWell(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: ctx,
-                      initialDate: announcementDate,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2030),
-                    );
-                    if (picked != null) setDialogState(() => announcementDate = picked);
-                  },
-                  child: InputDecorator(
-                    decoration: const InputDecoration(labelText: 'Date', border: OutlineInputBorder()),
-                    child: Text(DateFormat('MMM dd, yyyy').format(announcementDate)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Title')),
-                const SizedBox(height: 12),
-                TextField(controller: bodyController, decoration: const InputDecoration(labelText: 'Body'), maxLines: 4),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<AnnouncementCategory>(
-                  isExpanded: true,
-                  initialValue: selectedCategory,
-                  decoration: const InputDecoration(labelText: 'Category'),
-                  items: AnnouncementCategory.values
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c.name.replaceAll('_', ' ').toUpperCase(), overflow: TextOverflow.ellipsis)))
-                      .toList(),
-                  onChanged: (v) { if (v != null) setDialogState(() => selectedCategory = v); },
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  initialValue: selectedAudience,
-                  decoration: const InputDecoration(
-                    labelText: 'Target Audience',
-                    prefixIcon: Icon(Icons.people_alt_outlined),
-                  ),
-                  items: audienceItems,
-                  onChanged: (v) {
-                    if (v != null) {
-                      setDialogState(() => selectedAudience = v);
-                    }
-                  },
-                ),
-                if (isNationalOrAdmin &&
-                    (selectedAudience == 'branch' ||
-                        selectedAudience == 'branchExecutives')) ...[
-                  const SizedBox(height: 12),
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final branchesAsync =
-                          ref.watch(branchesStreamFamily(user.organizationId));
-                      return branchesAsync.when(
-                        data: (branches) {
-                          if (branches.isEmpty) {
-                            return const Text('No branches available');
-                          }
-                          final currentBranch = branches.any((b) => b.id == selectedBranchId)
-                              ? selectedBranchId
-                              : branches.first.id;
-                          if (selectedBranchId == null) {
-                            selectedBranchId = branches.first.id;
-                            selectedBranchName = branches.first.name;
-                          }
-                          return DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            initialValue: currentBranch,
-                            decoration: const InputDecoration(
-                              labelText: 'Target Branch',
-                              prefixIcon: Icon(Icons.location_city),
-                            ),
-                            items: branches
-                                .map(
-                                  (b) => DropdownMenuItem(
-                                    value: b.id,
-                                    child: Text(b.name, overflow: TextOverflow.ellipsis),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                final matched = branches.firstWhere((b) => b.id == val);
-                                setDialogState(() {
-                                  selectedBranchId = matched.id;
-                                  selectedBranchName = matched.name;
-                                });
-                              }
-                            },
-                          );
-                        },
-                        loading: () => const LinearProgressIndicator(),
-                        error: (_, _) => const Text('Error loading branches'),
-                      );
+        builder: (ctx, setDialogState) {
+          final isMeeting = selectedCategory == AnnouncementCategory.meeting;
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('New Announcement'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Category Dropdown
+                  DropdownButtonFormField<AnnouncementCategory>(
+                    isExpanded: true,
+                    initialValue: selectedCategory,
+                    decoration: const InputDecoration(
+                      labelText: 'Category *',
+                      prefixIcon: Icon(Icons.category_outlined, size: 20),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: AnnouncementCategory.values
+                        .map((c) => DropdownMenuItem(
+                              value: c,
+                              child: Text(
+                                c.name.replaceAll('_', ' ').toUpperCase(),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: (v) {
+                      if (v != null) setDialogState(() => selectedCategory = v);
                     },
                   ),
+                  const SizedBox(height: 12),
+
+                  // Title
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: isMeeting ? 'Meeting Title *' : 'Announcement Title *',
+                      hintText: isMeeting
+                          ? 'e.g. General Assembly & Welfare Review'
+                          : 'e.g. Important Notice',
+                      prefixIcon: Icon(isMeeting ? Icons.event_available : Icons.title, size: 20),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Side-by-side columns: Meeting Date & Meeting Time
+                  Row(
+                    children: [
+                      // Date column
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: ctx,
+                              initialDate: announcementDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                            );
+                            if (picked != null) {
+                              setDialogState(() {
+                                announcementDate = DateTime(
+                                  picked.year,
+                                  picked.month,
+                                  picked.day,
+                                  announcementTime.hour,
+                                  announcementTime.minute,
+                                );
+                              });
+                            }
+                          },
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: isMeeting ? 'Meeting Date *' : 'Date *',
+                              prefixIcon: const Icon(Icons.calendar_month, size: 18),
+                              border: const OutlineInputBorder(),
+                            ),
+                            child: Text(
+                              DateFormat('MMM dd, yyyy').format(announcementDate),
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Time column
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final picked = await showTimePicker(
+                              context: ctx,
+                              initialTime: announcementTime,
+                            );
+                            if (picked != null) {
+                              setDialogState(() {
+                                announcementTime = picked;
+                                announcementDate = DateTime(
+                                  announcementDate.year,
+                                  announcementDate.month,
+                                  announcementDate.day,
+                                  picked.hour,
+                                  picked.minute,
+                                );
+                              });
+                            }
+                          },
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: isMeeting ? 'Meeting Time *' : 'Time',
+                              prefixIcon: const Icon(Icons.access_time, size: 18),
+                              border: const OutlineInputBorder(),
+                            ),
+                            child: Text(
+                              announcementTime.format(ctx),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Column for Venue of the meeting
+                  TextField(
+                    controller: venueController,
+                    decoration: InputDecoration(
+                      labelText: isMeeting ? 'Meeting Venue *' : 'Venue / Location (Optional)',
+                      hintText: isMeeting
+                          ? 'e.g. Town Hall, Community Square, or Virtual Link'
+                          : 'Location if applicable',
+                      prefixIcon: const Icon(Icons.location_on_outlined, size: 20),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Space for Agenda, which is the body of the meeting
+                  TextField(
+                    controller: bodyController,
+                    minLines: 5,
+                    maxLines: 9,
+                    decoration: InputDecoration(
+                      labelText: isMeeting
+                          ? 'Meeting Agenda & Proceedings (Body) *'
+                          : 'Message Body *',
+                      hintText: isMeeting
+                          ? 'Enter meeting agenda points:\n1. Opening prayer & roll call\n2. Adoption of previous minutes\n3. Financial reports & levies\n4. Community project updates\n5. Any other business (A.O.B) & adjournment'
+                          : 'Enter message details...',
+                      alignLabelWithHint: true,
+                      prefixIcon: const Icon(Icons.format_list_numbered, size: 20),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Target Audience
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    initialValue: selectedAudience,
+                    decoration: const InputDecoration(
+                      labelText: 'Target Audience',
+                      prefixIcon: Icon(Icons.people_alt_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: audienceItems,
+                    onChanged: (v) {
+                      if (v != null) {
+                        setDialogState(() => selectedAudience = v);
+                      }
+                    },
+                  ),
+                  if (isNationalOrAdmin &&
+                      (selectedAudience == 'branch' ||
+                          selectedAudience == 'branchExecutives')) ...[
+                    const SizedBox(height: 12),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final branchesAsync =
+                            ref.watch(branchesStreamFamily(user.organizationId));
+                        return branchesAsync.when(
+                          data: (branches) {
+                            if (branches.isEmpty) {
+                              return const Text('No branches available');
+                            }
+                            final currentBranch = branches.any((b) => b.id == selectedBranchId)
+                                ? selectedBranchId
+                                : branches.first.id;
+                            if (selectedBranchId == null) {
+                              selectedBranchId = branches.first.id;
+                              selectedBranchName = branches.first.name;
+                            }
+                            return DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              initialValue: currentBranch,
+                              decoration: const InputDecoration(
+                                labelText: 'Target Branch',
+                                prefixIcon: Icon(Icons.location_city),
+                                border: OutlineInputBorder(),
+                              ),
+                              items: branches
+                                  .map(
+                                    (b) => DropdownMenuItem(
+                                      value: b.id,
+                                      child: Text(b.name, overflow: TextOverflow.ellipsis),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  final matched = branches.firstWhere((b) => b.id == val);
+                                  setDialogState(() {
+                                    selectedBranchId = matched.id;
+                                    selectedBranchName = matched.name;
+                                  });
+                                }
+                              },
+                            );
+                          },
+                          loading: () => const LinearProgressIndicator(),
+                          error: (_, _) => const Text('Error loading branches'),
+                        );
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    title: const Text('Pin Announcement'),
+                    value: isPinned,
+                    onChanged: (v) => setDialogState(() => isPinned = v),
+                  ),
                 ],
-                const SizedBox(height: 12),
-                SwitchListTile(title: const Text('Pin'), value: isPinned, onChanged: (v) => setDialogState(() => isPinned = v)),
-              ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () async {
-                if (titleController.text.trim().isEmpty) return;
-                try {
-                  final controller = ref.read(announcementControllerProvider);
-                  String? finalBranchId;
-                  String? finalBranchName;
-                  if (selectedAudience == 'branch' || selectedAudience == 'branchExecutives') {
-                    finalBranchId = selectedBranchId;
-                    finalBranchName = selectedBranchName;
-                  } else if (!isNationalOrAdmin) {
-                    finalBranchId = user.branchId;
-                    finalBranchName = user.branchName;
-                  }
-                  final announcement = AnnouncementModel(
-                    id: '',
-                    organizationId: user.organizationId,
-                    title: titleController.text.trim(),
-                    body: bodyController.text.trim(),
-                    category: selectedCategory,
-                    isPinned: isPinned,
-                    announcementDate: announcementDate,
-                    createdBy: user.uid,
-                    targetAudience: selectedAudience,
-                    targetBranchId: finalBranchId,
-                    targetBranchName: finalBranchName,
-                    createdAt: DateTime.now(),
-                    updatedAt: DateTime.now(),
-                  );
-                  await controller.createAnnouncement(announcement);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  ref.invalidate(announcementsStreamProvider(user.organizationId));
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Announcement created successfully')),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () async {
+                  if (titleController.text.trim().isEmpty) return;
+                  try {
+                    final controller = ref.read(announcementControllerProvider);
+                    String? finalBranchId;
+                    String? finalBranchName;
+                    if (selectedAudience == 'branch' || selectedAudience == 'branchExecutives') {
+                      finalBranchId = selectedBranchId;
+                      finalBranchName = selectedBranchName;
+                    } else if (!isNationalOrAdmin) {
+                      finalBranchId = user.branchId;
+                      finalBranchName = user.branchName;
+                    }
+
+                    final finalDateTime = DateTime(
+                      announcementDate.year,
+                      announcementDate.month,
+                      announcementDate.day,
+                      announcementTime.hour,
+                      announcementTime.minute,
                     );
-                  }
-                } catch (e) {
-                  if (ctx.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      SnackBar(backgroundColor: Colors.red, content: Text('Failed to create announcement: $e')),
+                    final venueText = venueController.text.trim();
+
+                    final announcement = AnnouncementModel(
+                      id: '',
+                      organizationId: user.organizationId,
+                      title: titleController.text.trim(),
+                      body: bodyController.text.trim(),
+                      venue: venueText.isNotEmpty ? venueText : null,
+                      category: selectedCategory,
+                      isPinned: isPinned,
+                      announcementDate: finalDateTime,
+                      createdBy: user.uid,
+                      targetAudience: selectedAudience,
+                      targetBranchId: finalBranchId,
+                      targetBranchName: finalBranchName,
+                      createdAt: DateTime.now(),
+                      updatedAt: DateTime.now(),
                     );
+                    final createdId = await controller.createAnnouncement(announcement);
+                    try {
+                      final notifType = selectedCategory == AnnouncementCategory.meeting
+                          ? 'meeting'
+                          : 'announcement';
+                      final notification = NotificationModel(
+                        id: 'ann_${DateTime.now().millisecondsSinceEpoch}',
+                        organizationId: user.organizationId,
+                        title: selectedCategory == AnnouncementCategory.meeting
+                            ? '📅 Meeting: ${announcement.title}'
+                            : '📢 ${announcement.title}',
+                        body: announcement.body,
+                        type: notifType,
+                        payload: createdId,
+                        targetBranchId: finalBranchId,
+                        targetRole: selectedAudience == 'executives' ? 'executives' : null,
+                        receivedAt: DateTime.now(),
+                      );
+                      await ref.read(notificationRepositoryProvider).sendNotification(notification);
+                    } catch (_) {}
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    ref.invalidate(announcementsStreamProvider(user.organizationId));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Announcement created successfully')),
+                      );
+                    }
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(backgroundColor: Colors.red, content: Text('Failed to create announcement: $e')),
+                      );
+                    }
                   }
-                }
-              },
-              child: const Text('Create'),
-            ),
-          ],
-        ),
+                },
+                child: const Text('Create'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -379,9 +543,13 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
     if (user == null) return;
     final titleController = TextEditingController(text: announcement.title);
     final bodyController = TextEditingController(text: announcement.body);
+    final venueController = TextEditingController(
+      text: announcement.venue ?? announcement.effectiveVenue ?? '',
+    );
     AnnouncementCategory selectedCategory = announcement.category;
     bool isPinned = announcement.isPinned;
     DateTime announcementDate = announcement.announcementDate ?? DateTime.now();
+    TimeOfDay announcementTime = TimeOfDay.fromDateTime(announcementDate);
 
     final isNationalOrAdmin = user.isNationalExecutive ||
         (user.role == UserRole.superAdmin &&
@@ -435,155 +603,300 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Edit Announcement'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                InkWell(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: ctx,
-                      initialDate: announcementDate,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2030),
-                    );
-                    if (picked != null) setDialogState(() => announcementDate = picked);
-                  },
-                  child: InputDecorator(
-                    decoration: const InputDecoration(labelText: 'Date', border: OutlineInputBorder()),
-                    child: Text(DateFormat('MMM dd, yyyy').format(announcementDate)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Title')),
-                const SizedBox(height: 12),
-                TextField(controller: bodyController, decoration: const InputDecoration(labelText: 'Body'), maxLines: 4),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<AnnouncementCategory>(
-                  isExpanded: true,
-                  initialValue: selectedCategory,
-                  decoration: const InputDecoration(labelText: 'Category'),
-                  items: AnnouncementCategory.values
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c.name.replaceAll('_', ' ').toUpperCase(), overflow: TextOverflow.ellipsis)))
-                      .toList(),
-                  onChanged: (v) { if (v != null) setDialogState(() => selectedCategory = v); },
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  initialValue: selectedAudience,
-                  decoration: const InputDecoration(
-                    labelText: 'Target Audience',
-                    prefixIcon: Icon(Icons.people_alt_outlined),
-                  ),
-                  items: audienceItems,
-                  onChanged: (v) {
-                    if (v != null) {
-                      setDialogState(() => selectedAudience = v);
-                    }
-                  },
-                ),
-                if (isNationalOrAdmin &&
-                    (selectedAudience == 'branch' ||
-                        selectedAudience == 'branchExecutives')) ...[
-                  const SizedBox(height: 12),
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final branchesAsync =
-                          ref.watch(branchesStreamFamily(user.organizationId));
-                      return branchesAsync.when(
-                        data: (branches) {
-                          if (branches.isEmpty) {
-                            return const Text('No branches available');
-                          }
-                          final currentBranch = branches.any((b) => b.id == selectedBranchId)
-                              ? selectedBranchId
-                              : branches.first.id;
-                          if (selectedBranchId == null) {
-                            selectedBranchId = branches.first.id;
-                            selectedBranchName = branches.first.name;
-                          }
-                          return DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            initialValue: currentBranch,
-                            decoration: const InputDecoration(
-                              labelText: 'Target Branch',
-                              prefixIcon: Icon(Icons.location_city),
-                            ),
-                            items: branches
-                                .map(
-                                  (b) => DropdownMenuItem(
-                                    value: b.id,
-                                    child: Text(b.name, overflow: TextOverflow.ellipsis),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                final matched = branches.firstWhere((b) => b.id == val);
-                                setDialogState(() {
-                                  selectedBranchId = matched.id;
-                                  selectedBranchName = matched.name;
-                                });
-                              }
-                            },
-                          );
-                        },
-                        loading: () => const LinearProgressIndicator(),
-                        error: (_, _) => const Text('Error loading branches'),
-                      );
+        builder: (ctx, setDialogState) {
+          final isMeeting = selectedCategory == AnnouncementCategory.meeting;
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Edit Announcement'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Category Dropdown
+                  DropdownButtonFormField<AnnouncementCategory>(
+                    isExpanded: true,
+                    initialValue: selectedCategory,
+                    decoration: const InputDecoration(
+                      labelText: 'Category *',
+                      prefixIcon: Icon(Icons.category_outlined, size: 20),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: AnnouncementCategory.values
+                        .map((c) => DropdownMenuItem(
+                              value: c,
+                              child: Text(
+                                c.name.replaceAll('_', ' ').toUpperCase(),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: (v) {
+                      if (v != null) setDialogState(() => selectedCategory = v);
                     },
                   ),
+                  const SizedBox(height: 12),
+
+                  // Title
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: isMeeting ? 'Meeting Title *' : 'Announcement Title *',
+                      hintText: isMeeting
+                          ? 'e.g. General Assembly & Welfare Review'
+                          : 'e.g. Important Notice',
+                      prefixIcon: Icon(isMeeting ? Icons.event_available : Icons.title, size: 20),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Side-by-side columns: Meeting Date & Meeting Time
+                  Row(
+                    children: [
+                      // Date column
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: ctx,
+                              initialDate: announcementDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                            );
+                            if (picked != null) {
+                              setDialogState(() {
+                                announcementDate = DateTime(
+                                  picked.year,
+                                  picked.month,
+                                  picked.day,
+                                  announcementTime.hour,
+                                  announcementTime.minute,
+                                );
+                              });
+                            }
+                          },
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: isMeeting ? 'Meeting Date *' : 'Date *',
+                              prefixIcon: const Icon(Icons.calendar_month, size: 18),
+                              border: const OutlineInputBorder(),
+                            ),
+                            child: Text(
+                              DateFormat('MMM dd, yyyy').format(announcementDate),
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Time column
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final picked = await showTimePicker(
+                              context: ctx,
+                              initialTime: announcementTime,
+                            );
+                            if (picked != null) {
+                              setDialogState(() {
+                                announcementTime = picked;
+                                announcementDate = DateTime(
+                                  announcementDate.year,
+                                  announcementDate.month,
+                                  announcementDate.day,
+                                  picked.hour,
+                                  picked.minute,
+                                );
+                              });
+                            }
+                          },
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: isMeeting ? 'Meeting Time *' : 'Time',
+                              prefixIcon: const Icon(Icons.access_time, size: 18),
+                              border: const OutlineInputBorder(),
+                            ),
+                            child: Text(
+                              announcementTime.format(ctx),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Column for Venue of the meeting
+                  TextField(
+                    controller: venueController,
+                    decoration: InputDecoration(
+                      labelText: isMeeting ? 'Meeting Venue *' : 'Venue / Location (Optional)',
+                      hintText: isMeeting
+                          ? 'e.g. Town Hall, Community Square, or Virtual Link'
+                          : 'Location if applicable',
+                      prefixIcon: const Icon(Icons.location_on_outlined, size: 20),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Space for Agenda, which is the body of the meeting
+                  TextField(
+                    controller: bodyController,
+                    minLines: 5,
+                    maxLines: 9,
+                    decoration: InputDecoration(
+                      labelText: isMeeting
+                          ? 'Meeting Agenda & Proceedings (Body) *'
+                          : 'Message Body *',
+                      hintText: isMeeting
+                          ? 'Enter meeting agenda points:\n1. Opening prayer & roll call\n2. Adoption of previous minutes\n3. Financial reports & levies\n4. Community project updates\n5. Any other business (A.O.B) & adjournment'
+                          : 'Enter message details...',
+                      alignLabelWithHint: true,
+                      prefixIcon: const Icon(Icons.format_list_numbered, size: 20),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Target Audience
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    initialValue: selectedAudience,
+                    decoration: const InputDecoration(
+                      labelText: 'Target Audience',
+                      prefixIcon: Icon(Icons.people_alt_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: audienceItems,
+                    onChanged: (v) {
+                      if (v != null) {
+                        setDialogState(() => selectedAudience = v);
+                      }
+                    },
+                  ),
+                  if (isNationalOrAdmin &&
+                      (selectedAudience == 'branch' ||
+                          selectedAudience == 'branchExecutives')) ...[
+                    const SizedBox(height: 12),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final branchesAsync =
+                            ref.watch(branchesStreamFamily(user.organizationId));
+                        return branchesAsync.when(
+                          data: (branches) {
+                            if (branches.isEmpty) {
+                              return const Text('No branches available');
+                            }
+                            final currentBranch = branches.any((b) => b.id == selectedBranchId)
+                                ? selectedBranchId
+                                : branches.first.id;
+                            if (selectedBranchId == null) {
+                              selectedBranchId = branches.first.id;
+                              selectedBranchName = branches.first.name;
+                            }
+                            return DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              initialValue: currentBranch,
+                              decoration: const InputDecoration(
+                                labelText: 'Target Branch',
+                                prefixIcon: Icon(Icons.location_city),
+                                border: OutlineInputBorder(),
+                              ),
+                              items: branches
+                                  .map(
+                                    (b) => DropdownMenuItem(
+                                      value: b.id,
+                                      child: Text(b.name, overflow: TextOverflow.ellipsis),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  final matched = branches.firstWhere((b) => b.id == val);
+                                  setDialogState(() {
+                                    selectedBranchId = matched.id;
+                                    selectedBranchName = matched.name;
+                                  });
+                                }
+                              },
+                            );
+                          },
+                          loading: () => const LinearProgressIndicator(),
+                          error: (_, _) => const Text('Error loading branches'),
+                        );
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    title: const Text('Pin Announcement'),
+                    value: isPinned,
+                    onChanged: (v) => setDialogState(() => isPinned = v),
+                  ),
                 ],
-                const SizedBox(height: 12),
-                SwitchListTile(title: const Text('Pin'), value: isPinned, onChanged: (v) => setDialogState(() => isPinned = v)),
-              ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () async {
-                if (titleController.text.trim().isEmpty) return;
-                try {
-                  final controller = ref.read(announcementControllerProvider);
-                  String? finalBranchId;
-                  String? finalBranchName;
-                  if (selectedAudience == 'branch' || selectedAudience == 'branchExecutives') {
-                    finalBranchId = selectedBranchId;
-                    finalBranchName = selectedBranchName;
-                  } else if (!isNationalOrAdmin) {
-                    finalBranchId = user.branchId;
-                    finalBranchName = user.branchName;
-                  }
-                  final updated = announcement.copyWith(
-                    title: titleController.text.trim(),
-                    body: bodyController.text.trim(),
-                    category: selectedCategory,
-                    isPinned: isPinned,
-                    announcementDate: announcementDate,
-                    targetAudience: selectedAudience,
-                    targetBranchId: finalBranchId,
-                    targetBranchName: finalBranchName,
-                  );
-                  await controller.updateAnnouncement(updated);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  ref.invalidate(announcementsStreamProvider(user.organizationId));
-                } catch (e) {
-                  if (ctx.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      SnackBar(backgroundColor: Colors.red, content: Text('Failed to update announcement: $e')),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () async {
+                  if (titleController.text.trim().isEmpty) return;
+                  try {
+                    final controller = ref.read(announcementControllerProvider);
+                    String? finalBranchId;
+                    String? finalBranchName;
+                    if (selectedAudience == 'branch' || selectedAudience == 'branchExecutives') {
+                      finalBranchId = selectedBranchId;
+                      finalBranchName = selectedBranchName;
+                    } else if (!isNationalOrAdmin) {
+                      finalBranchId = user.branchId;
+                      finalBranchName = user.branchName;
+                    }
+
+                    final finalDateTime = DateTime(
+                      announcementDate.year,
+                      announcementDate.month,
+                      announcementDate.day,
+                      announcementTime.hour,
+                      announcementTime.minute,
                     );
+                    final venueText = venueController.text.trim();
+
+                    final updated = announcement.copyWith(
+                      title: titleController.text.trim(),
+                      body: bodyController.text.trim(),
+                      venue: venueText.isNotEmpty ? venueText : null,
+                      category: selectedCategory,
+                      isPinned: isPinned,
+                      announcementDate: finalDateTime,
+                      targetAudience: selectedAudience,
+                      targetBranchId: finalBranchId,
+                      targetBranchName: finalBranchName,
+                    );
+                    await controller.updateAnnouncement(updated);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    ref.invalidate(announcementsStreamProvider(user.organizationId));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Announcement updated successfully')),
+                      );
+                    }
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(backgroundColor: Colors.red, content: Text('Failed to update announcement: $e')),
+                      );
+                    }
                   }
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -828,9 +1141,12 @@ class _AnnouncementCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => showAnnouncementDetailDialog(context, announcement),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header Row: Avatar, Title & Date, Pin, Edit & Delete buttons
@@ -864,13 +1180,46 @@ class _AnnouncementCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        dateFormat.format(date),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                      Row(
+                        children: [
+                          Icon(Icons.event_outlined, size: 13, color: theme.colorScheme.onSurfaceVariant),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              announcement.formattedTime != null
+                                  ? '${dateFormat.format(date)} \u2022 ${announcement.formattedTime}'
+                                  : dateFormat.format(date),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                      if (announcement.effectiveVenue != null &&
+                          announcement.effectiveVenue!.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on, size: 13, color: Colors.redAccent),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                announcement.effectiveVenue!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -895,6 +1244,23 @@ class _AnnouncementCard extends StatelessWidget {
             ),
             if (announcement.body.isNotEmpty) ...[
               const SizedBox(height: 10),
+              if (announcement.category == AnnouncementCategory.meeting) ...[
+                Row(
+                  children: [
+                    Icon(Icons.format_list_bulleted, size: 13, color: theme.colorScheme.primary),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Meeting Agenda & Proceedings:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+              ],
               Text(
                 announcement.body,
                 style: const TextStyle(fontSize: 14),
@@ -957,6 +1323,7 @@ class _AnnouncementCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

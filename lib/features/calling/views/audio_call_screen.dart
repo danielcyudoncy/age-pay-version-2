@@ -206,11 +206,19 @@ class _AudioCallScreenState extends ConsumerState<AudioCallScreen> {
           ],
         ),
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Column(
-              children: [
-                const Spacer(),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      child: Column(
+                        children: [
+                          const Spacer(),
 
                 // Active Avatar / Pulsing Calling Indicator
                 Stack(
@@ -433,5 +441,10 @@ class _AudioCallScreenState extends ConsumerState<AudioCallScreen> {
         ),
       ),
     );
-  }
+  },
+),
+),
+),
+);
+}
 }

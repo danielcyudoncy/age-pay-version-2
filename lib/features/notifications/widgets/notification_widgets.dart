@@ -28,6 +28,10 @@ class NotificationCard extends StatelessWidget {
         return (Icons.campaign, Theme.of(context).colorScheme.primary);
       case 'payment':
         return (Icons.payment, Colors.green);
+      case 'meeting':
+        return (Icons.event_available, Colors.indigo);
+      case 'announcement':
+        return (Icons.campaign, Colors.teal);
       case 'reminder':
         return (Icons.schedule, Colors.orange);
       case 'general':

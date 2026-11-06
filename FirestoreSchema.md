@@ -128,6 +128,15 @@ Example
   "accountName": "",
   "isBankVerified": true,
   "bankAccountType": "association",
+  "subscriptionTier": "starter | pro | national",
+  "subscriptionStatus": "active | pending_verification | expired",
+  "subscriptionExpiresAt": "Timestamp",
+  "licenseProofUrl": "https://storage.googleapis.com/.../receipt.jpg",
+  "licensePaymentReference": "ZEN-TRF-123456",
+  "licensePaymentBank": "First Bank of Nigeria",
+  "licensePaymentAmount": 35000,
+  "licenseSubmittedAt": "Timestamp",
+  "licenseVerifiedBy": "SuperAdmin email",
   "memberCount": 0,
   "createdAt": "",
   "updatedAt": ""
@@ -362,11 +371,20 @@ Example
 
 ```json
 {
-  "title": "",
-  "description": "",
-  "meetingDate": "",
-  "venue": "",
-  "status": "scheduled"
+  "id": "meeting123",
+  "organizationId": "org_abc",
+  "title": "Quarterly General Assembly",
+  "venue": "Aba Civic Centre",
+  "meetingDate": "Timestamp",
+  "minutesText": "Detailed proceedings, financial resolutions, and welfare allocations.",
+  "minutesFileUrl": "https://storage.googleapis.com/.../minutes_scan.pdf",
+  "minutesFileName": "minutes_scan.pdf",
+  "targetAudience": "all", // "all" | "executives"
+  "scope": "branch", // "branch" | "national"
+  "branchId": "branch_aba", // null for global national meetings
+  "createdBy": "secretary_uid",
+  "createdAt": "Timestamp",
+  "updatedAt": "Timestamp"
 }
 ```
 
@@ -690,9 +708,39 @@ surveys/
 
 polls/
 
-announcements/
-
 support_tickets/
+```
+
+---
+
+## Announcements Collection
+
+```text
+announcements/
+    {announcementId}
+```
+
+Example
+
+```json
+{
+  "id": "ann_123",
+  "organizationId": "org_abc",
+  "title": "General Assembly & Welfare Review",
+  "body": "1. Opening prayer & remarks\n2. Previous minutes adoption\n3. Financial reports & levies\n4. Civic project updates\n5. A.O.B & adjournment",
+  "category": "meeting", // "meeting" | "general" | "emergency" | "contribution" | "event" | "financialNotice"
+  "venue": "Aba Town Hall",
+  "announcementDate": "Timestamp", // contains both date and time (e.g. 10:00 AM)
+  "isPinned": false,
+  "isScheduled": false,
+  "scheduledAt": null,
+  "targetAudience": "branch", // "all" | "allExecutives" | "nationalExecutives" | "branch" | "branchExecutives"
+  "targetBranchId": "branch_aba",
+  "targetBranchName": "Aba Branch",
+  "createdBy": "sec_uid",
+  "createdAt": "Timestamp",
+  "updatedAt": "Timestamp"
+}
 ```
 
 ---
@@ -767,6 +815,10 @@ Controls platform-wide system operational configuration, gateway switches, and s
   "requirePresidentApproval": true,
   "maxUploadSizeBytes": 10485760,
   "sessionTimeoutMinutes": 60,
+  "companyBankName": "Zenith Bank",
+  "companyAccountName": "AgePay Technologies Ltd",
+  "companyAccountNumber": "1012345678",
+  "annualLicenseFee": 35000.0,
   "pushNotificationsEnabled": true,
   "smsNotificationsEnabled": true,
   "smsProvider": "Termii",

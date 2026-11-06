@@ -5,6 +5,8 @@ class AdminDashboardData {
   final int totalUsers;
   final int activeOrganizations;
   final int pendingApprovals;
+  final double totalCollections;
+  final int totalPaymentsCount;
   final List<OrganizationModel> recentOrganizations;
 
   const AdminDashboardData({
@@ -12,6 +14,8 @@ class AdminDashboardData {
     this.totalUsers = 0,
     this.activeOrganizations = 0,
     this.pendingApprovals = 0,
+    this.totalCollections = 0.0,
+    this.totalPaymentsCount = 0,
     this.recentOrganizations = const [],
   });
 }

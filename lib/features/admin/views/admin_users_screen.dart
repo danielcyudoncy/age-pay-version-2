@@ -1,11 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/enums.dart';
 import '../../auth/models/user_model.dart';
 import '../../calling/views/branch_directory_screen.dart';
+import '../../dashboard/controllers/treasurer_dashboard_provider.dart';
+import '../../members/models/member_model.dart';
+import '../../members/widgets/delete_member_dialog.dart';
 import '../controllers/admin_provider.dart';
+import '../models/organization_model.dart';
 import '../widgets/edit_user_role_dialog.dart';
 import '../widgets/reassign_branch_dialog.dart';
 import '../widgets/system_reset_dialog.dart';
@@ -26,6 +29,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   final _searchController = TextEditingController();
   String _query = '';
   UserRole? _selectedRoleFilter;
+  String? _selectedOrgFilter;
   String _statusFilter = 'All'; // 'All', 'Approved', 'Pending', 'Inactive'
 
   @override
@@ -46,6 +50,9 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final usersAsync = ref.watch(allUsersStreamProvider);
+    final orgsAsync = ref.watch(organizationsStreamProvider);
+    final orgs = orgsAsync.valueOrNull ?? <OrganizationModel>[];
+    final orgNameById = {for (final o in orgs) o.id: o.name};
 
     return Scaffold(
       appBar: AppBar(
@@ -73,7 +80,10 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
-            onPressed: () => ref.invalidate(allUsersStreamProvider),
+            onPressed: () {
+              ref.invalidate(allUsersStreamProvider);
+              ref.invalidate(organizationsStreamProvider);
+            },
           ),
         ],
       ),
@@ -85,7 +95,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search by name, email, phone, branch...',
+                hintText: 'Search by name, email, phone, branch, org...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _query.isNotEmpty
                     ? IconButton(
@@ -110,7 +120,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
             ),
           ),
 
-          // Horizontal Status Filter Chips
+          // Horizontal Status & Filter Chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -123,6 +133,40 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                 _buildStatusChip('Pending'),
                 const SizedBox(width: 8),
                 _buildStatusChip('Inactive'),
+                const SizedBox(width: 12),
+                // Org Filter Dropdown
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String?>(
+                      value: _selectedOrgFilter,
+                      hint: const Text('Filter by Org', style: TextStyle(fontSize: 12)),
+                      isDense: true,
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('All Organizations', style: TextStyle(fontSize: 12)),
+                        ),
+                        ...orgs.map((o) {
+                          return DropdownMenuItem(
+                            value: o.id,
+                            child: Text(o.name, style: const TextStyle(fontSize: 12)),
+                          );
+                        }),
+                      ],
+                      onChanged: (orgId) {
+                        setState(() => _selectedOrgFilter = orgId);
+                      },
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 12),
                 // Role Filter Dropdown
                 Container(
@@ -171,11 +215,18 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                   // Search query
                   if (_query.isNotEmpty) {
                     final q = _query;
+                    final orgName = orgNameById[u.organizationId]?.toLowerCase() ?? '';
                     final matches = u.displayName.toLowerCase().contains(q) ||
                         u.email.toLowerCase().contains(q) ||
                         u.phoneNumber.toLowerCase().contains(q) ||
-                        (u.branchName?.toLowerCase().contains(q) ?? false);
+                        (u.branchName?.toLowerCase().contains(q) ?? false) ||
+                        orgName.contains(q);
                     if (!matches) return false;
+                  }
+
+                  // Organization filter
+                  if (_selectedOrgFilter != null && _selectedOrgFilter!.isNotEmpty) {
+                    if (u.organizationId != _selectedOrgFilter) return false;
                   }
 
                   // Status filter
@@ -230,7 +281,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final user = filtered[index];
-                    return _buildUserCard(context, user);
+                    return _buildUserCard(context, user, orgNameById);
                   },
                 );
               },
@@ -265,7 +316,51 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     );
   }
 
-  Widget _buildUserCard(BuildContext context, UserModel user) {
+  Future<void> _confirmAndDeleteMember(BuildContext context, UserModel user) async {
+    try {
+      final memberRepo = ref.read(memberRepositoryProvider);
+      MemberModel? member = await memberRepo.getMemberByUserId(user.uid);
+      member ??= MemberModel(
+        id: user.uid,
+        userId: user.uid,
+        fullName: user.displayName.isNotEmpty ? user.displayName : user.email,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        dateOfBirth: DateTime(1990),
+        joinedDate: user.createdAt,
+        isActive: user.isActive,
+        status: user.status.name,
+        branchId: user.branchId,
+        branchName: user.branchName,
+        role: user.role,
+        nationalRole: user.nationalRole,
+        createdAt: user.createdAt,
+        updatedAt: DateTime.now(),
+      );
+
+      if (!context.mounted) return;
+      final result = await DeleteMemberDialog.show(context, member: member);
+      if (result == true) {
+        ref.invalidate(allUsersStreamProvider);
+        ref.invalidate(adminDashboardProvider);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Failed to manage member deletion: $e'),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildUserCard(
+    BuildContext context,
+    UserModel user,
+    Map<String, String> orgNameById,
+  ) {
     final theme = Theme.of(context);
     final userRepo = ref.read(adminUserRepositoryProvider);
     final isPending = user.status == AccountStatus.pendingApproval;
@@ -412,6 +507,16 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                   ),
                 ),
 
+                // Direct Delete Action (for non-superAdmin / non-primary owner)
+                if (user.email.toLowerCase().trim() != 'danielcyudoncy@gmail.com' &&
+                    user.role != UserRole.superAdmin)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                    tooltip: 'Delete / Deactivate Member',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => _confirmAndDeleteMember(context, user),
+                  ),
+
                 // More Actions Popup Menu
                 PopupMenuButton<String>(
                   icon: Icon(Icons.more_vert, color: theme.colorScheme.onSurfaceVariant),
@@ -506,59 +611,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                         }
                         break;
                       case 'delete_user':
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Delete User'),
-                            content: Text(
-                              'Are you sure you want to permanently delete "${user.displayName}" (${user.email})? This action cannot be undone.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('Cancel'),
-                              ),
-                              FilledButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                                child: const Text('Delete'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirm == true) {
-                          try {
-                            await FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(user.uid)
-                                .delete();
-                            final memberDocs = await FirebaseFirestore.instance
-                                .collection('members')
-                                .where('userId', isEqualTo: user.uid)
-                                .get();
-                            for (final doc in memberDocs.docs) {
-                              await doc.reference.delete();
-                            }
-                            ref.invalidate(allUsersStreamProvider);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: Colors.green,
-                                  content: Text('User "${user.displayName}" deleted successfully.'),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: Colors.red,
-                                  content: Text('Failed to delete user: $e'),
-                                ),
-                              );
-                            }
-                          }
-                        }
+                        await _confirmAndDeleteMember(context, user);
                         break;
                     }
                   },
@@ -652,7 +705,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                             SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'Delete User Account',
+                                'Delete / Archive Member',
                                 style: TextStyle(color: Colors.red),
                               ),
                             ),
@@ -666,7 +719,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
             ),
 
             const SizedBox(height: 10),
-            // Row 2: Contact info & branch details
+            // Row 2: Contact info, organization & branch details
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -734,20 +787,21 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                         child: Row(
                           children: [
                             Icon(
-                              Icons.location_city_outlined,
+                              Icons.business_outlined,
                               size: 13,
-                              color: theme.colorScheme.onSurfaceVariant,
+                              color: theme.colorScheme.primary,
                             ),
                             const SizedBox(width: 5),
                             Expanded(
                               child: Text(
-                                user.branchName != null && user.branchName!.isNotEmpty
-                                    ? user.branchName!
-                                    : 'No branch assigned',
+                                orgNameById[user.organizationId] ??
+                                    (user.organizationId.isNotEmpty
+                                        ? user.organizationId
+                                        : 'No Organization'),
                                 style: TextStyle(
                                   fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.primary,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -773,6 +827,30 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                             ),
                           ),
                         ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_city_outlined,
+                        size: 13,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          user.branchName != null && user.branchName!.isNotEmpty
+                              ? user.branchName!
+                              : 'No branch assigned',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),

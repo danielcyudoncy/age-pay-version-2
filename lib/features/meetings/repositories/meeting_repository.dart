@@ -32,6 +32,16 @@ class MeetingRepository {
         .handleError((_) => <MeetingModel>[]);
   }
 
+  Future<MeetingModel?> getMeetingById(String id) async {
+    try {
+      final doc = await _collection.doc(id).get();
+      if (!doc.exists) return null;
+      return MeetingModel.fromFirestore(doc);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<String> createMeeting({
     required String title,
     String? venue,

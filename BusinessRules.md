@@ -49,6 +49,16 @@ An organization must contain:
 * Administrator
 * Subscription Plan
 
+### Onboarding Unregistered / Traditional Organizations (No CAC Credentials)
+
+* CAC Registration Number is strictly **optional**.
+* Traditional community age-grades, clans, and cultural associations lacking formal CAC incorporation can onboard legitimately using traditional and community endorsements:
+  - Town Union affiliation name.
+  - Traditional ruler, elder, or community executive endorsement contact.
+  - Founder / Admin verified identity credential (NIN or BVN).
+* Organizations onboarding without CAC credentials enter a pending state and are manually reviewed and verified by the Platform SuperAdmin via the Organization Verification module.
+* Once verified, the organization receives full operational status without requiring formal corporate registry paperwork.
+
 Every organization receives a unique **organizationId**.
 
 ---
@@ -99,6 +109,28 @@ To eliminate collusion, unauthorized age-grade creation, and fund siphoning:
 * Personal bank accounts are strictly prohibited from receiving association dues.
 * Receiving bank accounts must be in the name of the Age Grade or contain corporate/association keywords.
 * Account names must be verified via NUBAN lookup and matched against the organization entity before being activated.
+
+---
+
+## Annual Software License & Direct Bank Transfer Verification
+
+AgePay operates on a B2B organizational subscription model:
+
+### 1. Billed to the Association (Not Individual Members)
+* Individual members download and use AgePay freely without monthly subscription paywalls.
+* Subscriptions are billed per organization/branch as an annual administrative license.
+
+### 2. Traditional Corporate Bank Transfer Flow
+* To match the traditional operations of community associations that do not use debit cards:
+  * Associations view AgePay's official corporate receiving bank details (Zenith Bank, AgePay Technologies Ltd, 1012345678) in the app's settings.
+  * Associations transfer the annual fee (default ₦35,000) directly from their association bank account.
+  * The Treasurer or President uploads their mobile transfer slip or bank teller image in the app with the transaction reference.
+
+### 3. SuperAdmin Verification & 365-Day Unlock
+* Submitted renewal slips transition the organization to `subscriptionStatus: pending_verification`.
+* Platform SuperAdmins review the uploaded receipt in the Admin Dashboard and verify payment credit.
+* Upon approval, `subscriptionExpiresAt` is extended by 365 days (from the current date or from the previous future expiration date).
+* If the transfer proof cannot be verified, the SuperAdmin rejects the submission with a clear reason, allowing the organization to re-upload.
 
 ---
 
@@ -446,12 +478,30 @@ Meetings include:
 * Title
 * Date
 * Venue
-* Agenda
-* Organizer
+* Agenda / Minutes Text
+* Uploaded Minutes Scan / PDF
+* Organizer (createdBy)
+* Target Audience ('all' vs 'executives')
+* Scope ('branch' vs 'national')
+* BranchId
 
 Attendance is recorded for each member.
 
-Meeting minutes may be attached after completion.
+### Meeting Minutes & Archive Architecture
+
+* **Two Unified Tabs**:
+  1. **Upcoming Meetings**: Displays scheduled sessions with RSVP buttons, live RSVP counters, venue badges, and scoping indicators.
+  2. **Past Meetings & Minutes Archive**: Searchable archive of completed meetings with secretarial status indicators (`Minutes Ready` vs `Pending Minutes`), minute snippets, and `Doc Attached` tags.
+* **Secretarial Publishing Workflow**:
+  - The Secretary records detailed minute notes and can attach physical scans/PDFs.
+  - Tapping **"Publish Minutes & Notify Members"** atomically saves the minutes, generates an official broadcast announcement (`category: meeting`), and triggers high-priority in-app notifications.
+  - Tapping **"Save Details (Without Notifying)"** allows secretarial drafting and updates without triggering notifications.
+* **Dual-Platform Scoping**:
+  - **National Secretary**: In the National Platform, schedules and documents National Assembly & Executive meetings (`scope == 'national'`). Broadcast announcements and notifications are delivered organization-wide (or to National Executives).
+  - **Branch Secretary**: In the Branch Platform, schedules and documents Branch Assembly meetings (`scope == 'branch'`). Broadcast announcements and notifications are strictly confined to that specific branch.
+* **Member Access**:
+  - Ordinary members have immediate read-only access to published minutes and downloadable document scans through the Member Dashboard ("Meeting Minutes" Quick Action button and interactive Meeting Minutes card).
+  - Ordinary members cannot view executive-only meeting minutes.
 
 ---
 
@@ -641,6 +691,8 @@ National account holders (National President, National Secretary, National Treas
    * National account holders cannot view branch announcements unless they are directly registered members of that branch.
    * SuperAdmin users belonging to a branch are scoped to their branch on the Member Dashboard and will not see other branches' meetings or meeting broadcasts.
    * Legacy meeting records or announcements lacking explicit target branch identifiers default to the creator's branch boundary and will not leak to members of different branches. Global broadcasts require explicit national scope (`scope == 'national'` with `targetAudience == 'all'`).
+   * **Meeting Announcement Structure**: Meeting announcements must include dedicated **Meeting Date & Time** columns, a dedicated **Meeting Venue** column, and a dedicated **Meeting Agenda (Body)** space specifying the order of proceedings.
+   * **Announcement & Notification Reader Accessibility**: Every announcement card (across member, executive, and search screens) and in-app notification inbox card is interactive (`InkWell`/tap response). Tapping opens a full modal reader displaying the complete title, metadata (date, time, venue, category, target audience), and scrollable unabridged body/agenda without text cutoffs, alongside contextual action deep-links (e.g. "View Meeting & RSVP", "Pay Now", "View Announcements").
 3. **Member Directory & National Assembly Roll**:
    * Branch members are NOT visible to national account holders unless they are explicitly **"Enrolled in national branch"** (`isEnrolledInNational == true`) by their Branch President.
    * Branch Presidents (and SuperAdmins) have exclusive authority to enroll or unenroll branch members in the national tier with an audit trail (`enrolledInNationalAt`, `enrolledInNationalBy`).

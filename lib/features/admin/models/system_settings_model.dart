@@ -15,6 +15,12 @@ class SystemSettingsModel {
   final int maxUploadSizeBytes;
   final int sessionTimeoutMinutes;
 
+  // Platform Subscription & Corporate Receiving Bank
+  final String companyBankName;
+  final String companyAccountName;
+  final String companyAccountNumber;
+  final double annualLicenseFee;
+
   // Communication & Notifications
   final bool pushNotificationsEnabled;
   final bool smsNotificationsEnabled;
@@ -38,6 +44,10 @@ class SystemSettingsModel {
     this.requirePresidentApproval = true,
     this.maxUploadSizeBytes = 10485760, // 10MB
     this.sessionTimeoutMinutes = 60,
+    this.companyBankName = 'Zenith Bank',
+    this.companyAccountName = 'AgePay Technologies Ltd',
+    this.companyAccountNumber = '1012345678',
+    this.annualLicenseFee = 35000.0,
     this.pushNotificationsEnabled = true,
     this.smsNotificationsEnabled = true,
     this.smsProvider = 'Termii',
@@ -66,6 +76,11 @@ class SystemSettingsModel {
       requirePresidentApproval: data['requirePresidentApproval'] ?? true,
       maxUploadSizeBytes: (data['maxUploadSizeBytes'] as int?) ?? 10485760,
       sessionTimeoutMinutes: (data['sessionTimeoutMinutes'] as int?) ?? 60,
+      companyBankName: data['companyBankName'] ?? 'Zenith Bank',
+      companyAccountName: data['companyAccountName'] ?? 'AgePay Technologies Ltd',
+      companyAccountNumber: data['companyAccountNumber'] ?? '1012345678',
+      annualLicenseFee:
+          (data['annualLicenseFee'] as num?)?.toDouble() ?? 35000.0,
       pushNotificationsEnabled: data['pushNotificationsEnabled'] ?? true,
       smsNotificationsEnabled: data['smsNotificationsEnabled'] ?? true,
       smsProvider: data['smsProvider'] ?? 'Termii',
@@ -95,6 +110,10 @@ class SystemSettingsModel {
       'requirePresidentApproval': requirePresidentApproval,
       'maxUploadSizeBytes': maxUploadSizeBytes,
       'sessionTimeoutMinutes': sessionTimeoutMinutes,
+      'companyBankName': companyBankName,
+      'companyAccountName': companyAccountName,
+      'companyAccountNumber': companyAccountNumber,
+      'annualLicenseFee': annualLicenseFee,
       'pushNotificationsEnabled': pushNotificationsEnabled,
       'smsNotificationsEnabled': smsNotificationsEnabled,
       'smsProvider': smsProvider,
@@ -123,6 +142,10 @@ class SystemSettingsModel {
     bool? requirePresidentApproval,
     int? maxUploadSizeBytes,
     int? sessionTimeoutMinutes,
+    String? companyBankName,
+    String? companyAccountName,
+    String? companyAccountNumber,
+    double? annualLicenseFee,
     bool? pushNotificationsEnabled,
     bool? smsNotificationsEnabled,
     String? smsProvider,
@@ -146,6 +169,10 @@ class SystemSettingsModel {
       maxUploadSizeBytes: maxUploadSizeBytes ?? this.maxUploadSizeBytes,
       sessionTimeoutMinutes:
           sessionTimeoutMinutes ?? this.sessionTimeoutMinutes,
+      companyBankName: companyBankName ?? this.companyBankName,
+      companyAccountName: companyAccountName ?? this.companyAccountName,
+      companyAccountNumber: companyAccountNumber ?? this.companyAccountNumber,
+      annualLicenseFee: annualLicenseFee ?? this.annualLicenseFee,
       pushNotificationsEnabled:
           pushNotificationsEnabled ?? this.pushNotificationsEnabled,
       smsNotificationsEnabled:

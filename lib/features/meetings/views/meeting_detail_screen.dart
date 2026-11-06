@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cls/core/constants/enums.dart';
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/meetings/controllers/meeting_provider.dart';
 import 'package:cls/features/meetings/models/meeting_model.dart';
@@ -109,7 +110,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
     }
   }
 
-  Future<void> _save() async {
+  Future<void> _save({bool publishAndNotify = false}) async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDate == null) {
       setState(() => _error = 'Please select the meeting date & time');
@@ -118,6 +119,18 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) {
       setState(() => _error = 'Session expired. Please sign in again.');
+      return;
+    }
+
+    final rawMinutes = _minutesController.text.trim();
+    final hasMinutesContent = rawMinutes.isNotEmpty ||
+        _pickedFile != null ||
+        (widget.meeting?.minutesFileUrl != null && !_removeFile);
+
+    if (publishAndNotify && !hasMinutesContent) {
+      setState(() {
+        _error = 'Please enter minutes or attach a file before publishing to members.';
+      });
       return;
     }
 
@@ -130,9 +143,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
       final controller = ref.read(meetingControllerProvider);
       final title = _titleController.text.trim();
       final venue = _venueController.text.trim();
-      final minutesText = _minutesController.text.trim().isEmpty
-          ? null
-          : _minutesController.text.trim();
+      final minutesText = rawMinutes.isEmpty ? null : rawMinutes;
 
       String? minutesFileUrl = _removeFile
           ? null
@@ -239,6 +250,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
           category: AnnouncementCategory.meeting,
           isPinned: true,
           announcementDate: _selectedDate!,
+          venue: venue,
           createdBy: user.uid,
           targetAudience: announcementAudience,
           targetBranchId: isNational ? null : user.branchId,
@@ -261,6 +273,71 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
               : 'Meeting Scheduled: $title',
           body: '$formattedDateTime at $venue',
           type: 'meeting',
+          payload: id,
+          targetBranchId: isNational ? null : user.branchId,
+          receivedAt: DateTime.now(),
+        );
+
+        try {
+          final notificationRepo = ref.read(notificationRepositoryProvider);
+          await notificationRepo.sendNotification(notification);
+        } catch (_) {}
+
+        final notificationNotifier = ref.read(
+          notificationListProvider.notifier,
+        );
+        notificationNotifier.addNotification(notification);
+      } else if (publishAndNotify) {
+        final formattedDateTime = DateFormat(
+          'EEEE, MMM dd, yyyy \u2022 hh:mm a',
+        ).format(_selectedDate!);
+
+        final isExecutiveOnly = _targetAudience == 'executives';
+        final announcementAudience = isExecutiveOnly
+            ? (isNational ? 'nationalexecutives' : 'branchexecutives')
+            : (isNational ? 'all' : 'branch');
+
+        // 1. Post to Announcements for Minutes Published
+        final announcement = AnnouncementModel(
+          id: '',
+          organizationId: orgId,
+          title: isExecutiveOnly
+              ? '🏛️ Executive Minutes Published: $title'
+              : '📝 Meeting Minutes Published: $title',
+          body: isExecutiveOnly
+              ? 'The official minutes and deliberations for the executive meeting held on $formattedDateTime have been recorded and published.\n\n'
+                  '📍 Venue: ${venue.isNotEmpty ? venue : 'Executive Secretariat'}\n\n'
+                  'Executive officers can now read the recorded proceedings, resolutions, and view attached files in the Meeting Minutes archive.'
+              : 'The official minutes and proceedings for the meeting held on $formattedDateTime have been recorded and published by the Secretariat.\n\n'
+                  '📍 Venue: ${venue.isNotEmpty ? venue : 'General Meeting'}\n\n'
+                  'All members can now view the recorded minutes, attendance records, and download attached documents directly from the Meeting Minutes archive.',
+          category: AnnouncementCategory.meeting,
+          isPinned: true,
+          announcementDate: DateTime.now(),
+          venue: venue.isNotEmpty ? venue : null,
+          createdBy: user.uid,
+          targetAudience: announcementAudience,
+          targetBranchId: isNational ? null : user.branchId,
+          targetBranchName: isNational ? null : user.branchName,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        final announcementRepo = ref.read(announcementRepositoryProvider);
+        await announcementRepo.createAnnouncement(announcement);
+        ref.invalidate(announcementsStreamProvider(orgId));
+
+        // 2. Add to in-app Notifications inbox
+        final notification = NotificationModel(
+          id: 'min_${DateTime.now().millisecondsSinceEpoch}',
+          organizationId: orgId,
+          targetRole: isExecutiveOnly ? 'executives' : null,
+          title: isExecutiveOnly
+              ? 'Executive Minutes Published: $title'
+              : 'Meeting Minutes Published: $title',
+          body: 'Official minutes for "$title" held on $formattedDateTime are now available.',
+          type: 'meeting',
+          payload: id,
           targetBranchId: isNational ? null : user.branchId,
           receivedAt: DateTime.now(),
         );
@@ -284,7 +361,9 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
             content: Text(
               _isNew
                   ? 'Meeting scheduled and broadcast to members!'
-                  : 'Meeting updated successfully',
+                  : (publishAndNotify
+                      ? 'Minutes published and broadcast to all members!'
+                      : 'Meeting details updated successfully'),
             ),
             backgroundColor: Colors.green,
           ),
@@ -506,6 +585,51 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                 MeetingExcusesSection(meetingId: widget.meeting!.id),
               ],
               const SizedBox(height: 24),
+              if (widget.readOnly) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: (widget.meeting?.hasMinutes == true)
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.amber.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: (widget.meeting?.hasMinutes == true)
+                          ? Colors.green.withValues(alpha: 0.3)
+                          : Colors.amber.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        (widget.meeting?.hasMinutes == true)
+                            ? Icons.check_circle_outline
+                            : Icons.pending_actions,
+                        color: (widget.meeting?.hasMinutes == true)
+                            ? Colors.green.shade700
+                            : Colors.amber.shade800,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          (widget.meeting?.hasMinutes == true)
+                              ? 'Official Meeting Minutes Documented & Verified'
+                              : 'Meeting Minutes Pending Documentation by the Secretariat',
+                          style: TextStyle(
+                            color: (widget.meeting?.hasMinutes == true)
+                                ? Colors.green.shade800
+                                : Colors.amber.shade900,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               Text(
                 'Meeting Minutes / Agenda',
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -514,6 +638,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
               ),
               const SizedBox(height: 8),
               TextFormField(
+                key: const Key('meeting_minutes_field'),
                 controller: _minutesController,
                 readOnly: widget.readOnly,
                 maxLines: 8,
@@ -552,41 +677,72 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                 onUndoRemove: () => setState(() => _removeFile = false),
               ),
               if (!widget.readOnly) ...[
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: _isSaving ? null : _save,
-                    child: _isSaving
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(_isNew ? Icons.send : Icons.save),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    _isNew
-                                        ? 'Schedule & Notify Members'
-                                        : 'Save Minutes',
-                                    style: const TextStyle(fontSize: 16),
-                                  ),
-                                ),
+                const SizedBox(height: 20),
+                if (_isNew)
+                  SizedBox(
+                    height: 48,
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.brandGreen,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: _isSaving ? null : () => _save(),
+                      icon: _isSaving
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
                               ),
-                            ],
-                          ),
+                            )
+                          : const Icon(Icons.send),
+                      label: Text(
+                        _isSaving
+                            ? 'Scheduling...'
+                            : 'Schedule & Notify Members',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  )
+                else ...[
+                  SizedBox(
+                    height: 48,
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.brandGreen,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: _isSaving ? null : () => _save(publishAndNotify: true),
+                      icon: _isSaving
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.campaign_outlined),
+                      label: Text(
+                        _isSaving ? 'Publishing...' : 'Publish Minutes & Notify Members',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 46,
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _isSaving ? null : () => _save(publishAndNotify: false),
+                      icon: const Icon(Icons.save_outlined),
+                      label: const Text('Save Details (Without Notifying)'),
+                    ),
+                  ),
+                ],
               ],
               SizedBox(height: MediaQuery.paddingOf(context).bottom + 24),
             ],

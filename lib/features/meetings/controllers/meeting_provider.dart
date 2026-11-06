@@ -55,6 +55,10 @@ class MeetingController {
 
   MeetingController(this._repository);
 
+  Future<MeetingModel?> getMeetingById(String id) {
+    return _repository.getMeetingById(id);
+  }
+
   Future<String> createMeeting({
     required String title,
     String? venue,

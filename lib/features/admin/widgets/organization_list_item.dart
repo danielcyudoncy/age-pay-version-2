@@ -4,6 +4,7 @@ import 'package:cls/features/admin/controllers/admin_provider.dart';
 import 'package:cls/features/admin/models/branch_model.dart';
 import 'package:cls/features/admin/models/organization_model.dart';
 import 'organization_verification_dialog.dart';
+import 'license_verification_dialog.dart';
 
 class OrganizationListItem extends ConsumerWidget {
   final OrganizationModel organization;
@@ -86,6 +87,7 @@ class OrganizationListItem extends ConsumerWidget {
                         children: [
                           _buildStatusPill(context, isActive: organization.isActive),
                           _buildVerificationPill(context, status: organization.verificationStatus),
+                          _buildLicensePill(context, organization: organization),
                           _buildJoinPill(context, openForJoin: organization.openForJoin),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -128,6 +130,12 @@ class OrganizationListItem extends ConsumerWidget {
                           organization: organization,
                         );
                         break;
+                      case 'license':
+                        LicenseVerificationDialog.show(
+                          context,
+                          organization: organization,
+                        );
+                        break;
                       case 'edit':
                         onEdit();
                         break;
@@ -150,6 +158,16 @@ class OrganizationListItem extends ConsumerWidget {
                           Icon(Icons.shield_outlined, size: 20, color: Colors.blue),
                           SizedBox(width: 12),
                           Expanded(child: Text('Review & Verify')),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'license',
+                      child: Row(
+                        children: [
+                          Icon(Icons.receipt_long_rounded, size: 20, color: Colors.amber),
+                          SizedBox(width: 12),
+                          Expanded(child: Text('Review License Payment')),
                         ],
                       ),
                     ),
@@ -231,6 +249,55 @@ class OrganizationListItem extends ConsumerWidget {
                 ),
               ],
             ),
+
+            if (organization.isLicensePendingVerification) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.amber.shade300),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.hourglass_top_rounded,
+                      color: Colors.amber.shade900,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Annual license renewal payment pending review',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF7F4C00),
+                        ),
+                      ),
+                    ),
+                    FilledButton.tonal(
+                      onPressed: () => LicenseVerificationDialog.show(
+                        context,
+                        organization: organization,
+                      ),
+                      style: FilledButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        backgroundColor: Colors.amber.shade200,
+                      ),
+                      child: const Text(
+                        'Review',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             // Tier 2: Metadata / Contact details
             if (organization.contactEmail.isNotEmpty ||
@@ -610,6 +677,58 @@ class OrganizationListItem extends ConsumerWidget {
               color: isVerified
                   ? Colors.green.shade800
                   : (isRejected ? Colors.red.shade800 : Colors.amber.shade900),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLicensePill(
+    BuildContext context, {
+    required OrganizationModel organization,
+  }) {
+    final isPending = organization.isLicensePendingVerification;
+    final isActive = organization.isLicenseActive;
+    final color = isPending
+        ? Colors.amber
+        : (isActive ? Colors.teal : Colors.red);
+    final label = isPending
+        ? 'License: Pending'
+        : (isActive
+            ? (organization.subscriptionExpiresAt != null
+                ? 'License: ${organization.licenseDaysRemaining}d'
+                : 'License: Active')
+            : 'License: Expired');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isPending
+                ? Icons.hourglass_top
+                : (isActive ? Icons.verified_user : Icons.warning_amber),
+            size: 11,
+            color: isPending
+                ? Colors.amber.shade900
+                : (isActive ? Colors.teal.shade800 : Colors.red.shade800),
+          ),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: isPending
+                  ? Colors.amber.shade900
+                  : (isActive ? Colors.teal.shade800 : Colors.red.shade800),
             ),
           ),
         ],
