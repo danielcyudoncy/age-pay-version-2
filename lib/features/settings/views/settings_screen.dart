@@ -8,6 +8,7 @@ import '../../admin/widgets/edit_organization_bank_dialog.dart';
 import '../../admin/widgets/system_reset_dialog.dart';
 import '../../../core/constants/enums.dart';
 import '../controllers/settings_provider.dart';
+import 'annual_license_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -31,6 +32,21 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           _SectionHeader(title: 'Organization Account', icon: Icons.account_balance_outlined),
           const _OrganizationBankCard(),
+          if (user != null &&
+              (user.role == UserRole.treasurer ||
+                  user.role == UserRole.viceTreasurer ||
+                  user.role == UserRole.president ||
+                  user.role == UserRole.vicePresident ||
+                  user.role == UserRole.superAdmin ||
+                  user.role == UserRole.financialSecretary ||
+                  user.role == UserRole.secretary)) ...[
+            const SizedBox(height: 20),
+            _SectionHeader(
+              title: 'Annual Software License',
+              icon: Icons.verified_user_outlined,
+            ),
+            const _AnnualLicenseCard(),
+          ],
           const SizedBox(height: 20),
           _SectionHeader(title: 'Appearance', icon: Icons.palette_outlined),
           Card(
@@ -531,6 +547,160 @@ class _OrganizationBankCard extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AnnualLicenseCard extends ConsumerWidget {
+  const _AnnualLicenseCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final orgAsync = ref.watch(currentOrganizationProvider);
+
+    return orgAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (error, stackTrace) => const SizedBox.shrink(),
+      data: (org) {
+        if (org == null) return const SizedBox.shrink();
+
+        final isPending = org.isLicensePendingVerification;
+        final isActive = org.isLicenseActive;
+        final days = org.licenseDaysRemaining;
+
+        Color statusColor;
+        String statusLabel;
+        IconData statusIcon;
+
+        if (isPending) {
+          statusColor = Colors.amber.shade700;
+          statusLabel = 'Proof Under Review';
+          statusIcon = Icons.hourglass_top_rounded;
+        } else if (isActive) {
+          statusColor = Colors.green.shade700;
+          statusLabel = org.subscriptionExpiresAt != null
+              ? 'Active ($days days)'
+              : 'Active (Permanent)';
+          statusIcon = Icons.verified_user_rounded;
+        } else {
+          statusColor = Colors.red.shade700;
+          statusLabel = 'Expired';
+          statusIcon = Icons.warning_amber_rounded;
+        }
+
+        return Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: statusColor.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(statusIcon, color: statusColor, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'AgePay Platform License',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Annual software license for this association',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: statusColor.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: statusColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        isPending
+                            ? 'Your renewal receipt was submitted and is pending SuperAdmin review. Premium features remain accessible.'
+                            : isActive
+                                ? 'Your association software license is active. Tap below to view AgePay company bank details or submit next renewal.'
+                                : 'Your annual license has expired. Transfer the renewal fee directly into AgePay Zenith Bank account to renew.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonalIcon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AnnualLicenseScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.payment, size: 18),
+                    label: Text(
+                      isPending
+                          ? 'View Submitted Payment'
+                          : 'Manage & Renew License',
+                    ),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

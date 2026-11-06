@@ -11,6 +11,8 @@ import '../repositories/system_settings_repository.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../auth/models/user_model.dart';
 import '../../../core/constants/enums.dart';
+import '../../dashboard/controllers/treasurer_dashboard_provider.dart'
+    show allPaymentsStreamProvider;
 
 final branchRepositoryProvider = Provider<BranchRepository>((ref) {
   return BranchRepository();
@@ -90,10 +92,19 @@ final adminDashboardProvider =
   final totalOrgsAsync = ref.watch(totalOrganizationsProvider);
   final activeOrgsAsync = ref.watch(activeOrganizationsProvider);
   final allUsersAsync = ref.watch(allUsersStreamProvider);
+  final allPaymentsAsync = ref.watch(allPaymentsStreamProvider);
 
   return totalOrgsAsync.whenData((total) {
     final active = activeOrgsAsync.valueOrNull ?? 0;
     final users = allUsersAsync.valueOrNull ?? [];
+    final payments = allPaymentsAsync.valueOrNull ?? [];
+
+    final approvedPayments = payments.where((p) => p.status == PaymentStatus.approved);
+    final totalCollections = approvedPayments.fold<double>(
+      0.0,
+      (sum, p) => sum + p.amount,
+    );
+
     final pending = users
         .where(
           (u) =>
@@ -106,6 +117,8 @@ final adminDashboardProvider =
       totalUsers: users.length,
       activeOrganizations: active,
       pendingApprovals: pending,
+      totalCollections: totalCollections,
+      totalPaymentsCount: payments.length,
       recentOrganizations: const [],
     );
   });

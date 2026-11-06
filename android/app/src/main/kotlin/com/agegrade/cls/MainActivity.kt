@@ -4,10 +4,13 @@ import android.content.Context
 import android.os.Build
 import android.os.PowerManager
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.RenderMode
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    override fun getRenderMode(): RenderMode = RenderMode.texture
+
     private val PROXIMITY_CHANNEL = "com.agegrade.cls/proximity"
     private var proximityWakeLock: PowerManager.WakeLock? = null
 

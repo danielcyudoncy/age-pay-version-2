@@ -189,4 +189,68 @@ class OrganizationRepository {
       'updatedAt': Timestamp.fromDate(DateTime.now()),
     });
   }
+
+  Future<void> submitLicenseRenewal({
+    required String organizationId,
+    required String proofUrl,
+    required String reference,
+    required String bankName,
+    required double amount,
+    required String submittedBy,
+  }) async {
+    await _collection.doc(organizationId).update({
+      'subscriptionStatus': 'pending_verification',
+      'licenseProofUrl': proofUrl,
+      'licensePaymentReference': reference,
+      'licensePaymentBank': bankName,
+      'licensePaymentAmount': amount,
+      'licenseSubmittedAt': Timestamp.fromDate(DateTime.now()),
+      'licenseSubmittedBy': submittedBy,
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
+  Future<void> approveLicenseRenewal(
+    String organizationId, {
+    required String approvedBy,
+    int days = 365,
+    String tier = 'pro',
+  }) async {
+    final doc = await _collection.doc(organizationId).get();
+    DateTime currentExpiry = DateTime.now();
+    if (doc.exists && doc.data() != null) {
+      final data = doc.data() as Map<String, dynamic>;
+      if (data['subscriptionExpiresAt'] != null) {
+        final parsed = (data['subscriptionExpiresAt'] as Timestamp).toDate();
+        if (parsed.isAfter(DateTime.now())) {
+          currentExpiry = parsed;
+        }
+      }
+    }
+
+    final newExpiry = currentExpiry.add(Duration(days: days));
+
+    await _collection.doc(organizationId).update({
+      'subscriptionTier': tier,
+      'subscriptionStatus': 'active',
+      'subscriptionExpiresAt': Timestamp.fromDate(newExpiry),
+      'licenseVerifiedBy': approvedBy,
+      'licenseApprovedAt': Timestamp.fromDate(DateTime.now()),
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
+  Future<void> rejectLicenseRenewal(
+    String organizationId, {
+    required String rejectedBy,
+    String? reason,
+  }) async {
+    await _collection.doc(organizationId).update({
+      'subscriptionStatus': 'expired',
+      'licenseRejectionReason': reason ?? 'Payment proof could not be verified',
+      'licenseRejectedBy': rejectedBy,
+      'licenseRejectedAt': Timestamp.fromDate(DateTime.now()),
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
 }

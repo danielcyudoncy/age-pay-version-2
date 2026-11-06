@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../core/constants/enums.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../auth/models/user_model.dart';
+import '../../meetings/controllers/meeting_provider.dart';
+import '../../meetings/views/meeting_detail_screen.dart';
+import '../../meetings/views/meeting_list_screen.dart';
 import '../../payments/views/make_payment_screen.dart';
+import '../../secretary/views/member_announcements_screen.dart';
 import '../controllers/notification_provider.dart';
 import '../models/notification_model.dart';
 import '../widgets/notification_widgets.dart';
@@ -25,16 +31,19 @@ class NotificationsScreen extends ConsumerWidget {
         notification.payload!.isNotEmpty &&
         isExecutive) {
       _showApprovalSheet(context, ref, notification.payload!);
-    } else if (notification.type == 'levy') {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => MakePaymentScreen(
-            memberId: currentUser.uid,
-            memberEmail: currentUser.email,
-          ),
-        ),
-      );
+    } else {
+      _showNotificationDetail(context, ref, notification);
     }
+  }
+
+  void _showNotificationDetail(BuildContext context, WidgetRef ref, NotificationModel notification) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _NotificationDetailDialog(
+        notification: notification,
+        currentUser: currentUser,
+      ),
+    );
   }
 
   void _showApprovalSheet(BuildContext context, WidgetRef ref, String applicantUid) {
@@ -679,6 +688,272 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _NotificationDetailDialog extends ConsumerWidget {
+  final NotificationModel notification;
+  final UserModel currentUser;
+
+  const _NotificationDetailDialog({
+    required this.notification,
+    required this.currentUser,
+  });
+
+  (IconData, Color, String) _typeMetadata(BuildContext context) {
+    switch (notification.type) {
+      case 'meeting':
+        return (Icons.event_available, Colors.indigo, 'MEETING NOTICE');
+      case 'announcement':
+        return (Icons.campaign, Colors.teal, 'ANNOUNCEMENT');
+      case 'levy':
+        return (Icons.receipt_long, Theme.of(context).colorScheme.primary, 'LEVY / DUES');
+      case 'payment':
+        return (Icons.payment, Colors.green, 'PAYMENT CONFIRMATION');
+      case 'pending_approval':
+        return (Icons.person_add_alt_1, Colors.amber.shade800, 'APPROVAL REQUEST');
+      case 'approval_success':
+        return (Icons.verified_user, Colors.green, 'APPROVAL SUCCESS');
+      case 'co_founder_invite':
+        return (Icons.shield, Colors.blue, 'INVITATION');
+      case 'reminder':
+        return (Icons.alarm, Colors.orange, 'REMINDER');
+      case 'general':
+      default:
+        return (Icons.notifications_active, Colors.blueGrey, 'NOTIFICATION');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final (iconData, iconColor, typeLabel) = _typeMetadata(context);
+    final dateTimeFormat = DateFormat('EEE, MMM dd, yyyy \u2022 hh:mm a');
+
+    final isExecutive = currentUser.role == UserRole.president ||
+        currentUser.role == UserRole.vicePresident ||
+        currentUser.role == UserRole.superAdmin;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header Row: Type badge, Close
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: iconColor.withValues(alpha: 0.15),
+                    child: Icon(iconData, color: iconColor, size: 18),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      typeLabel,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: iconColor,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Title
+              Text(
+                notification.title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 17,
+                ),
+              ),
+              const SizedBox(height: 4),
+
+              // Timestamp
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 13,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    dateTimeFormat.format(notification.receivedAt),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+
+              // Message Body
+              Expanded(
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    notification.body,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontSize: 14,
+                      height: 1.55,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Action buttons based on type
+              Row(
+                children: [
+                  if (notification.type == 'meeting') ...[
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppTheme.brandGreen,
+                        ),
+                        icon: const Icon(Icons.event, size: 18),
+                        label: const Text('View Meeting & RSVP'),
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          final meetingId = notification.payload;
+                          if (meetingId != null && meetingId.isNotEmpty) {
+                            final meeting = await ref
+                                .read(meetingRepositoryProvider)
+                                .getMeetingById(meetingId);
+                            if (context.mounted) {
+                              if (meeting != null) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => MeetingDetailScreen(
+                                      meeting: meeting,
+                                      readOnly: true,
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                            }
+                          }
+                          if (context.mounted) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const MeetingListScreen(initialTabIndex: 0),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ] else if (notification.type == 'levy') ...[
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppTheme.brandGreen,
+                        ),
+                        icon: const Icon(Icons.payment, size: 18),
+                        label: const Text('Pay Now'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => MakePaymentScreen(
+                                memberId: currentUser.uid,
+                                memberEmail: currentUser.email,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ] else if (notification.type == 'announcement') ...[
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppTheme.brandGreen,
+                        ),
+                        icon: const Icon(Icons.campaign, size: 18),
+                        label: const Text('View Announcements'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const MemberAnnouncementsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ] else if (notification.type == 'pending_approval' && isExecutive) ...[
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.amber.shade800,
+                        ),
+                        icon: const Icon(Icons.how_to_reg, size: 18),
+                        label: const Text('Review Application'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          if (notification.payload != null &&
+                              notification.payload!.isNotEmpty) {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              useSafeArea: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) => _ApprovalModal(
+                                applicantUid: notification.payload!,
+                                organizationId: currentUser.organizationId,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

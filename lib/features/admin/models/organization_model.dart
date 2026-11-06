@@ -22,6 +22,15 @@ class OrganizationModel {
   final String? secretaryNinOrBvn;
   final bool isBankVerified;
   final String? bankAccountType;
+  final String subscriptionTier; // 'starter', 'pro', 'national'
+  final String subscriptionStatus; // 'active', 'pending_verification', 'expired'
+  final DateTime? subscriptionExpiresAt;
+  final String? licenseProofUrl;
+  final String? licensePaymentReference;
+  final String? licensePaymentBank;
+  final double? licensePaymentAmount;
+  final DateTime? licenseSubmittedAt;
+  final String? licenseVerifiedBy;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -47,12 +56,37 @@ class OrganizationModel {
     this.secretaryNinOrBvn,
     this.isBankVerified = false,
     this.bankAccountType,
+    this.subscriptionTier = 'starter',
+    this.subscriptionStatus = 'active',
+    this.subscriptionExpiresAt,
+    this.licenseProofUrl,
+    this.licensePaymentReference,
+    this.licensePaymentBank,
+    this.licensePaymentAmount,
+    this.licenseSubmittedAt,
+    this.licenseVerifiedBy,
     required this.createdAt,
     required this.updatedAt,
   });
 
   bool get isVerified => verificationStatus == 'verified';
   bool get isPendingVerification => verificationStatus == 'pending_verification';
+  bool get isLicensePendingVerification =>
+      subscriptionStatus == 'pending_verification';
+  bool get isLicenseActive {
+    if (subscriptionStatus == 'pending_verification') return false;
+    if (subscriptionExpiresAt == null) return true; // Starter / permanent
+    return DateTime.now().isBefore(subscriptionExpiresAt!);
+  }
+  bool get isLicenseExpired {
+    if (subscriptionExpiresAt == null) return false;
+    return DateTime.now().isAfter(subscriptionExpiresAt!);
+  }
+  int get licenseDaysRemaining {
+    if (subscriptionExpiresAt == null) return 365;
+    final diff = subscriptionExpiresAt!.difference(DateTime.now()).inDays;
+    return diff > 0 ? diff : 0;
+  }
 
   factory OrganizationModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -80,6 +114,21 @@ class OrganizationModel {
       secretaryNinOrBvn: data['secretaryNinOrBvn'] as String?,
       isBankVerified: data['isBankVerified'] ?? false,
       bankAccountType: data['bankAccountType'] as String?,
+      subscriptionTier: data['subscriptionTier'] ?? 'starter',
+      subscriptionStatus: data['subscriptionStatus'] ?? 'active',
+      subscriptionExpiresAt: data['subscriptionExpiresAt'] != null
+          ? _parseDate(data['subscriptionExpiresAt'])
+          : null,
+      licenseProofUrl: data['licenseProofUrl'] as String?,
+      licensePaymentReference: data['licensePaymentReference'] as String?,
+      licensePaymentBank: data['licensePaymentBank'] as String?,
+      licensePaymentAmount: (data['licensePaymentAmount'] is num)
+          ? (data['licensePaymentAmount'] as num).toDouble()
+          : null,
+      licenseSubmittedAt: data['licenseSubmittedAt'] != null
+          ? _parseDate(data['licenseSubmittedAt'])
+          : null,
+      licenseVerifiedBy: data['licenseVerifiedBy'] as String?,
       createdAt: _parseDate(data['createdAt']),
       updatedAt: _parseDate(data['updatedAt']),
     );
@@ -107,6 +156,19 @@ class OrganizationModel {
       if (secretaryNinOrBvn != null) 'secretaryNinOrBvn': secretaryNinOrBvn,
       'isBankVerified': isBankVerified,
       if (bankAccountType != null) 'bankAccountType': bankAccountType,
+      'subscriptionTier': subscriptionTier,
+      'subscriptionStatus': subscriptionStatus,
+      if (subscriptionExpiresAt != null)
+        'subscriptionExpiresAt': Timestamp.fromDate(subscriptionExpiresAt!),
+      if (licenseProofUrl != null) 'licenseProofUrl': licenseProofUrl,
+      if (licensePaymentReference != null)
+        'licensePaymentReference': licensePaymentReference,
+      if (licensePaymentBank != null) 'licensePaymentBank': licensePaymentBank,
+      if (licensePaymentAmount != null)
+        'licensePaymentAmount': licensePaymentAmount,
+      if (licenseSubmittedAt != null)
+        'licenseSubmittedAt': Timestamp.fromDate(licenseSubmittedAt!),
+      if (licenseVerifiedBy != null) 'licenseVerifiedBy': licenseVerifiedBy,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -140,6 +202,15 @@ class OrganizationModel {
     String? secretaryNinOrBvn,
     bool? isBankVerified,
     String? bankAccountType,
+    String? subscriptionTier,
+    String? subscriptionStatus,
+    DateTime? subscriptionExpiresAt,
+    String? licenseProofUrl,
+    String? licensePaymentReference,
+    String? licensePaymentBank,
+    double? licensePaymentAmount,
+    DateTime? licenseSubmittedAt,
+    String? licenseVerifiedBy,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -165,6 +236,17 @@ class OrganizationModel {
       secretaryNinOrBvn: secretaryNinOrBvn ?? this.secretaryNinOrBvn,
       isBankVerified: isBankVerified ?? this.isBankVerified,
       bankAccountType: bankAccountType ?? this.bankAccountType,
+      subscriptionTier: subscriptionTier ?? this.subscriptionTier,
+      subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
+      subscriptionExpiresAt:
+          subscriptionExpiresAt ?? this.subscriptionExpiresAt,
+      licenseProofUrl: licenseProofUrl ?? this.licenseProofUrl,
+      licensePaymentReference:
+          licensePaymentReference ?? this.licensePaymentReference,
+      licensePaymentBank: licensePaymentBank ?? this.licensePaymentBank,
+      licensePaymentAmount: licensePaymentAmount ?? this.licensePaymentAmount,
+      licenseSubmittedAt: licenseSubmittedAt ?? this.licenseSubmittedAt,
+      licenseVerifiedBy: licenseVerifiedBy ?? this.licenseVerifiedBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

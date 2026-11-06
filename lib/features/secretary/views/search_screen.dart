@@ -8,6 +8,8 @@ import 'package:cls/features/secretary/models/announcement_model.dart';
 import 'package:cls/features/secretary/models/document_model.dart';
 import 'package:cls/features/calling/views/branch_directory_screen.dart';
 import 'package:cls/features/calling/widgets/member_call_button.dart';
+import 'package:cls/features/meetings/views/meeting_detail_screen.dart';
+import '../widgets/announcement_detail_dialog.dart';
 import 'package:intl/intl.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -91,6 +93,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       leading: const CircleAvatar(child: Icon(Icons.event)),
                       title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                       subtitle: Text('${DateFormat('MMM dd, yyyy').format(item.meetingDate)} • ${item.isExecutivesOnly ? 'Executives Only' : 'All Members'}'),
+                      trailing: const Icon(Icons.chevron_right, size: 18),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MeetingDetailScreen(meeting: item, readOnly: true),
+                          ),
+                        );
+                      },
                     ),
                   );
                 } else if (item is AnnouncementModel) {
@@ -100,6 +111,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       leading: const CircleAvatar(child: Icon(Icons.campaign)),
                       title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                       subtitle: Text(item.category.name.toUpperCase()),
+                      trailing: const Icon(Icons.chevron_right, size: 18),
+                      onTap: () => showAnnouncementDetailDialog(context, item),
                     ),
                   );
                 } else if (item is DocumentModel) {

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/secretary/controllers/secretary_dashboard_provider.dart';
 import 'package:cls/features/secretary/models/announcement_model.dart';
+import '../widgets/announcement_detail_dialog.dart';
 
 /// Screen members use to receive and read announcements created by the
 /// secretary or vice secretary. Announcements are scoped by the organization
@@ -129,12 +130,16 @@ class _MemberAnnouncementCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => showAnnouncementDetailDialog(context, announcement),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CircleAvatar(
                   backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
@@ -142,19 +147,90 @@ class _MemberAnnouncementCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    announcement.title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              announcement.title,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                          ),
+                          if (announcement.isPinned) ...[
+                            const SizedBox(width: 6),
+                            const Icon(Icons.push_pin, size: 16, color: Colors.red),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.event_outlined, size: 13, color: theme.colorScheme.onSurfaceVariant),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              announcement.formattedTime != null
+                                  ? '${dateFormat.format(date)} \u2022 ${announcement.formattedTime}'
+                                  : dateFormat.format(date),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (announcement.effectiveVenue != null &&
+                          announcement.effectiveVenue!.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on, size: 13, color: Colors.redAccent),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                announcement.effectiveVenue!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                if (announcement.isPinned) ...[
-                  const SizedBox(width: 6),
-                  const Icon(Icons.push_pin, size: 16, color: Colors.red),
-                ],
               ],
             ),
-            const SizedBox(height: 10),
-            Text(announcement.body, style: const TextStyle(fontSize: 14)),
+            if (announcement.body.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              if (announcement.category == AnnouncementCategory.meeting) ...[
+                Row(
+                  children: [
+                    Icon(Icons.format_list_bulleted, size: 13, color: theme.colorScheme.primary),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Meeting Agenda & Proceedings:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+              ],
+              Text(announcement.body, style: const TextStyle(fontSize: 14)),
+            ],
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -221,6 +297,7 @@ class _MemberAnnouncementCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -30,6 +30,10 @@ class _SystemConfigurationScreenState
   late bool _smsNotificationsEnabled;
   late String _smsProvider;
   late bool _emailNotificationsEnabled;
+  late TextEditingController _companyBankController;
+  late TextEditingController _companyAccountNameController;
+  late TextEditingController _companyAccountNumberController;
+  late TextEditingController _annualFeeController;
   bool _isSaving = false;
 
   void _initValues(SystemSettingsModel settings) {
@@ -50,6 +54,18 @@ class _SystemConfigurationScreenState
     _smsNotificationsEnabled = settings.smsNotificationsEnabled;
     _smsProvider = settings.smsProvider;
     _emailNotificationsEnabled = settings.emailNotificationsEnabled;
+    _companyBankController = TextEditingController(
+      text: settings.companyBankName,
+    );
+    _companyAccountNameController = TextEditingController(
+      text: settings.companyAccountName,
+    );
+    _companyAccountNumberController = TextEditingController(
+      text: settings.companyAccountNumber,
+    );
+    _annualFeeController = TextEditingController(
+      text: settings.annualLicenseFee.toStringAsFixed(0),
+    );
     _initialized = true;
   }
 
@@ -58,6 +74,10 @@ class _SystemConfigurationScreenState
     if (_initialized) {
       _maintenanceMsgController.dispose();
       _thresholdController.dispose();
+      _companyBankController.dispose();
+      _companyAccountNameController.dispose();
+      _companyAccountNumberController.dispose();
+      _annualFeeController.dispose();
     }
     super.dispose();
   }
@@ -389,6 +409,102 @@ class _SystemConfigurationScreenState
           ),
           const SizedBox(height: 20),
 
+          // Platform Subscription & Corporate Bank
+          _buildSectionHeader(
+            title: 'Platform Subscription & Corporate Receiving Bank',
+            icon: Icons.account_balance,
+            color: Colors.teal,
+          ),
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Company Bank Account for Annual Licenses',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Associations transfer their annual software license fees directly into this account.',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _companyBankController,
+                    decoration: InputDecoration(
+                      labelText: 'Corporate Bank Name',
+                      hintText: 'e.g. Zenith Bank',
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _companyAccountNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Account Name',
+                      hintText: 'e.g. AgePay Technologies Ltd',
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _companyAccountNumberController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Account Number',
+                      hintText: 'e.g. 1012345678',
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _annualFeeController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Annual License Fee (₦)',
+                      prefixText: '₦ ',
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
           // 3. Platform Policies & Security
           _buildSectionHeader(
             title: 'Platform Policies & Security',
@@ -704,6 +820,11 @@ class _SystemConfigurationScreenState
         requirePresidentApproval: _requirePresidentApproval,
         maxUploadSizeBytes: _maxUploadSizeBytes,
         sessionTimeoutMinutes: _sessionTimeoutMinutes,
+        companyBankName: _companyBankController.text.trim(),
+        companyAccountName: _companyAccountNameController.text.trim(),
+        companyAccountNumber: _companyAccountNumberController.text.trim(),
+        annualLicenseFee:
+            double.tryParse(_annualFeeController.text.trim()) ?? 35000.0,
         pushNotificationsEnabled: _pushNotificationsEnabled,
         smsNotificationsEnabled: _smsNotificationsEnabled,
         smsProvider: _smsProvider,

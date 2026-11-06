@@ -110,6 +110,8 @@ class MeetingModel {
       (minutesText?.trim().isNotEmpty ?? false) ||
       (minutesFileUrl?.isNotEmpty ?? false);
 
+  bool get isNational => scope == 'national' || branchId == 'national';
+
   bool get isExecutivesOnly {
     final audience = targetAudience.trim().toLowerCase();
     if (audience == 'executives' || audience == 'executive') return true;
