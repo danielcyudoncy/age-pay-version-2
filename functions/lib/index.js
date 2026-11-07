@@ -333,28 +333,31 @@ exports.recordCashPayment = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
     }
     const callerUid = context.auth.uid;
-    // Verify caller has treasurer or admin role
+    // Verify caller has treasurer, financialSecretary, or admin role
     const userDoc = await db.collection('users').doc(callerUid).get();
     if (!userDoc.exists) {
         throw new functions.https.HttpsError('not-found', 'User not found');
     }
     const role = userDoc.data()['role'];
-    if (!['treasurer', 'president', 'superAdmin'].includes(role)) {
-        throw new functions.https.HttpsError('permission-denied', 'Only treasurers, presidents, or admins can record cash payments');
+    if (!['treasurer', 'financialSecretary', 'president', 'superAdmin'].includes(role)) {
+        throw new functions.https.HttpsError('permission-denied', 'Only treasurers, financial secretaries, presidents, or admins can record cash payments');
     }
     const { memberId, obligationIds, amount, notes, recordedBy } = data;
-    if (!memberId || !obligationIds || !amount || !recordedBy) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: memberId, obligationIds, amount, recordedBy');
+    if (!memberId || !amount || !recordedBy) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: memberId, amount, recordedBy');
     }
     const now = admin.firestore.Timestamp.now();
-    // Build allocations
-    const allocations = obligationIds.map((id) => ({
+    // Build allocations (empty for upfront / advance payments)
+    const safeObligationIds = Array.isArray(obligationIds) ? obligationIds : [];
+    const allocations = safeObligationIds.map((id) => ({
         obligationId: id,
-        amount: Number(amount) / obligationIds.length,
+        amount: Number(amount) / safeObligationIds.length,
     }));
     // Create payment document
     const paymentRef = db.collection('payments').doc();
+    const paymentNumber = `PAY-${Date.now()}`;
     await paymentRef.set({
+        paymentReference: paymentNumber,
         memberId,
         amount: Number(amount),
         method: 'cash',
@@ -393,6 +396,7 @@ exports.recordCashPayment = functions.https.onCall(async (data, context) => {
     const receiptNumber = `RCP-${Date.now()}`;
     await receiptRef.set({
         paymentId: paymentRef.id,
+        paymentReference: paymentNumber,
         memberId,
         receiptNumber,
         amount: Number(amount),
@@ -405,7 +409,8 @@ exports.recordCashPayment = functions.https.onCall(async (data, context) => {
         createdAt: now,
     });
     return {
-        paymentId: paymentRef.id,
+        paymentId: paymentNumber,
+        documentId: paymentRef.id,
         receiptId: receiptRef.id,
         receiptNumber,
     };

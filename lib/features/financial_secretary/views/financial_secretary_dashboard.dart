@@ -25,7 +25,11 @@ import 'package:cls/features/levies/controllers/levy_provider.dart'
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart'
     show allPaymentsStreamProvider, membersStreamProvider;
 import 'package:cls/features/expenses/widgets/expense_approval_queue_card.dart';
+import 'package:cls/features/expenses/views/expense_form_screen.dart';
 import 'package:cls/features/calling/views/branch_directory_screen.dart';
+import 'package:cls/features/fiscal_period/views/fiscal_period_screen.dart';
+import 'package:cls/features/financial_secretary/views/cash_handover_screen.dart';
+import 'package:cls/features/national/views/national_remittance_screen.dart';
 
 class FinancialSecretaryDashboard extends ConsumerStatefulWidget {
   const FinancialSecretaryDashboard({super.key});
@@ -372,6 +376,24 @@ class _HomeTab extends ConsumerWidget {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CashHandoverScreen(),
+                            ),
+                          ),
+                          icon: const Icon(Icons.sync_alt, size: 16),
+                          label: const Text('Manage Cash Handover Vouchers'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.teal,
+                            side: const BorderSide(color: Colors.teal),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -391,14 +413,55 @@ class _HomeTab extends ConsumerWidget {
                 runSpacing: 10,
                 children: [
                   QuickActionButton(
-                    icon: Icons.phone_in_talk,
-                    label: 'Branch Calls',
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const BranchDirectoryScreen(),
-                      ),
-                    ),
+                    icon: Icons.receipt_long,
+                    label: 'Record Expense',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ExpenseFormScreen(
+                            currentUserId: user.uid,
+                            organizationId: user.organizationId,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  QuickActionButton(
+                    icon: Icons.calendar_month,
+                    label: 'Tenure & Bal b/f',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FiscalPeriodScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  QuickActionButton(
+                    icon: Icons.sync_alt,
+                    label: 'Cash Handover',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CashHandoverScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  QuickActionButton(
+                    icon: Icons.account_balance,
+                    label: 'National Escrow',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const NationalRemittanceScreen(),
+                        ),
+                      );
+                    },
                   ),
                   QuickActionButton(
                     icon: Icons.point_of_sale,
@@ -475,6 +538,16 @@ class _HomeTab extends ConsumerWidget {
                     icon: Icons.warning_amber_rounded,
                     label: 'Defaulters',
                     onPressed: () => onNavigate(2),
+                  ),
+                  QuickActionButton(
+                    icon: Icons.phone_in_talk,
+                    label: 'Branch Calls',
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BranchDirectoryScreen(),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -626,16 +699,17 @@ class _HomeTab extends ConsumerWidget {
   ) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => SafeArea(
         top: false,
-        child: Padding(
+        child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             20,
-            20,
+            12,
             20,
             MediaQuery.of(ctx).padding.bottom + 20,
           ),
@@ -643,6 +717,17 @@ class _HomeTab extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               const Text(
                 'Cash Collection & Handover',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -695,6 +780,24 @@ class _HomeTab extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CashHandoverScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.sync_alt, color: Colors.teal),
+                  label: const Text('Open Handover Vouchers', style: TextStyle(color: Colors.teal)),
+                ),
+              ),
+              const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -1151,11 +1254,23 @@ class _DebtorsTabState extends ConsumerState<_DebtorsTab> {
                               ],
                             ),
                             onTap: () {
+                              final allMembers =
+                                  ref.read(membersStreamProvider).valueOrNull ?? [];
+                              final matchedMember = allMembers
+                                  .where(
+                                    (m) =>
+                                        m.id == item.memberId ||
+                                        m.userId == item.memberId,
+                                  )
+                                  .firstOrNull;
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => CashPaymentScreen(
-                                    recordedBy: widget.user.displayName,
+                                    recordedBy: widget.user.displayName.isNotEmpty
+                                        ? widget.user.displayName
+                                        : 'Financial Secretary',
+                                    initialMember: matchedMember,
                                   ),
                                 ),
                               );

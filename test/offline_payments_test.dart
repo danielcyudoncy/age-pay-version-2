@@ -11,6 +11,10 @@ import 'package:cls/features/payments/controllers/payment_provider.dart';
 import 'package:cls/features/payments/views/cash_payment_screen.dart';
 import 'package:cls/features/payments/views/payment_verification_screen.dart';
 import 'package:cls/features/payments/views/bank_transfer_screen.dart';
+import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart'
+    show membersStreamProvider;
+import 'package:cls/features/obligations/controllers/obligation_provider.dart'
+    show allObligationsProvider;
 
 class _MockPaymentService implements PaymentService {
   CashPaymentResult? _cashResult;
@@ -244,35 +248,162 @@ void main() {
   });
 
   group('CashPaymentScreen', () {
-    Widget buildScreen() {
+    Widget buildScreen({
+      List<MemberModel>? members,
+      MemberModel? initialMember,
+      List<ObligationModel>? obligations,
+    }) {
       final mockService = _MockPaymentService();
+      final memberList = members ?? [testMember];
       return ProviderScope(
         overrides: [
           paymentServiceProvider.overrideWith((ref) => mockService),
           selectedObligationsProvider.overrideWith(
             (ref) => SelectedObligationsNotifier(),
           ),
+          membersStreamProvider.overrideWith(
+            (ref) => Stream.value(memberList),
+          ),
+          allObligationsProvider.overrideWith(
+            (ref) => Stream.value(obligations ?? [testObligation]),
+          ),
         ],
-        child: MaterialApp(home: CashPaymentScreen(recordedBy: 'treasurer1')),
+        child: MaterialApp(
+          home: CashPaymentScreen(
+            recordedBy: 'treasurer1',
+            initialMember: initialMember,
+          ),
+        ),
       );
     }
 
-    testWidgets('renders search field initially', (tester) async {
+    testWidgets('renders search field and members list by default', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
       expect(find.text('Record Cash Payment'), findsOneWidget);
       expect(find.byType(TextField), findsWidgets);
+      expect(find.text('John Doe'), findsOneWidget);
+      expect(
+        find.text('Select a member to view dues and record cash payment'),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('shows empty state when no member selected', (tester) async {
+    testWidgets('does not overflow on narrow screen (320px)', (tester) async {
+      tester.view.physicalSize = const Size(320, 600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(
-        find.widgetWithText(Center, 'Type at least 1 character to search'),
-        findsOneWidget,
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('filters member list when typing in search field', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      expect(find.text('John Doe'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).first, 'NonExistent');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No members matching "NonExistent"'), findsOneWidget);
+      expect(find.text('John Doe'), findsNothing);
+    });
+
+    testWidgets('selecting a member opens payment form', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('John Doe'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Select obligations to settle'), findsOneWidget);
+      expect(find.text('June Due'), findsOneWidget);
+      expect(find.text('Amount (₦)'), findsOneWidget);
+    });
+
+    testWidgets('supports initialMember parameter', (tester) async {
+      await tester.pumpWidget(buildScreen(initialMember: testMember));
+      await tester.pumpAndSettle();
+
+      expect(find.text('John Doe'), findsWidgets);
+      expect(find.text('Select obligations to settle'), findsOneWidget);
+      expect(find.text('June Due'), findsOneWidget);
+    });
+
+    testWidgets(
+      'records upfront/advance payment when member has no obligations',
+      (tester) async {
+        await tester.pumpWidget(
+          buildScreen(initialMember: testMember, obligations: []),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('All current obligations settled! 🎉'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Record Upfront / Advance Payment'),
+          findsOneWidget,
+        );
+
+        // Button is initially disabled because amount is 0
+        final buttonFinder = find.widgetWithText(
+          FilledButton,
+          'Record Upfront / Advance Payment',
+        );
+        expect(tester.widget<FilledButton>(buttonFinder).enabled, isFalse);
+
+        // Enter amount 10000
+        final amountField = find.widgetWithText(TextField, 'Amount (₦)');
+        await tester.enterText(amountField, '10000');
+        await tester.pumpAndSettle();
+
+        // Button is now enabled
+        expect(tester.widget<FilledButton>(buttonFinder).enabled, isTrue);
+
+        // Tap Record
+        await tester.tap(buttonFinder);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Cash Payment Recorded!'), findsOneWidget);
+      },
+    );
+
+    testWidgets('records cash payment for selected obligations', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildScreen(initialMember: testMember, obligations: [testObligation]),
       );
+      await tester.pumpAndSettle();
+
+      // Tap checkbox for June Due
+      await tester.tap(find.text('June Due'));
+      await tester.pumpAndSettle();
+
+      final buttonFinder = find.widgetWithText(
+        FilledButton,
+        'Record Payment (1 due)',
+      );
+      expect(buttonFinder, findsOneWidget);
+      expect(tester.widget<FilledButton>(buttonFinder).enabled, isTrue);
+
+      await tester.tap(buttonFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cash Payment Recorded!'), findsOneWidget);
     });
   });
 

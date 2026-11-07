@@ -36,6 +36,13 @@ class ReportsScreen extends ConsumerWidget {
       icon: Icons.receipt_long_outlined,
     ),
     _ReportItem(
+      type: ReportType.agmFinancialReport,
+      title: 'AGM Annual Financial Report',
+      description:
+          'Official Receipts & Disbursements statement with Bal b/f, National Escrow, and Notes 1 to 14.',
+      icon: Icons.account_balance,
+    ),
+    _ReportItem(
       type: ReportType.financialSummary,
       title: 'Financial Summary',
       description:

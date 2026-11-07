@@ -10,6 +10,10 @@ import '../../payments/models/payment_model.dart';
 import '../../payments/repositories/payment_repository.dart';
 import '../../expenses/models/expense_model.dart';
 import '../../expenses/repositories/expense_repository.dart';
+import '../../fiscal_period/models/fiscal_period_model.dart';
+import '../../fiscal_period/repositories/fiscal_period_repository.dart';
+import '../../national/models/national_remittance_model.dart';
+import '../../national/repositories/national_remittance_repository.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../national/controllers/national_provider.dart';
 import '../../../core/constants/enums.dart';
@@ -21,6 +25,7 @@ enum ReportType {
   yearlySummary,
   expenseBreakdown,
   financialSummary,
+  agmFinancialReport,
 }
 
 final pdfServiceProvider = Provider<PdfService>((ref) => PdfService());
@@ -47,6 +52,16 @@ final reportsPaymentRepositoryProvider = Provider<PaymentRepository>((ref) {
 
 final reportsExpenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
   return ExpenseRepository();
+});
+
+final reportsRemittanceRepositoryProvider =
+    Provider<NationalRemittanceRepository>((ref) {
+  return NationalRemittanceRepository();
+});
+
+final reportsFiscalPeriodRepositoryProvider =
+    Provider<FiscalPeriodRepository>((ref) {
+  return FiscalPeriodRepository();
 });
 
 final reportsMembersStreamProvider =
@@ -144,6 +159,18 @@ final pdfGenerationProvider = FutureProvider.family<Uint8List, ReportRequest>((
         endDate: request.endDate,
         organizationName: request.organizationName,
       );
+    case ReportType.agmFinancialReport:
+      return pdfService.generateAgmFinancialReport(
+        fiscalPeriod: request.fiscalPeriod,
+        startDate: request.startDate,
+        endDate: request.endDate,
+        payments: request.payments,
+        expenses: request.expenses,
+        remittances: request.remittances,
+        obligations: request.obligations,
+        organizationName: request.organizationName,
+        branchName: request.branchName,
+      );
   }
 });
 
@@ -155,12 +182,15 @@ class ReportRequest {
   final List<PaymentModel> payments;
   final List<ExpenseModel> expenses;
   final List<MemberModel> members;
+  final List<NationalRemittanceModel> remittances;
+  final FiscalPeriodModel? fiscalPeriod;
   final DateTime? reportDate;
   final DateTime? startDate;
   final DateTime? endDate;
   final int? year;
   final int? totalMembers;
   final String? organizationName;
+  final String? branchName;
 
   const ReportRequest({
     required this.type,
@@ -170,11 +200,14 @@ class ReportRequest {
     this.payments = const [],
     this.expenses = const [],
     this.members = const [],
+    this.remittances = const [],
+    this.fiscalPeriod,
     this.reportDate,
     this.startDate,
     this.endDate,
     this.year,
     this.totalMembers,
     this.organizationName,
+    this.branchName,
   });
 }

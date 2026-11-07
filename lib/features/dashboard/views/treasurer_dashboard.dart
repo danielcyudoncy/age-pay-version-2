@@ -27,6 +27,9 @@ import 'package:cls/features/payments/views/payment_verification_screen.dart';
 import 'package:cls/features/payments/views/make_payment_screen.dart';
 import 'package:cls/features/payments/models/payment_model.dart';
 import 'package:cls/features/calling/views/branch_directory_screen.dart';
+import 'package:cls/features/financial_secretary/models/cash_handover_model.dart';
+import 'package:cls/features/financial_secretary/controllers/cash_handover_provider.dart';
+import 'package:cls/features/dashboard/views/treasurer_cash_handover_screen.dart';
 
 class TreasurerDashboard extends ConsumerStatefulWidget {
   const TreasurerDashboard({super.key});
@@ -310,6 +313,34 @@ class _HomeTab extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
+            // Pending Cash Handovers from Fin Sec
+            Builder(
+              builder: (ctx) {
+                final pendingHandovers = ref
+                        .watch(pendingCashHandoversStreamProvider)
+                        .valueOrNull ??
+                    [];
+                if (pendingHandovers.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  children: [
+                    _PendingCashHandoversBanner(
+                      handovers: pendingHandovers,
+                      currency: currency,
+                      onView: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TreasurerCashHandoverScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                );
+              },
+            ),
+
             // Pending Payments Alert (if any require verification)
             if (data.totalPending > 0) ...[
               _PendingVerificationsBanner(
@@ -335,7 +366,27 @@ class _HomeTab extends ConsumerWidget {
               user: user,
               onNavigate: onNavigate,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+
+            // Cash Custody & Handover Inflows Card (Fin Sec handover reconciliation)
+            if (data.totalCashHandoverReceived > 0 ||
+                data.totalCashHandoverPending > 0) ...[
+              _CashHandoverCustodyCard(
+                totalReceived: data.totalCashHandoverReceived,
+                totalPending: data.totalCashHandoverPending,
+                currency: currency,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TreasurerCashHandoverScreen(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+            const SizedBox(height: 4),
 
             // Members in Arrears
             _MemberArrearsSection(
@@ -687,6 +738,286 @@ class _PersonalMemberStatusBanner extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Pending Cash Handovers Banner
+// ---------------------------------------------------------------------------
+class _PendingCashHandoversBanner extends StatelessWidget {
+  final List<CashHandoverModel> handovers;
+  final NumberFormat currency;
+  final VoidCallback onView;
+
+  const _PendingCashHandoversBanner({
+    required this.handovers,
+    required this.currency,
+    required this.onView,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final totalAmount = handovers.fold<double>(0.0, (s, h) => s + h.amount);
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.teal.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.teal.shade300, width: 1.2),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.teal.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.sync_alt,
+              color: Colors.teal,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${handovers.length} Cash Handover${handovers.length > 1 ? "s" : ""} Pending',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Colors.teal.shade900,
+                  ),
+                ),
+                Text(
+                  '${currency.format(totalAmount)} from Fin Sec to deposit',
+                  style: TextStyle(fontSize: 12, color: Colors.teal.shade800),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: onView,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal.shade800,
+              foregroundColor: Colors.white,
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+            child: const Text('Accept & Deposit', style: TextStyle(fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Cash Handover Custody Card
+// ---------------------------------------------------------------------------
+class _CashHandoverCustodyCard extends ConsumerWidget {
+  final double totalReceived;
+  final double totalPending;
+  final NumberFormat currency;
+  final VoidCallback onTap;
+
+  const _CashHandoverCustodyCard({
+    required this.totalReceived,
+    required this.totalPending,
+    required this.currency,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final handovers = ref.watch(cashHandoversStreamProvider).valueOrNull ?? [];
+    final acceptedCount =
+        handovers.where((h) => h.status == CashHandoverStatus.accepted).length;
+    final pendingCount =
+        handovers.where((h) => h.status == CashHandoverStatus.pending).length;
+    final hasPending = pendingCount > 0;
+
+    return Card(
+      elevation: 0,
+      color: Colors.teal.withValues(alpha: 0.08),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: hasPending
+              ? Colors.teal.shade300
+              : Colors.teal.withValues(alpha: 0.25),
+          width: hasPending ? 1.4 : 1.0,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet,
+                    color: Colors.teal,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Cash Handover from Fin Sec',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      Text(
+                        'Physical meeting cash custody',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      currency.format(totalReceived),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                        color: Colors.teal,
+                      ),
+                    ),
+                    Text(
+                      '$acceptedCount Reconciled',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.teal.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                          Border.all(color: Colors.teal.withValues(alpha: 0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Confirmed in Custody',
+                          style: TextStyle(fontSize: 10, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          currency.format(totalReceived),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: hasPending
+                          ? Colors.amber.shade50
+                          : Colors.white.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: hasPending
+                            ? Colors.amber.shade300
+                            : Colors.teal.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          hasPending ? 'Pending Receipt' : 'Pending Handovers',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: hasPending
+                                ? Colors.amber.shade900
+                                : Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          hasPending
+                              ? currency.format(totalPending)
+                              : '0 Pending',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: hasPending
+                                ? Colors.amber.shade900
+                                : Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onTap,
+                icon: const Icon(Icons.sync_alt, size: 16),
+                label: Text(
+                  hasPending
+                      ? 'Verify Pending Handover (${currency.format(totalPending)})'
+                      : 'Open Handover Custody Ledger',
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.teal,
+                  side: const BorderSide(color: Colors.teal),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Pending Verifications Banner
 // ---------------------------------------------------------------------------
 class _PendingVerificationsBanner extends StatelessWidget {
@@ -790,6 +1121,23 @@ class _OverviewCards extends StatelessWidget {
             onTap: () => onNavigate(2),
           ),
           const SizedBox(width: 12),
+          if (data.totalCashHandoverReceived > 0) ...[
+            _OverviewCard(
+              label: 'Cash in Hand',
+              value: currency.format(data.totalCashHandoverReceived),
+              icon: Icons.payments,
+              color: Colors.teal,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TreasurerCashHandoverScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 12),
+          ],
           _OverviewCard(
             label: 'Total Expenses',
             value: currency.format(data.expenseTotal),
@@ -1358,6 +1706,18 @@ class _QuickActionsRow extends ConsumerWidget {
                           ? user.displayName
                           : 'Treasurer',
                     ),
+                  ),
+                );
+              },
+            ),
+            QuickActionButton(
+              icon: Icons.sync_alt,
+              label: 'Cash Handovers',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TreasurerCashHandoverScreen(),
                   ),
                 );
               },

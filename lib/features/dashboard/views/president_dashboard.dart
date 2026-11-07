@@ -1190,6 +1190,14 @@ class _RecentExpensesSection extends StatelessWidget {
         return Icons.event;
       case ExpenseCategory.administration:
         return Icons.admin_panel_settings;
+      case ExpenseCategory.assetsAndUtensils:
+        return Icons.restaurant;
+      case ExpenseCategory.meetingRefreshment:
+        return Icons.local_cafe;
+      case ExpenseCategory.delegationAndTransport:
+        return Icons.directions_bus;
+      case ExpenseCategory.communications:
+        return Icons.phone_in_talk;
       case ExpenseCategory.miscellaneous:
         return Icons.category;
     }
@@ -1205,6 +1213,14 @@ class _RecentExpensesSection extends StatelessWidget {
         return Colors.purple;
       case ExpenseCategory.administration:
         return Colors.teal;
+      case ExpenseCategory.assetsAndUtensils:
+        return Colors.amber.shade800;
+      case ExpenseCategory.meetingRefreshment:
+        return Colors.deepOrange;
+      case ExpenseCategory.delegationAndTransport:
+        return Colors.indigo;
+      case ExpenseCategory.communications:
+        return Colors.green;
       case ExpenseCategory.miscellaneous:
         return Colors.grey;
     }

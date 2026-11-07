@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/payments/models/payment_model.dart';
 import 'package:cls/features/payments/views/transfer_proof_screen.dart';
+import 'package:cls/features/payments/widgets/payment_detail_sheet.dart';
+import 'package:cls/features/obligations/controllers/obligation_provider.dart'
+    show allObligationsProvider;
 import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dart'
     show paymentRepositoryProvider;
 
@@ -145,101 +148,144 @@ class _PaymentHistoryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final allObligations = ref.watch(allObligationsProvider).valueOrNull ?? [];
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    currency.format(payment.amount),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => showPaymentDetailSheet(context, payment: payment),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      currency.format(payment.amount),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _statusColor(payment.status).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _statusLabel(payment.status),
-                    style: TextStyle(
-                      color: _statusColor(payment.status),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _statusColor(payment.status).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _statusLabel(payment.status),
+                      style: TextStyle(
+                        color: _statusColor(payment.status),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                ),
-                if (payment.method == PaymentMethod.bankTransfer &&
-                    payment.transferProofUrl != null) ...[
-                  const SizedBox(width: 8),
-                  _buildReceiptButton(context, payment),
+                  if (payment.method == PaymentMethod.bankTransfer &&
+                      payment.transferProofUrl != null) ...[
+                    const SizedBox(width: 8),
+                    _buildReceiptButton(context, payment),
+                  ],
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
                 ],
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.payment, size: 14, color: Colors.grey.shade500),
-                const SizedBox(width: 4),
-                Text(
-                  _methodLabel(payment.method),
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
-                const SizedBox(width: 4),
-                Text(
-                  dateFormat.format(payment.createdAt),
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-            if (payment.allocations.isNotEmpty) ...[
+              ),
               const SizedBox(height: 8),
-              const Divider(),
-              Text(
-                'Allocations',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade600,
-                ),
+              Row(
+                children: [
+                  Icon(Icons.payment, size: 14, color: Colors.grey.shade500),
+                  const SizedBox(width: 4),
+                  Text(
+                    _methodLabel(payment.method),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                ],
               ),
               const SizedBox(height: 4),
-              ...payment.allocations.map((alloc) {
-                return Text(
-                  '• ${alloc.obligationId.substring(0, alloc.obligationId.length > 8 ? 8 : alloc.obligationId.length)}: ${currency.format(alloc.amount)}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                );
-              }),
-            ],
-            if (payment.paystackReference != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Ref: ${payment.paystackReference}',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey.shade500,
-                  fontStyle: FontStyle.italic,
-                ),
+              Row(
+                children: [
+                  Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
+                  const SizedBox(width: 4),
+                  Text(
+                    dateFormat.format(payment.createdAt),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                ],
               ),
+              if (payment.notes != null && payment.notes!.trim().isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.notes, size: 14, color: Colors.amber.shade900),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          payment.notes!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.amber.shade900,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (payment.allocations.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                const Divider(),
+                Text(
+                  'Allocations',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                ...payment.allocations.map((alloc) {
+                  final matched = allObligations
+                      .where((o) => o.id == alloc.obligationId)
+                      .firstOrNull;
+                  final title = matched?.title ??
+                      'Obligation (${alloc.obligationId.substring(0, alloc.obligationId.length > 8 ? 8 : alloc.obligationId.length)})';
+
+                  return Text(
+                    '• $title: ${currency.format(alloc.amount)}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                  );
+                }),
+              ],
+              if (payment.paystackReference != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Ref: ${payment.paystackReference}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade500,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

@@ -24,6 +24,7 @@ import 'package:cls/features/expenses/views/expense_list_screen.dart';
 import 'package:cls/features/calling/views/branch_directory_screen.dart';
 import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
+import 'package:cls/features/payments/widgets/payment_detail_sheet.dart';
 
 class MemberDashboard extends ConsumerWidget {
   const MemberDashboard({super.key});
@@ -539,64 +540,120 @@ class _RecentPaymentsSection extends StatelessWidget {
               children: payments.map((payment) {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: _statusColor(
-                            payment.status,
-                          ).withValues(alpha: 0.15),
-                          child: Icon(
-                            Icons.payment,
-                            color: _statusColor(payment.status),
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => showPaymentDetailSheet(
+                      context,
+                      payment: payment,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Text(
-                                currency.format(payment.amount),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
+                              CircleAvatar(
+                                backgroundColor: _statusColor(
+                                  payment.status,
+                                ).withValues(alpha: 0.15),
+                                child: Icon(
+                                  Icons.payment,
+                                  color: _statusColor(payment.status),
+                                  size: 18,
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${_methodLabel(payment.method)} \u2022 ${dateTimeFormat.format(payment.createdAt)}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      currency.format(payment.amount),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${_methodLabel(payment.method)} \u2022 ${dateTimeFormat.format(payment.createdAt)}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _statusColor(
+                                    payment.status,
+                                  ).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  _statusLabel(payment.status),
+                                  style: TextStyle(
+                                    color: _statusColor(payment.status),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.chevron_right,
+                                size: 18,
+                                color: Colors.grey,
                               ),
                             ],
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _statusColor(
-                              payment.status,
-                            ).withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            _statusLabel(payment.status),
-                            style: TextStyle(
-                              color: _statusColor(payment.status),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
+                          if (payment.notes != null &&
+                              payment.notes!.trim().isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade50,
+                                borderRadius: BorderRadius.circular(6),
+                                border:
+                                    Border.all(color: Colors.amber.shade200),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.notes,
+                                    size: 12,
+                                    color: Colors.amber.shade900,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      payment.notes!,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.amber.shade900,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 );

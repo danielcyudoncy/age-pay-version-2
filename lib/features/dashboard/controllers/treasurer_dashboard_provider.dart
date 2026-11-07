@@ -12,6 +12,7 @@ import 'package:cls/features/levies/controllers/levy_provider.dart'
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/national/controllers/national_provider.dart';
+import 'package:cls/features/financial_secretary/controllers/cash_handover_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Repositories
@@ -146,6 +147,8 @@ class TreasurerDashboardData {
   final double expenseTotal;
   final double netPosition;
   final List<RecentPaymentItem> recentPayments;
+  final double totalCashHandoverReceived;
+  final double totalCashHandoverPending;
 
   TreasurerDashboardData({
     required this.totalCollected,
@@ -157,6 +160,8 @@ class TreasurerDashboardData {
     required this.expenseTotal,
     required this.netPosition,
     required this.recentPayments,
+    this.totalCashHandoverReceived = 0.0,
+    this.totalCashHandoverPending = 0.0,
   });
 }
 
@@ -183,12 +188,21 @@ AsyncValue<T> _combine<T>(List<AsyncValue> inputs, T Function() build) {
 // Metric providers
 // ---------------------------------------------------------------------------
 final totalCollectedProvider = Provider.autoDispose<AsyncValue<double>>((ref) {
-  // Sum paidAmount from obligations directly - this captures both manual
-  // payment updates (via "Update Payment Status") and actual payment transactions.
+  // Sum paidAmount from obligations directly, plus any approved upfront/advance payments
   final obligationsAsync = ref.watch(allObligationsProvider);
-  return obligationsAsync.whenData(
-    (list) => list.fold<double>(0.0, (sum, o) => sum + o.paidAmount),
-  );
+  final paymentsAsync = ref.watch(allPaymentsStreamProvider);
+  return obligationsAsync.whenData((list) {
+    final obligationsSum =
+        list.fold<double>(0.0, (sum, o) => sum + o.paidAmount);
+    final payments = paymentsAsync.valueOrNull ?? [];
+    final advancePaymentsSum = payments
+        .where(
+          (p) =>
+              p.status == PaymentStatus.approved && p.allocations.isEmpty,
+        )
+        .fold<double>(0.0, (sum, p) => sum + p.amount);
+    return obligationsSum + advancePaymentsSum;
+  });
 });
 
 final totalOutstandingProvider = Provider.autoDispose<AsyncValue<double>>((
@@ -408,6 +422,13 @@ final treasurerDashboardProvider =
       final netAsync = ref.watch(treasurerFinancialSummaryProvider);
       final paymentsAsync = ref.watch(allPaymentsStreamProvider);
       final membersAsync = ref.watch(membersStreamProvider);
+      final handovers = ref.watch(cashHandoversStreamProvider).valueOrNull ?? [];
+      final handoverReceived = handovers
+          .where((h) => h.status == CashHandoverStatus.accepted)
+          .fold<double>(0.0, (sum, h) => sum + h.amount);
+      final handoverPending = handovers
+          .where((h) => h.status == CashHandoverStatus.pending)
+          .fold<double>(0.0, (sum, h) => sum + h.amount);
 
       return _combine<TreasurerDashboardData>(
         [
@@ -455,6 +476,8 @@ final treasurerDashboardProvider =
             expenseTotal: expenseAsync.valueOrNull ?? 0.0,
             netPosition: netAsync.valueOrNull ?? 0.0,
             recentPayments: recent,
+            totalCashHandoverReceived: handoverReceived,
+            totalCashHandoverPending: handoverPending,
           );
         },
       );

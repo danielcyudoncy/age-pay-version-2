@@ -7,6 +7,7 @@ import '../widgets/financial_summary_report_widget.dart';
 import '../widgets/levy_report_widget.dart';
 import '../widgets/member_statement_report_widget.dart';
 import '../widgets/yearly_summary_report_widget.dart';
+import '../widgets/agm_financial_report_widget.dart';
 import 'pdf_viewer_screen.dart';
 
 class ReportDetailScreen extends ConsumerWidget {
@@ -26,6 +27,8 @@ class ReportDetailScreen extends ConsumerWidget {
         return 'Expense Breakdown';
       case ReportType.financialSummary:
         return 'Financial Summary';
+      case ReportType.agmFinancialReport:
+        return 'AGM Annual Financial Report';
     }
   }
 
@@ -71,6 +74,9 @@ class ReportDetailScreen extends ConsumerWidget {
         break;
       case ReportType.financialSummary:
         content = FinancialSummaryReportWidget(request: request);
+        break;
+      case ReportType.agmFinancialReport:
+        content = AgmFinancialReportWidget(request: request);
         break;
     }
 

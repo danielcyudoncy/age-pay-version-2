@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/payments/models/payment_model.dart';
 import 'package:cls/features/payments/repositories/payment_repository.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
@@ -17,9 +18,44 @@ final memberPaymentsStreamProvider = StreamProvider.autoDispose
 
 final memberTotalPaidProvider = Provider.autoDispose
     .family<AsyncValue<double>, String>((ref, memberId) {
+      final asyncPayments = ref.watch(memberPaymentsStreamProvider(memberId));
       final asyncObligations = ref.watch(memberObligationsProvider(memberId));
-      return asyncObligations.whenData(
-        (list) => list.fold(0.0, (sum, o) => sum + o.paidAmount),
+
+      return asyncPayments.when(
+        data: (payments) {
+          final approvedPaymentsTotal = payments
+              .where((p) => p.status == PaymentStatus.approved)
+              .fold<double>(0.0, (sum, p) => sum + p.amount);
+
+          final obligationsPaidTotal =
+              asyncObligations.valueOrNull?.fold<double>(
+                0.0,
+                (sum, o) => sum + o.paidAmount,
+              ) ??
+              0.0;
+
+          // Total paid is the total of approved payments recorded for this member,
+          // or the total paid across obligations if manual status updates were applied.
+          final total = approvedPaymentsTotal > obligationsPaidTotal
+              ? approvedPaymentsTotal
+              : obligationsPaidTotal;
+
+          return AsyncValue.data(total);
+        },
+        loading: () => asyncObligations.when(
+          data: (obs) => AsyncValue.data(
+            obs.fold<double>(0.0, (sum, o) => sum + o.paidAmount),
+          ),
+          loading: () => const AsyncValue.loading(),
+          error: (e, st) => AsyncValue.error(e, st),
+        ),
+        error: (err, st) => asyncObligations.when(
+          data: (obs) => AsyncValue.data(
+            obs.fold<double>(0.0, (sum, o) => sum + o.paidAmount),
+          ),
+          loading: () => const AsyncValue.loading(),
+          error: (e, s) => AsyncValue.error(err, st),
+        ),
       );
     });
 

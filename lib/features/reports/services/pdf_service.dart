@@ -9,6 +9,8 @@ import '../../obligations/models/obligation_model.dart';
 import '../../payments/models/payment_model.dart';
 import '../../expenses/models/expense_model.dart';
 import '../../levies/models/levy_model.dart';
+import '../../fiscal_period/models/fiscal_period_model.dart';
+import '../../national/models/national_remittance_model.dart';
 
 class PdfService {
   static pw.Font? _regularFont;
@@ -923,6 +925,452 @@ class PdfService {
           ),
           pw.SizedBox(height: 4),
           _buildSummaryRow('Total Outstanding:', _fmt(totalOutstanding)),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  static pw.Widget _tableCell(
+    String text, {
+    bool isBold = false,
+    pw.TextAlign align = pw.TextAlign.left,
+  }) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: pw.Text(
+        text,
+        textAlign: align,
+        style: _regularStyle(
+          fontSize: 9,
+          fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _buildNoteCard(String title, List<String> lines) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 6),
+      padding: const pw.EdgeInsets.all(6),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border.fromBorderSide(
+          pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+        ),
+        borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
+        color: PdfColors.grey50,
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            title,
+            style: _regularStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 2),
+          ...lines.map(
+            (l) => pw.Text(
+              '• $l',
+              style: _regularStyle(fontSize: 8.5, color: PdfColors.grey800),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<Uint8List> generateAgmFinancialReport({
+    FiscalPeriodModel? fiscalPeriod,
+    DateTime? startDate,
+    DateTime? endDate,
+    List<PaymentModel> payments = const [],
+    List<ExpenseModel> expenses = const [],
+    List<NationalRemittanceModel> remittances = const [],
+    List<ObligationModel> obligations = const [],
+    String? organizationName,
+    String? branchName,
+  }) async {
+    await _ensureFonts();
+
+    final pdf = pw.Document();
+
+    final sDate = startDate ?? fiscalPeriod?.startDate ?? DateTime(2025, 7, 1);
+    final eDate = endDate ?? fiscalPeriod?.endDate ?? DateTime(2026, 10, 31);
+    final balBf = fiscalPeriod?.openingBalance ?? 0.0;
+
+    final approvedPayments = payments.where((p) {
+      if (p.createdAt.isBefore(sDate)) return false;
+      final endOfDay = DateTime(eDate.year, eDate.month, eDate.day, 23, 59, 59);
+      if (p.createdAt.isAfter(endOfDay)) return false;
+      return true;
+    }).toList();
+
+    bool isRegistration(PaymentModel p) {
+      final note = (p.notes ?? '').toLowerCase();
+      return note.contains('reg') ||
+          note.contains('admission') ||
+          note.contains('drink') ||
+          p.allocations.any((a) => a.obligationId.toLowerCase().contains('reg'));
+    }
+
+    final regPayments = approvedPayments.where(isRegistration).toList();
+    final duesPayments = approvedPayments.where((p) => !isRegistration(p)).toList();
+
+    final duesTotal = duesPayments.fold<double>(0.0, (s, p) => s + p.amount);
+    final regTotal = regPayments.fold<double>(0.0, (s, p) => s + p.amount);
+    final branchIncomeSubtotal = duesTotal + regTotal;
+
+    final nationalSubtotal = remittances.fold<double>(
+      0.0,
+      (s, r) => s + r.unremittedBalance,
+    );
+
+    final totalGrossValue = balBf + branchIncomeSubtotal + nationalSubtotal;
+
+    final periodExpenses = expenses.where((e) {
+      if (e.expenseDate.isBefore(sDate)) return false;
+      final endOfDay = DateTime(eDate.year, eDate.month, eDate.day, 23, 59, 59);
+      if (e.expenseDate.isAfter(endOfDay)) return false;
+      return true;
+    }).toList();
+
+    final totalExpenses = periodExpenses.fold<double>(0.0, (s, e) => s + e.amount);
+    final balAtHandAndBank = totalGrossValue - totalExpenses;
+
+    // Dynamic dues by month
+    final Map<String, double> duesByMonth = {};
+    for (final p in duesPayments) {
+      final key = DateFormat('MMMM yyyy').format(p.createdAt);
+      duesByMonth[key] = (duesByMonth[key] ?? 0.0) + p.amount;
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageTheme: pw.PageTheme(
+          margin: const pw.EdgeInsets.all(32),
+          buildBackground: (context) => pw.Container(),
+        ),
+        footer: _buildFooter,
+        build: (context) => [
+          pw.Center(
+            child: pw.Column(
+              children: [
+                pw.Text(
+                  (organizationName ?? 'ASSOCIATION').toUpperCase(),
+                  style: _regularStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+                ),
+                if (branchName != null && branchName.trim().isNotEmpty) ...[
+                  pw.SizedBox(height: 2),
+                  pw.Text(
+                    branchName.trim().toUpperCase(),
+                    style: _regularStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700),
+                  ),
+                ],
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'FINANCIAL REPORT AS AT ${_fmtDate(eDate).toUpperCase()}',
+                  style: _regularStyle(fontSize: 15, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800),
+                ),
+                pw.SizedBox(height: 2),
+                pw.Text(
+                  'TENURE PERIOD: ${_fmtDate(sDate)} – ${_fmtDate(eDate)}',
+                  style: _regularStyle(fontSize: 10, color: PdfColors.grey800),
+                ),
+                pw.SizedBox(height: 12),
+                pw.Divider(thickness: 1.5, color: PdfColors.blue800),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 8),
+          pw.Text(
+            'STATEMENT OF RECEIPTS AND DISBURSEMENTS',
+            style: _regularStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 6),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(4.5),
+              1: const pw.FlexColumnWidth(1.2),
+              2: const pw.FlexColumnWidth(2),
+              3: const pw.FlexColumnWidth(2),
+            },
+            children: [
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                children: [
+                  _tableCell('PARTICULARS', isBold: true),
+                  _tableCell('NOTE', isBold: true, align: pw.TextAlign.center),
+                  _tableCell('SUB (₦)', isBold: true, align: pw.TextAlign.right),
+                  _tableCell('TOTAL (₦)', isBold: true, align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _tableCell('Balance Brought Forward (Bal b/f - Cash & Bank)'),
+                  _tableCell('-', align: pw.TextAlign.center),
+                  _tableCell(''),
+                  _tableCell(_fmt(balBf), isBold: true, align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+                children: [
+                  _tableCell('BRANCH RECEIPTS / INFLOWS', isBold: true),
+                  _tableCell(''),
+                  _tableCell(''),
+                  _tableCell(''),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _tableCell('  Monthly / Tenure Dues Collected'),
+                  _tableCell('Note 1', align: pw.TextAlign.center),
+                  _tableCell(_fmt(duesTotal), align: pw.TextAlign.right),
+                  _tableCell(''),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _tableCell('  New Registration Fees'),
+                  _tableCell('Note 2', align: pw.TextAlign.center),
+                  _tableCell(_fmt(regTotal), align: pw.TextAlign.right),
+                  _tableCell(''),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _tableCell('Sub-Total (Branch Receipts)', isBold: true),
+                  _tableCell(''),
+                  _tableCell(''),
+                  _tableCell(_fmt(branchIncomeSubtotal), isBold: true, align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+                children: [
+                  _tableCell('PASS-THROUGH / NATIONAL ESCROW (CUSTODIAL)', isBold: true),
+                  _tableCell(''),
+                  _tableCell(''),
+                  _tableCell(''),
+                ],
+              ),
+              if (remittances.isEmpty) ...[
+                pw.TableRow(
+                  children: [
+                    _tableCell('  No unremitted national levies'),
+                    _tableCell('-', align: pw.TextAlign.center),
+                    _tableCell(_fmt(0), align: pw.TextAlign.right),
+                    _tableCell(''),
+                  ],
+                ),
+              ] else ...[
+                ...remittances.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final r = entry.value;
+                  return pw.TableRow(
+                    children: [
+                      _tableCell('  ${r.levyTitle} (Unremitted)'),
+                      _tableCell('Note ${3 + idx}', align: pw.TextAlign.center),
+                      _tableCell(_fmt(r.unremittedBalance), align: pw.TextAlign.right),
+                      _tableCell(''),
+                    ],
+                  );
+                }),
+              ],
+              pw.TableRow(
+                children: [
+                  _tableCell('Sub-Total (National Escrow)', isBold: true),
+                  _tableCell(''),
+                  _tableCell(''),
+                  _tableCell(_fmt(nationalSubtotal), isBold: true, align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.blue50),
+                children: [
+                  _tableCell('TOTAL GROSS VALUE AVAILABLE', isBold: true),
+                  _tableCell(''),
+                  _tableCell(''),
+                  _tableCell(_fmt(totalGrossValue), isBold: true, align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+                children: [
+                  _tableCell('LESS: OPERATING DISBURSEMENTS / EXPENSES', isBold: true),
+                  _tableCell(''),
+                  _tableCell(''),
+                  _tableCell(''),
+                ],
+              ),
+              if (periodExpenses.isEmpty) ...[
+                pw.TableRow(
+                  children: [
+                    _tableCell('  No operating disbursements recorded'),
+                    _tableCell('-', align: pw.TextAlign.center),
+                    _tableCell(_fmt(0), align: pw.TextAlign.right),
+                    _tableCell(''),
+                  ],
+                ),
+              ] else ...[
+                ...periodExpenses.map((e) {
+                  final noteStr = e.noteRef != null && e.noteRef!.isNotEmpty ? e.noteRef! : 'Expense';
+                  return pw.TableRow(
+                    children: [
+                      _tableCell('  ${e.title}'),
+                      _tableCell(noteStr, align: pw.TextAlign.center),
+                      _tableCell(_fmt(e.amount), align: pw.TextAlign.right),
+                      _tableCell(''),
+                    ],
+                  );
+                }),
+              ],
+              pw.TableRow(
+                children: [
+                  _tableCell('TOTAL OPERATING DISBURSEMENTS', isBold: true),
+                  _tableCell(''),
+                  _tableCell(''),
+                  _tableCell('(${_fmt(totalExpenses)})', isBold: true, align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.green50),
+                children: [
+                  _tableCell('BAL AT HAND / BANK (CLOSING BALANCE)', isBold: true),
+                  _tableCell('Reconciled', align: pw.TextAlign.center),
+                  _tableCell(''),
+                  _tableCell(_fmt(balAtHandAndBank), isBold: true, align: pw.TextAlign.right),
+                ],
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 24),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Container(width: 180, height: 1, color: PdfColors.grey700),
+                  pw.SizedBox(height: 4),
+                  pw.Text('Prepared by: Financial Secretary', style: _regularStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('Accounting & Bookkeeping Officer', style: _regularStyle(fontSize: 9, color: PdfColors.grey700)),
+                  pw.Text('Date: ${_fmtDate(DateTime.now())}', style: _regularStyle(fontSize: 9, color: PdfColors.grey700)),
+                ],
+              ),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Container(width: 180, height: 1, color: PdfColors.grey700),
+                  pw.SizedBox(height: 4),
+                  pw.Text('Certified by: Treasurer', style: _regularStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('Fund Custodian & Banker', style: _regularStyle(fontSize: 9, color: PdfColors.grey700)),
+                  pw.Text('Date: ${_fmtDate(DateTime.now())}', style: _regularStyle(fontSize: 9, color: PdfColors.grey700)),
+                ],
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 16),
+          pw.Divider(thickness: 1, color: PdfColors.grey400),
+          pw.SizedBox(height: 12),
+          pw.Text(
+            'NOTES TO THE FINANCIAL STATEMENTS',
+            style: _regularStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 8),
+
+          // Dynamic Note 1: Dues Collections
+          _buildNoteCard(
+            'Note 1: Dues Collections Schedule',
+            duesByMonth.isNotEmpty
+                ? [
+                    'Total monthly contributions collected: ${_fmt(duesTotal)}.',
+                    ...duesByMonth.entries.map((e) => '${e.key}: ${_fmt(e.value)}'),
+                  ]
+                : ['No dues collections recorded for this tenure period. Total: ${_fmt(0)}.'],
+          ),
+
+          // Dynamic Note 2: New Registrations
+          _buildNoteCard(
+            'Note 2: New Member Registrations',
+            regPayments.isNotEmpty
+                ? [
+                    'Total registration fees collected: ${_fmt(regTotal)}.',
+                    ...regPayments.map((p) =>
+                        '${_fmtDate(p.createdAt)}: ${_fmt(p.amount)}${p.notes != null && p.notes!.isNotEmpty ? ' (${p.notes})' : ''}'),
+                  ]
+                : ['No new member registrations recorded for this tenure period. Total: ${_fmt(0)}.'],
+          ),
+
+          // Dynamic Notes for National Remittances
+          if (remittances.isEmpty) ...[
+            _buildNoteCard('Note 3: National Levies & Pass-Through Escrow', [
+              'No pass-through national levies recorded for this tenure period. Total: ${_fmt(0)}.',
+            ]),
+          ] else ...[
+            ...remittances.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final r = entry.value;
+              final statusStr = r.unremittedBalance <= 0
+                  ? 'Fully Remitted'
+                  : (r.amountRemitted > 0
+                      ? 'Partially Remitted'
+                      : 'Pending Remittance');
+              return _buildNoteCard('Note ${3 + idx}: ${r.levyTitle} (National Custodial)', [
+                'Total Collected from Members: ${_fmt(r.totalCollected)}.',
+                'Amount Remitted to National HQ: (${_fmt(r.amountRemitted)}).',
+                'Unremitted Balance held in Trust: ${_fmt(r.unremittedBalance)}.',
+                'Status: $statusStr',
+                if (r.notes != null && r.notes!.isNotEmpty) 'Note: ${r.notes}',
+              ]);
+            }),
+          ],
+
+          // Dynamic Notes for Operating Expenses
+          if (periodExpenses.isEmpty) ...[
+            _buildNoteCard('Operating Disbursements', [
+              'No operating expenses or disbursements recorded for this tenure period. Total: ${_fmt(0)}.',
+            ]),
+          ] else ...[
+            ...periodExpenses.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final e = entry.value;
+              final noteTag = e.noteRef != null && e.noteRef!.isNotEmpty ? e.noteRef! : 'Disbursement #${idx + 1}';
+
+              if ((e.grossAmount != null && e.grossAmount! > 0) ||
+                  (e.contributionsDeduction != null && e.contributionsDeduction! > 0)) {
+                final gross = e.grossAmount ?? e.amount;
+                final deduction = e.contributionsDeduction ?? 0.0;
+                return _buildNoteCard('$noteTag: ${e.title} (Co-Funded Event)', [
+                  'Gross Expenditure: ${_fmt(gross)}',
+                  'Less Member Donations / Contributions: (${_fmt(deduction)})',
+                  'Net Purse Disbursement: ${_fmt(e.amount)}',
+                  'Date: ${_fmtDate(e.expenseDate)}',
+                  'Details: ${e.description}',
+                ]);
+              } else {
+                return _buildNoteCard('$noteTag: ${e.title}', [
+                  'Category: ${e.category.displayName}',
+                  'Disbursed Amount: ${_fmt(e.amount)}',
+                  'Date: ${_fmtDate(e.expenseDate)}',
+                  'Details: ${e.description}',
+                ]);
+              }
+            }),
+          ],
+
+          // Final Note: Liquidity Reconciliation
+          _buildNoteCard('Summary of Bank & Cash at Hand (Closing Reconciliation)', [
+            'Total Closing Balance: ${_fmt(balAtHandAndBank)}.',
+            'Balance Brought Forward (Opening Bal): ${_fmt(balBf)}.',
+            'Total Branch Receipts: ${_fmt(branchIncomeSubtotal)}.',
+            'Total National Escrow Inflows: ${_fmt(nationalSubtotal)}.',
+            'Total Gross Value Available: ${_fmt(totalGrossValue)}.',
+            'Less Operating Disbursements: (${_fmt(totalExpenses)}).',
+            'Closing Liquid Assets: ${_fmt(balAtHandAndBank)}.',
+          ]),
         ],
       ),
     );

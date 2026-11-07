@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../members/models/member_model.dart';
 import '../../levies/models/levy_model.dart';
+import '../../national/models/national_remittance_model.dart';
 import '../../../core/constants/enums.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../admin/controllers/admin_provider.dart';
@@ -44,6 +45,8 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
         return 'Expense Breakdown';
       case ReportType.financialSummary:
         return 'Financial Summary';
+      case ReportType.agmFinancialReport:
+        return 'AGM Annual Financial Report';
     }
   }
 
@@ -59,6 +62,8 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
         return 'Generate a detailed expense report for the selected date range.';
       case ReportType.financialSummary:
         return 'Generate a comprehensive financial summary.';
+      case ReportType.agmFinancialReport:
+        return 'Generate the official Receipts & Disbursements statement with Opening Balance (Bal b/f), National Escrow, and Notes 1 to 14.';
     }
   }
 
@@ -297,6 +302,41 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
           endDate: _endDate,
           organizationName: orgName,
         );
+      case ReportType.agmFinancialReport:
+        final payments = await ref.read(reportsAllPaymentsStreamProvider.future);
+        final expenses = await ref.read(reportsAllExpensesStreamProvider.future);
+        final members = await ref.read(reportsMembersStreamProvider.future);
+        final obligations =
+            await ref.read(reportsAllObligationsStreamProvider.future);
+
+        final user = ref.read(authProvider).valueOrNull;
+        final orgId = user?.organizationId ?? '';
+        final branchId = user?.branchId;
+
+        final remittances = await ref
+            .read(reportsRemittanceRepositoryProvider)
+            .getRemittances(organizationId: orgId, branchId: branchId)
+            .first
+            .catchError((_) => <NationalRemittanceModel>[]);
+
+        final activePeriod = await ref
+            .read(reportsFiscalPeriodRepositoryProvider)
+            .getActiveFiscalPeriod(organizationId: orgId, branchId: branchId)
+            .catchError((_) => null);
+
+        return ReportRequest(
+          type: ReportType.agmFinancialReport,
+          payments: payments,
+          expenses: expenses,
+          members: members,
+          obligations: obligations,
+          remittances: remittances,
+          fiscalPeriod: activePeriod,
+          startDate: _startDate ?? activePeriod?.startDate ?? DateTime(2025, 7, 1),
+          endDate: _endDate ?? activePeriod?.endDate ?? DateTime(2026, 10, 31),
+          organizationName: orgName ?? 'Onyirimba Age Grade',
+          branchName: user?.branchId ?? 'Elu Ohafia, Lagos Branch',
+        );
     }
   }
 
@@ -493,6 +533,66 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
                         _endDate != null
                             ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
                             : 'Optional',
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      case ReportType.agmFinancialReport:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.25),
+              child: const Padding(
+                padding: EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(Icons.account_balance, color: Colors.blue),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Generates the 4-page AGM financial report: Page 1 (Statement of Receipts & Disbursements with Bal b/f) and Pages 2–4 (Notes 1–14).',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _pickDate(isStart: true),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Tenure Start Date',
+                      ),
+                      child: Text(
+                        _startDate != null
+                            ? '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'
+                            : '01/07/2025 (Default)',
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _pickDate(isStart: false),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Tenure End Date',
+                      ),
+                      child: Text(
+                        _endDate != null
+                            ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
+                            : '31/10/2026 (Default)',
                       ),
                     ),
                   ),
