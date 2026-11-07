@@ -140,7 +140,10 @@ void main() {
     recentPayments: [],
   );
 
-  Widget buildDashboard({FinancialSecretaryDashboardData data = emptyData}) {
+  Widget buildDashboard({
+    FinancialSecretaryDashboardData? data,
+    List<ObligationModel>? obligations,
+  }) {
     final mockAuth = _MockAuthService(testUser);
     final mockPayment = _MockPaymentRepo();
     final mockObligation = _MockObligationRepo();
@@ -156,9 +159,10 @@ void main() {
           notifier.state = AsyncValue.data(testUser);
           return notifier;
         }),
-        financialSecretaryDashboardProvider.overrideWithValue(
-          AsyncValue.data(data),
-        ),
+        if (data != null || obligations == null)
+          financialSecretaryDashboardProvider.overrideWithValue(
+            AsyncValue.data(data ?? emptyData),
+          ),
         paymentRepositoryProvider.overrideWith((ref) => mockPayment),
         obligationRepositoryProvider.overrideWith((ref) => mockObligation),
         levyRepositoryProvider.overrideWith((ref) => mockLevy),
@@ -172,11 +176,12 @@ void main() {
         }),
         membersStreamProvider.overrideWith((ref) => Stream.value(testMembers)),
         allPaymentsStreamProvider.overrideWith((ref) => Stream.value([])),
-        allObligationsProvider.overrideWith((ref) => Stream.value([])),
+        allObligationsProvider.overrideWith((ref) => Stream.value(obligations ?? [])),
         activeLeviesProvider.overrideWith((ref) => Stream.value([])),
         expensesStreamProvider.overrideWith((ref) => Stream.value([])),
         pendingExpensesStreamProvider.overrideWith((ref) => Stream.value([])),
         announcementsStreamProvider('org1').overrideWith((ref) => Stream.value([])),
+        organizationObligationsCleanupProvider('org1').overrideWith((ref) => Future.value(0)),
         memberTotalPaidProvider('finsec1').overrideWithValue(const AsyncValue.data(0.0)),
         memberTotalOutstandingProvider('finsec1').overrideWithValue(const AsyncValue.data(0.0)),
         memberActiveLeviesProvider('finsec1').overrideWithValue(const AsyncValue.data(0)),
@@ -237,6 +242,53 @@ void main() {
       expect(find.text('Levies Management'), findsOneWidget);
       expect(find.text('Create Levy / Due'), findsWidgets);
       expect(find.text('No Active Levies or Dues'), findsOneWidget);
+    });
+
+    testWidgets('Debtors tab deduplicates duplicate obligations for the same levy', (tester) async {
+      final duplicateObligations = [
+        ObligationModel(
+          id: 'obl_dup_1',
+          organizationId: 'org1',
+          memberId: 'm1',
+          levyId: 'levy_20k',
+          type: ObligationType.specialLevy,
+          title: 'Development Levy',
+          description: 'Levy 20k',
+          amount: 20000,
+          paidAmount: 0,
+          outstandingBalance: 20000,
+          status: ObligationStatus.unpaid,
+          dueDate: DateTime.now().add(const Duration(days: 10)),
+          createdAt: DateTime.now(),
+        ),
+        ObligationModel(
+          id: 'obl_dup_2',
+          organizationId: 'org1',
+          memberId: 'm1',
+          levyId: 'levy_20k',
+          type: ObligationType.specialLevy,
+          title: 'Development Levy',
+          description: 'Levy 20k',
+          amount: 20000,
+          paidAmount: 0,
+          outstandingBalance: 20000,
+          status: ObligationStatus.unpaid,
+          dueDate: DateTime.now().add(const Duration(days: 10)),
+          createdAt: DateTime.now(),
+        ),
+      ];
+
+      await tester.pumpWidget(buildDashboard(obligations: duplicateObligations));
+      await tester.pumpAndSettle();
+
+      // Navigate to Debtors tab (index 2)
+      await tester.tap(find.text('Debtors'));
+      await tester.pumpAndSettle();
+
+      // Must show ₦20,000 for member m1 (not ₦40,000)
+      expect(find.text('₦20,000'), findsWidgets);
+      expect(find.text('₦40,000'), findsNothing);
+      expect(find.text('1 unpaid dues/levies'), findsOneWidget);
     });
   });
 }

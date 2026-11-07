@@ -72,11 +72,6 @@ final financialSecretaryDashboardProvider =
           (sum, o) => sum + o.paidAmount,
         );
 
-        // Total outstanding dues
-        final totalOutstanding = obligations
-            .where((o) => o.status != ObligationStatus.paid)
-            .fold<double>(0.0, (sum, o) => sum + o.outstandingBalance);
-
         // Channel breakdown
         double cashCollected = 0.0;
         double bankCollected = 0.0;
@@ -112,7 +107,7 @@ final financialSecretaryDashboardProvider =
           }
         }
 
-        // Member arrears (Debtors list)
+        // Member arrears (Debtors list) with defensive deduplication
         final memberObligations = <String, List<ObligationModel>>{};
         for (final o in obligations) {
           if (o.outstandingBalance <= 0) continue;
@@ -126,7 +121,25 @@ final financialSecretaryDashboardProvider =
 
         final memberArrears = memberObligations.entries.map((e) {
           final member = memberByDocId[e.key];
-          final totalOutstanding = e.value.fold<double>(
+
+          // Deduplicate multiple unpaid records for the same levy/title for this member
+          final deduplicated = <String, ObligationModel>{};
+          for (final o in e.value) {
+            final key = o.levyId.isNotEmpty
+                ? 'levy_${o.levyId}'
+                : 'title_${o.type.name}_${o.title.trim().toLowerCase()}';
+            if (!deduplicated.containsKey(key)) {
+              deduplicated[key] = o;
+            } else {
+              final existing = deduplicated[key]!;
+              if (o.paidAmount > existing.paidAmount) {
+                deduplicated[key] = o;
+              }
+            }
+          }
+
+          final uniqueObligations = deduplicated.values.toList();
+          final totalOutstanding = uniqueObligations.fold<double>(
             0.0,
             (sum, o) => sum + o.outstandingBalance,
           );
@@ -134,13 +147,19 @@ final financialSecretaryDashboardProvider =
             memberId: e.key,
             memberName: member?.fullName ?? 'Unknown Member',
             totalOutstanding: totalOutstanding,
-            unpaidCount: e.value
+            unpaidCount: uniqueObligations
                 .where((o) => o.status != ObligationStatus.paid)
                 .length,
           );
         }).toList();
         memberArrears.sort(
           (a, b) => b.totalOutstanding.compareTo(a.totalOutstanding),
+        );
+
+        // Total outstanding dues calculated directly from deduplicated member arrears
+        final totalOutstanding = memberArrears.fold<double>(
+          0.0,
+          (sum, a) => sum + a.totalOutstanding,
         );
 
         // Levies progress summary
@@ -156,11 +175,26 @@ final financialSecretaryDashboardProvider =
                       o.title.trim().toLowerCase() ==
                           levy.title.trim().toLowerCase()))
               .toList();
-          final target = levyObligations.fold<double>(
+
+          // Deduplicate obligations by canonical memberId
+          final uniqueLevyObsByMember = <String, ObligationModel>{};
+          for (final o in levyObligations) {
+            String mid = o.memberId;
+            if (!memberByDocId.containsKey(mid) && memberByUserId.containsKey(mid)) {
+              mid = memberByUserId[mid]!;
+            }
+            if (!uniqueLevyObsByMember.containsKey(mid) ||
+                o.paidAmount > uniqueLevyObsByMember[mid]!.paidAmount) {
+              uniqueLevyObsByMember[mid] = o;
+            }
+          }
+          final uniqueLevyObs = uniqueLevyObsByMember.values.toList();
+
+          final target = uniqueLevyObs.fold<double>(
             0.0,
             (sum, o) => sum + o.amount,
           );
-          final collected = levyObligations.fold<double>(
+          final collected = uniqueLevyObs.fold<double>(
             0.0,
             (sum, o) => sum + o.paidAmount,
           );
@@ -171,7 +205,7 @@ final financialSecretaryDashboardProvider =
             collected: collected,
             target: target,
             percentage: percentage,
-            memberCount: levyObligations.length,
+            memberCount: uniqueLevyObs.length,
           ));
         }
 
@@ -189,8 +223,22 @@ final financialSecretaryDashboardProvider =
         for (final entry in groupedObligations.entries) {
           final title = entry.key;
           final list = entry.value;
-          final target = list.fold<double>(0.0, (sum, o) => sum + o.amount);
-          final collected = list.fold<double>(0.0, (sum, o) => sum + o.paidAmount);
+
+          final uniqueObsByMember = <String, ObligationModel>{};
+          for (final o in list) {
+            String mid = o.memberId;
+            if (!memberByDocId.containsKey(mid) && memberByUserId.containsKey(mid)) {
+              mid = memberByUserId[mid]!;
+            }
+            if (!uniqueObsByMember.containsKey(mid) ||
+                o.paidAmount > uniqueObsByMember[mid]!.paidAmount) {
+              uniqueObsByMember[mid] = o;
+            }
+          }
+          final uniqueList = uniqueObsByMember.values.toList();
+
+          final target = uniqueList.fold<double>(0.0, (sum, o) => sum + o.amount);
+          final collected = uniqueList.fold<double>(0.0, (sum, o) => sum + o.paidAmount);
           final percentage = target > 0 ? (collected / target) : 0.0;
 
           levySummaries.add(LevyCollectionSummary(
@@ -199,7 +247,7 @@ final financialSecretaryDashboardProvider =
             collected: collected,
             target: target,
             percentage: percentage,
-            memberCount: list.length,
+            memberCount: uniqueList.length,
           ));
         }
 

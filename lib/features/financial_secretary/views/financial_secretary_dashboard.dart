@@ -19,7 +19,7 @@ import 'package:cls/features/payments/controllers/offline_payment_provider.dart'
 import 'package:cls/features/payments/models/payment_model.dart';
 import 'package:cls/features/financial_secretary/controllers/financial_secretary_dashboard_provider.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart'
-    show allObligationsProvider;
+    show allObligationsProvider, organizationObligationsCleanupProvider;
 import 'package:cls/features/levies/controllers/levy_provider.dart'
     show activeLeviesProvider;
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart'
@@ -69,6 +69,11 @@ class _FinancialSecretaryDashboardState
 
     if (user == null) {
       return const Scaffold(body: Center(child: Text('Please sign in')));
+    }
+
+    final orgId = user.organizationId;
+    if (orgId.isNotEmpty) {
+      ref.watch(organizationObligationsCleanupProvider(orgId));
     }
 
     final pages = <Widget>[

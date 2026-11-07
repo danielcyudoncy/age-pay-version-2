@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
+import 'package:cls/core/theme/app_theme.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
 import 'package:cls/features/payments/models/payment_model.dart';
 import 'package:cls/features/payments/views/transfer_proof_screen.dart';
 import 'package:cls/features/payments/widgets/payment_detail_sheet.dart';
@@ -25,25 +27,74 @@ class PaymentHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final paymentsAsync = ref.watch(paymentHistoryProvider(memberId));
+    final activeScope = ref.watch(activeExecutiveScopeProvider);
+    final isNational = activeScope == ExecutiveScope.national;
+    final allObligationsAsync = ref.watch(allObligationsProvider);
+    final allObligations = allObligationsAsync.valueOrNull ?? [];
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
     final dateFormat = DateFormat('MMM d, yyyy \u2022 h:mm a');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Payment History'), centerTitle: true),
+      appBar: AppBar(
+        title: Text(isNational ? 'National Payments' : 'Branch Payments'),
+        centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ActionChip(
+              visualDensity: VisualDensity.compact,
+              avatar: Icon(
+                isNational ? Icons.stars_rounded : Icons.location_on_outlined,
+                size: 14,
+                color: isNational ? const Color(0xFFB8860B) : AppTheme.brandGreen,
+              ),
+              label: Text(
+                isNational ? 'National' : 'Branch',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isNational ? const Color(0xFFB8860B) : AppTheme.brandGreen,
+                ),
+              ),
+              onPressed: () {
+                ref.read(activeExecutiveScopeProvider.notifier).state =
+                    isNational ? ExecutiveScope.branch : ExecutiveScope.national;
+              },
+            ),
+          ),
+        ],
+      ),
       body: paymentsAsync.when(
         data: (payments) {
-          if (payments.isEmpty) {
-            return const Center(
+          final scopedPayments = payments.where((p) {
+            final isNationalPayment =
+                (p.notes?.toLowerCase().contains('national') ?? false) ||
+                    p.allocations.any((a) {
+                      final ob = allObligations
+                          .where((o) => o.id == a.obligationId)
+                          .firstOrNull;
+                      return ob != null && ob.scope.toLowerCase() == 'national';
+                    });
+            return isNational ? isNationalPayment : !isNationalPayment;
+          }).toList();
+
+          if (scopedPayments.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.receipt_long_outlined,
                     size: 64,
                     color: Colors.grey,
                   ),
-                  SizedBox(height: 16),
-                  Text('No payments yet', style: TextStyle(fontSize: 18)),
+                  const SizedBox(height: 16),
+                  Text(
+                    isNational
+                        ? 'No national payments recorded yet'
+                        : 'No branch payments recorded yet',
+                    style: const TextStyle(fontSize: 16),
+                  ),
                 ],
               ),
             );
@@ -56,9 +107,9 @@ class PaymentHistoryScreen extends ConsumerWidget {
               16,
               MediaQuery.paddingOf(context).bottom + 24,
             ),
-            itemCount: payments.length,
+            itemCount: scopedPayments.length,
             itemBuilder: (context, index) {
-              final payment = payments[index];
+              final payment = scopedPayments[index];
               return _PaymentHistoryCard(
                 payment: payment,
                 currency: currency,

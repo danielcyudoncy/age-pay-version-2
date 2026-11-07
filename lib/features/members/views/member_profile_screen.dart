@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cls/core/constants/enums.dart';
+import 'package:cls/core/theme/app_theme.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
 import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
@@ -12,6 +15,7 @@ class MemberProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
+    final activeScope = ref.watch(activeExecutiveScopeProvider);
     final dateFormat = DateFormat('MMM d, yyyy');
 
     return Scaffold(
@@ -76,6 +80,215 @@ class MemberProfileScreen extends ConsumerWidget {
                         icon: Icons.calendar_today,
                         label: 'Joined',
                         value: dateFormat.format(member.joinedDate),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _ProfileSection(
+                    title: 'Jurisdiction & Membership Tier',
+                    children: [
+                      _ProfileInfoRow(
+                        icon: Icons.location_on_outlined,
+                        label: 'Local Branch',
+                        value: (user.branchName != null &&
+                                user.branchName!.trim().isNotEmpty)
+                            ? user.branchName!.trim()
+                            : 'Branch Member',
+                      ),
+                      const _ProfileInfoRow(
+                        icon: Icons.stars_rounded,
+                        label: 'National Body',
+                        value: 'National Assembly (Enrolled)',
+                      ),
+                      if (user.nationalRole != null)
+                        _ProfileInfoRow(
+                          icon: Icons.military_tech_outlined,
+                          label: 'National Executive Office',
+                          value: user.nationalRole!.displayName,
+                        ),
+                      const SizedBox(height: 12),
+                      const Divider(height: 1),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.swap_horiz,
+                              size: 18, color: AppTheme.brandGreen),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Active Account Context',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest
+                              .withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.all(3),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  ref
+                                      .read(activeExecutiveScopeProvider.notifier)
+                                      .state = ExecutiveScope.branch;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      duration:
+                                          const Duration(milliseconds: 1500),
+                                      backgroundColor: AppTheme.brandGreen,
+                                      content: Text(
+                                        'Switched active view to ${user.branchName ?? 'Local Branch'}',
+                                      ),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: activeScope == ExecutiveScope.branch
+                                        ? Theme.of(context).colorScheme.surface
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: activeScope == ExecutiveScope.branch
+                                        ? Border.all(
+                                            color: AppTheme.brandGreen
+                                                .withValues(alpha: 0.4),
+                                            width: 1.5,
+                                          )
+                                        : null,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.location_on,
+                                        size: 15,
+                                        color: activeScope ==
+                                                ExecutiveScope.branch
+                                            ? AppTheme.brandGreen
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          user.branchName ?? 'Branch',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: activeScope ==
+                                                    ExecutiveScope.branch
+                                                ? FontWeight.bold
+                                                : FontWeight.w500,
+                                            color: activeScope ==
+                                                    ExecutiveScope.branch
+                                                ? AppTheme.brandGreen
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  ref
+                                      .read(activeExecutiveScopeProvider.notifier)
+                                      .state = ExecutiveScope.national;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      duration: Duration(milliseconds: 1500),
+                                      backgroundColor: AppTheme.brandGreen,
+                                      content: Text(
+                                        'Switched active view to National Body (Central Dues)',
+                                      ),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: activeScope == ExecutiveScope.national
+                                        ? Theme.of(context).colorScheme.surface
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: activeScope ==
+                                            ExecutiveScope.national
+                                        ? Border.all(
+                                            color: const Color(0xFFB8860B)
+                                                .withValues(alpha: 0.5),
+                                            width: 1.5,
+                                          )
+                                        : null,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.stars_rounded,
+                                        size: 15,
+                                        color: activeScope ==
+                                                ExecutiveScope.national
+                                            ? const Color(0xFFB8860B)
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'National Body',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: activeScope ==
+                                                  ExecutiveScope.national
+                                              ? FontWeight.bold
+                                              : FontWeight.w500,
+                                          color: activeScope ==
+                                                  ExecutiveScope.national
+                                              ? const Color(0xFFB8860B)
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Switching your active context filters your dashboard dues, receipts, and announcements to the selected tier.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ],
                   ),

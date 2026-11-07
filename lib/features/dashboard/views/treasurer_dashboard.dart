@@ -72,6 +72,11 @@ class _TreasurerDashboardState extends ConsumerState<TreasurerDashboard> {
           return const Scaffold(body: Center(child: Text('Please sign in')));
         }
 
+        final orgId = user.organizationId;
+        if (orgId.isNotEmpty) {
+          ref.watch(organizationObligationsCleanupProvider(orgId));
+        }
+
         final pages = <Widget>[
           _HomeTab(user: user, onNavigate: _onNavigate),
           ExpenseListScreen(

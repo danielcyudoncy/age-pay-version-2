@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cls/core/constants/enums.dart';
+import 'package:cls/core/theme/app_theme.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
 import 'package:cls/features/obligations/models/obligation_model.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:intl/intl.dart';
@@ -14,11 +16,41 @@ class MemberObligationsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final obligationsAsync = ref.watch(memberObligationsProvider(memberId));
+    final activeScope = ref.watch(activeExecutiveScopeProvider);
+    final isNational = activeScope == ExecutiveScope.national;
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
     final dateFormat = DateFormat('MMM d, yyyy');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Obligations'), centerTitle: true),
+      appBar: AppBar(
+        title: Text(isNational ? 'National Obligations' : 'Branch Obligations'),
+        centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ActionChip(
+              visualDensity: VisualDensity.compact,
+              avatar: Icon(
+                isNational ? Icons.stars_rounded : Icons.location_on_outlined,
+                size: 14,
+                color: isNational ? const Color(0xFFB8860B) : AppTheme.brandGreen,
+              ),
+              label: Text(
+                isNational ? 'National' : 'Branch',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isNational ? const Color(0xFFB8860B) : AppTheme.brandGreen,
+                ),
+              ),
+              onPressed: () {
+                ref.read(activeExecutiveScopeProvider.notifier).state =
+                    isNational ? ExecutiveScope.branch : ExecutiveScope.national;
+              },
+            ),
+          ),
+        ],
+      ),
       body: obligationsAsync.when(
         data: (obligations) {
           if (obligations.isEmpty) {

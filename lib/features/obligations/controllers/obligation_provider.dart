@@ -18,17 +18,28 @@ final allObligationsProvider =
       if (user == null) return const Stream.empty();
 
       final activeScope = ref.watch(activeExecutiveScopeProvider);
-      final isNationalScope = activeScope == ExecutiveScope.national &&
-          (user.nationalRole != null || user.role == UserRole.superAdmin);
+      final isNationalScope = activeScope == ExecutiveScope.national;
 
       final repo = ref.watch(obligationRepositoryProvider);
       final obligationsStream = repo.getAllObligations();
 
-      if (isNationalScope ||
-          user.role == UserRole.superAdmin ||
+      if (isNationalScope) {
+        // In national scope, stream national-scoped obligations
+        return obligationsStream.map((obligations) {
+          return obligations
+              .where((o) => o.scope.trim().toLowerCase() == 'national')
+              .toList();
+        });
+      }
+
+      if (user.role == UserRole.superAdmin ||
           user.branchId == null ||
           user.branchId!.isEmpty) {
-        return obligationsStream;
+        return obligationsStream.map((obligations) {
+          return obligations
+              .where((o) => o.scope.trim().toLowerCase() != 'national')
+              .toList();
+        });
       }
 
       final membersAsync = ref.watch(membersStreamProvider);
@@ -44,6 +55,7 @@ final allObligationsProvider =
 
       return obligationsStream.map((obligations) {
         return obligations.where((o) {
+          if (o.scope.trim().toLowerCase() == 'national') return false;
           if (o.branchId != null && o.branchId!.isNotEmpty) {
             return o.branchId == user.branchId;
           }
@@ -73,9 +85,27 @@ final memberObligationsProvider = Provider.autoDispose
             }
           }
 
-          return AsyncValue.data(
-            obligations.where((o) => memberIds.contains(o.memberId)).toList(),
-          );
+          final matching = obligations
+              .where((o) => memberIds.contains(o.memberId))
+              .toList();
+
+          // Deduplicate by levyId or title to prevent duplicate charges for the same levy
+          final deduplicated = <String, ObligationModel>{};
+          for (final o in matching) {
+            final key = o.levyId.isNotEmpty
+                ? 'levy_${o.levyId}'
+                : 'title_${o.type.name}_${o.title.trim().toLowerCase()}';
+            if (!deduplicated.containsKey(key)) {
+              deduplicated[key] = o;
+            } else {
+              final existing = deduplicated[key]!;
+              if (o.paidAmount > existing.paidAmount) {
+                deduplicated[key] = o;
+              }
+            }
+          }
+
+          return AsyncValue.data(deduplicated.values.toList());
         },
         loading: () => const AsyncValue.loading(),
         error: (e, st) => AsyncValue.error(e, st),
@@ -183,4 +213,12 @@ final filteredObligationsProvider =
         loading: () => const AsyncValue.loading(),
         error: (err, st) => AsyncValue.error(err, st),
       );
+    });
+
+/// Auto-cleans up duplicate unpaid obligations across the entire organization
+final organizationObligationsCleanupProvider =
+    FutureProvider.autoDispose.family<int, String>((ref, organizationId) async {
+      if (organizationId.isEmpty) return 0;
+      final repo = ref.watch(obligationRepositoryProvider);
+      return repo.cleanupOrganizationDuplicateObligations(organizationId);
     });

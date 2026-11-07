@@ -47,7 +47,7 @@ class DashboardAppBarActions extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (hasNationalRole && showScopeChip)
+        if (showScopeChip)
           Padding(
             padding: const EdgeInsets.only(right: 6),
             child: ActionChip(
@@ -81,14 +81,21 @@ class DashboardAppBarActions extends ConsumerWidget {
                     ? ExecutiveScope.national
                     : ExecutiveScope.branch;
                 ref.read(activeExecutiveScopeProvider.notifier).state = newScope;
+                final branchLabel = (targetUser?.branchName != null &&
+                        targetUser!.branchName!.trim().isNotEmpty)
+                    ? targetUser.branchName!.trim()
+                    : 'Local Branch';
+                final nationalLabel = targetUser?.nationalRole != null
+                    ? 'National View (${targetUser!.nationalRole!.displayName})'
+                    : 'National Body View (Central Dues & Levies)';
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     duration: const Duration(milliseconds: 1500),
                     backgroundColor: AppTheme.brandGreen,
                     content: Text(
                       newScope == ExecutiveScope.national
-                          ? 'Switched to National View (${targetUser?.nationalRole?.displayName})'
-                          : 'Switched to Branch View (${targetUser?.branchName ?? 'Local'})',
+                          ? 'Switched to $nationalLabel'
+                          : 'Switched to Branch View ($branchLabel)',
                     ),
                   ),
                 );
