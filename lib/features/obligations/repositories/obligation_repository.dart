@@ -356,6 +356,8 @@ class ObligationRepository {
           'settledAt': isCleared ? Timestamp.fromDate(now) : null,
           'createdAt': Timestamp.fromDate(now),
           'updatedAt': Timestamp.fromDate(now),
+          'scope': levy.scope,
+          if (levy.branchId != null) 'branchId': levy.branchId,
         });
       }
     } catch (_) {
@@ -418,6 +420,8 @@ class ObligationRepository {
         'settledAt': isCleared ? Timestamp.fromDate(now) : null,
         'createdAt': Timestamp.fromDate(now),
         'updatedAt': Timestamp.fromDate(now),
+        'scope': template.scope,
+        if (template.branchId != null) 'branchId': template.branchId,
       });
     }
 
@@ -441,6 +445,7 @@ class ObligationRepository {
         'dueDate': Timestamp.fromDate(now),
         'createdAt': Timestamp.fromDate(now),
         'updatedAt': Timestamp.fromDate(now),
+        'scope': 'branch',
       });
     }
 

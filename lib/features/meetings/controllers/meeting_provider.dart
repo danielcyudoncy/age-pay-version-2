@@ -17,12 +17,11 @@ final meetingsStreamProvider =
       if (user == null) return const Stream.empty();
 
       final activeScope = ref.watch(activeExecutiveScopeProvider);
-      final isNationalScope = activeScope == ExecutiveScope.national &&
-          (user.nationalRole != null || user.role == UserRole.superAdmin);
+      final isNationalScope = activeScope == ExecutiveScope.national;
 
       return ref.watch(meetingRepositoryProvider).getMeetings().map((meetings) {
         if (isNationalScope) {
-          // National executives only see national meetings. Branch meetings remain private to the branch.
+          // In national scope, show national-tier meetings and conventions
           return meetings
               .where((m) => m.scope == 'national' || m.branchId == 'national')
               .toList();
@@ -31,7 +30,7 @@ final meetingsStreamProvider =
           return meetings
               .where(
                 (m) =>
-                    m.branchId == user.branchId ||
+                    (m.branchId == user.branchId && m.scope != 'national') ||
                     (m.scope == 'national' && m.targetAudience == 'all'),
               )
               .toList();

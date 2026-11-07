@@ -1,23 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
 import 'package:cls/features/secretary/controllers/secretary_dashboard_provider.dart';
 import 'package:cls/features/secretary/models/announcement_model.dart';
 import '../widgets/announcement_detail_dialog.dart';
+
+enum AnnouncementTierFilter { all, branch, national }
 
 /// Screen members use to receive and read announcements created by the
 /// secretary or vice secretary. Announcements are scoped by the organization
 /// the member belongs to, resolved via [organizationIdProvider] so that
 /// members whose profile predates the organizationId field still receive
 /// announcements created by the secretary.
-class MemberAnnouncementsScreen extends ConsumerWidget {
+class MemberAnnouncementsScreen extends ConsumerStatefulWidget {
   const MemberAnnouncementsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MemberAnnouncementsScreen> createState() =>
+      _MemberAnnouncementsScreenState();
+}
+
+class _MemberAnnouncementsScreenState
+    extends ConsumerState<MemberAnnouncementsScreen> {
+  AnnouncementTierFilter? _filter;
+
+  bool _isNational(AnnouncementModel a) {
+    final aud = a.targetAudience.trim().toLowerCase();
+    return aud == 'national' ||
+        aud == 'nationalexecutives' ||
+        aud == 'national_executives' ||
+        a.targetBranchId == 'national' ||
+        (a.targetBranchName?.trim().toLowerCase() == 'national assembly') ||
+        (a.targetBranchName?.trim().toLowerCase() == 'national');
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final orgIdAsync = ref.watch(organizationIdProvider);
+    final activeScope = ref.watch(activeExecutiveScopeProvider);
     final dateFormat = DateFormat('MMM dd, yyyy');
+
+    _filter ??= (activeScope == ExecutiveScope.national
+        ? AnnouncementTierFilter.national
+        : AnnouncementTierFilter.branch);
 
     return orgIdAsync.when(
       loading: () => Scaffold(
@@ -41,57 +69,124 @@ class MemberAnnouncementsScreen extends ConsumerWidget {
               final visible =
                   announcements.where((a) => a.isVisibleTo(user)).toList();
 
-              if (visible.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.campaign_outlined, size: 64, color: Colors.grey.shade400),
-                      const SizedBox(height: 16),
-                      const Text('No announcements yet', style: TextStyle(fontSize: 16)),
-                    ],
-                  ),
-                );
+              final branchItems =
+                  visible.where((a) => !_isNational(a)).toList();
+              final nationalItems =
+                  visible.where((a) => _isNational(a)).toList();
+
+              List<AnnouncementModel> filtered;
+              switch (_filter) {
+                case AnnouncementTierFilter.branch:
+                  filtered = branchItems;
+                  break;
+                case AnnouncementTierFilter.national:
+                  filtered = nationalItems;
+                  break;
+                case AnnouncementTierFilter.all:
+                default:
+                  filtered = visible;
+                  break;
               }
 
-              final pinned = visible.where((a) => a.isPinned).toList();
-              final others = visible.where((a) => !a.isPinned).toList();
+              final pinned = filtered.where((a) => a.isPinned).toList();
+              final others = filtered.where((a) => !a.isPinned).toList();
 
-              return RefreshIndicator(
-                onRefresh: () async =>
-                    ref.invalidate(announcementsStreamProvider(orgId)),
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    16,
-                    16,
-                    MediaQuery.paddingOf(context).bottom + 24,
-                  ),
-                  children: [
-                    ...pinned.map(
-                      (a) => _MemberAnnouncementCard(
-                        announcement: a,
-                        dateFormat: dateFormat,
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: SegmentedButton<AnnouncementTierFilter>(
+                      style: SegmentedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        textStyle: const TextStyle(fontSize: 12),
                       ),
-                    ),
-                    if (pinned.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        'Recent',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                      segments: [
+                        ButtonSegment(
+                          value: AnnouncementTierFilter.all,
+                          label: Text('All (${visible.length})'),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    ...others.map(
-                      (a) => _MemberAnnouncementCard(
-                        announcement: a,
-                        dateFormat: dateFormat,
-                      ),
+                        ButtonSegment(
+                          value: AnnouncementTierFilter.branch,
+                          icon: const Icon(Icons.location_on_outlined, size: 14),
+                          label: Text('Branch (${branchItems.length})'),
+                        ),
+                        ButtonSegment(
+                          value: AnnouncementTierFilter.national,
+                          icon: const Icon(Icons.stars_rounded, size: 14),
+                          label: Text('National (${nationalItems.length})'),
+                        ),
+                      ],
+                      selected: {_filter ?? AnnouncementTierFilter.all},
+                      onSelectionChanged: (set) {
+                        setState(() => _filter = set.first);
+                      },
                     ),
-                  ],
-                ),
+                  ),
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.campaign_outlined,
+                                  size: 64,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _filter == AnnouncementTierFilter.national
+                                      ? 'No national communiqués yet'
+                                      : _filter == AnnouncementTierFilter.branch
+                                          ? 'No branch announcements yet'
+                                          : 'No announcements yet',
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () async => ref.invalidate(
+                              announcementsStreamProvider(orgId),
+                            ),
+                            child: ListView(
+                              padding: EdgeInsets.fromLTRB(
+                                16,
+                                8,
+                                16,
+                                MediaQuery.paddingOf(context).bottom + 24,
+                              ),
+                              children: [
+                                ...pinned.map(
+                                  (a) => _MemberAnnouncementCard(
+                                    announcement: a,
+                                    dateFormat: dateFormat,
+                                  ),
+                                ),
+                                if (pinned.isNotEmpty) ...[
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Recent',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+                                ...others.map(
+                                  (a) => _MemberAnnouncementCard(
+                                    announcement: a,
+                                    dateFormat: dateFormat,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ),
+                ],
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),

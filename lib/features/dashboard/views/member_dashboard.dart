@@ -25,6 +25,7 @@ import 'package:cls/features/calling/views/branch_directory_screen.dart';
 import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
 import 'package:cls/features/payments/widgets/payment_detail_sheet.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
 
 class MemberDashboard extends ConsumerWidget {
   const MemberDashboard({super.key});
@@ -163,12 +164,27 @@ class MemberDashboard extends ConsumerWidget {
     );
 
     final user = ref.watch(authProvider).valueOrNull;
+    final activeScope = ref.watch(activeExecutiveScopeProvider);
+    final isNational = activeScope == ExecutiveScope.national;
 
     final announcementsCount = ref
         .watch(announcementsStreamProvider(orgId))
         .when(
           data: (items) {
-            final visible = items.where((a) => a.isVisibleTo(user)).toList();
+            final visible = items.where((a) {
+              if (!a.isVisibleTo(user)) return false;
+              final aud = a.targetAudience.trim().toLowerCase();
+              final isNationalAnnouncement = aud == 'national' ||
+                  aud == 'nationalexecutives' ||
+                  aud == 'national_executives' ||
+                  a.targetBranchId == 'national' ||
+                  (a.targetBranchName?.trim().toLowerCase() ==
+                      'national assembly') ||
+                  (a.targetBranchName?.trim().toLowerCase() == 'national');
+              return isNational
+                  ? isNationalAnnouncement
+                  : !isNationalAnnouncement;
+            }).toList();
             return visible.length;
           },
           loading: () => 0,
@@ -198,7 +214,20 @@ class MemberDashboard extends ConsumerWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
+          _BranchNationalScopeToggle(
+            activeScope: activeScope,
+            branchName: user?.branchName,
+            onScopeChanged: (newScope) {
+              ref.read(activeExecutiveScopeProvider.notifier).state = newScope;
+            },
+          ),
+          const SizedBox(height: 10),
+          _ScopeContextBanner(
+            activeScope: activeScope,
+            branchName: user?.branchName,
+          ),
+          const SizedBox(height: 18),
           _SummaryCardsRow(
             totalPaidAsync: totalPaidAsync,
             totalOutstandingAsync: totalOutstandingAsync,
@@ -1375,6 +1404,221 @@ class _UpcomingMeetingCard extends ConsumerWidget {
       },
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _BranchNationalScopeToggle extends StatelessWidget {
+  final ExecutiveScope activeScope;
+  final String? branchName;
+  final ValueChanged<ExecutiveScope> onScopeChanged;
+
+  const _BranchNationalScopeToggle({
+    required this.activeScope,
+    required this.branchName,
+    required this.onScopeChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isNational = activeScope == ExecutiveScope.national;
+    final resolvedBranchName =
+        (branchName != null && branchName!.trim().isNotEmpty)
+            ? branchName!.trim()
+            : 'Local Branch';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: [
+          Expanded(
+            child: _ScopeToggleButton(
+              isSelected: !isNational,
+              icon: Icons.location_on_outlined,
+              selectedIcon: Icons.location_on,
+              label: resolvedBranchName,
+              selectedColor: AppTheme.brandGreen,
+              onTap: () => onScopeChanged(ExecutiveScope.branch),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: _ScopeToggleButton(
+              isSelected: isNational,
+              icon: Icons.stars_outlined,
+              selectedIcon: Icons.stars_rounded,
+              label: 'National Body',
+              selectedColor: const Color(0xFFB8860B),
+              badgeText: 'Central',
+              onTap: () => onScopeChanged(ExecutiveScope.national),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScopeToggleButton extends StatelessWidget {
+  final bool isSelected;
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final Color selectedColor;
+  final String? badgeText;
+  final VoidCallback onTap;
+
+  const _ScopeToggleButton({
+    required this.isSelected,
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selectedColor,
+    this.badgeText,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? theme.colorScheme.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+          border: isSelected
+              ? Border.all(
+                  color: selectedColor.withValues(alpha: 0.4),
+                  width: 1.5,
+                )
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isSelected ? selectedIcon : icon,
+              size: 16,
+              color: isSelected
+                  ? selectedColor
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected
+                      ? theme.colorScheme.onSurface
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (badgeText != null) ...[
+              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: selectedColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  badgeText!,
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: selectedColor,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ScopeContextBanner extends StatelessWidget {
+  final ExecutiveScope activeScope;
+  final String? branchName;
+
+  const _ScopeContextBanner({
+    required this.activeScope,
+    required this.branchName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isNational = activeScope == ExecutiveScope.national;
+    final resolvedBranchName =
+        (branchName != null && branchName!.trim().isNotEmpty)
+            ? branchName!.trim()
+            : 'Local Branch';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isNational
+            ? const Color(0xFFB8860B).withValues(alpha: 0.10)
+            : AppTheme.brandGreen.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isNational
+              ? const Color(0xFFB8860B).withValues(alpha: 0.25)
+              : AppTheme.brandGreen.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isNational ? Icons.shield_outlined : Icons.info_outline,
+            size: 16,
+            color: isNational ? const Color(0xFFB8860B) : AppTheme.brandGreen,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isNational
+                  ? 'National Body Tier \u2022 Showing central levies, conventions & assembly directives'
+                  : '$resolvedBranchName Tier \u2022 Showing local dues, levies & branch meetings',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                color: isNational
+                    ? const Color(0xFF7A5900)
+                    : AppTheme.brandGreen,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
