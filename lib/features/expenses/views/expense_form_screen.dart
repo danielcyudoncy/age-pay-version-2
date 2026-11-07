@@ -33,12 +33,16 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _amountController = TextEditingController();
+  final _grossAmountController = TextEditingController();
+  final _contributionsController = TextEditingController();
+  final _noteRefController = TextEditingController();
 
   ExpenseCategory _selectedCategory = ExpenseCategory.miscellaneous;
   DateTime _expenseDate = DateTime.now();
   String? _receiptUrl;
   File? _pickedImageFile;
   bool _isSaving = false;
+  bool _isCoFunded = false;
 
   bool get _isEditing => widget.expense != null;
 
@@ -53,7 +57,25 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       _selectedCategory = expense.category;
       _expenseDate = expense.expenseDate;
       _receiptUrl = expense.receiptUrl;
+      if (expense.grossAmount != null) {
+        _isCoFunded = true;
+        _grossAmountController.text = expense.grossAmount.toString();
+      }
+      if (expense.contributionsDeduction != null) {
+        _contributionsController.text =
+            expense.contributionsDeduction.toString();
+      }
+      if (expense.noteRef != null) {
+        _noteRefController.text = expense.noteRef!;
+      }
     }
+  }
+
+  void _recalculateNetAmount() {
+    final gross = double.tryParse(_grossAmountController.text) ?? 0.0;
+    final contributed = double.tryParse(_contributionsController.text) ?? 0.0;
+    final net = (gross - contributed).clamp(0.0, double.infinity);
+    _amountController.text = net.toStringAsFixed(0);
   }
 
   @override
@@ -61,6 +83,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _amountController.dispose();
+    _grossAmountController.dispose();
+    _contributionsController.dispose();
+    _noteRefController.dispose();
     super.dispose();
   }
 
@@ -122,6 +147,16 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       final defaultBranchId =
           activeScope == ExecutiveScope.national ? 'national' : user?.branchId;
 
+      final grossAmount = _isCoFunded
+          ? double.tryParse(_grossAmountController.text)
+          : null;
+      final contributionsDeduction = _isCoFunded
+          ? double.tryParse(_contributionsController.text)
+          : null;
+      final noteRef = _noteRefController.text.trim().isNotEmpty
+          ? _noteRefController.text.trim()
+          : null;
+
       if (_isEditing) {
         final updated = widget.expense!.copyWith(
           title: _titleController.text.trim(),
@@ -130,6 +165,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           category: _selectedCategory,
           expenseDate: _expenseDate,
           receiptUrl: receiptUrl,
+          grossAmount: grossAmount,
+          contributionsDeduction: contributionsDeduction,
+          noteRef: noteRef,
           organizationId: widget.expense!.organizationId.isNotEmpty
               ? widget.expense!.organizationId
               : orgId,
@@ -149,6 +187,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           createdBy: widget.currentUserId,
           receiptUrl: receiptUrl,
           branchId: defaultBranchId,
+          grossAmount: grossAmount,
+          contributionsDeduction: contributionsDeduction,
+          noteRef: noteRef,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -235,11 +276,16 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
               // Amount
               TextFormField(
                 controller: _amountController,
-                decoration: const InputDecoration(
-                  labelText: 'Amount (₦) *',
+                decoration: InputDecoration(
+                  labelText: _isCoFunded
+                      ? 'Net Purse Deficit (₦) *'
+                      : 'Amount (₦) *',
                   hintText: 'e.g., 5000',
-                  prefixIcon: Icon(Icons.attach_money),
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.attach_money),
+                  border: const OutlineInputBorder(),
+                  helperText: _isCoFunded
+                      ? 'Automatically calculated: Gross Spent minus Member Contributions'
+                      : null,
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
@@ -254,6 +300,70 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+
+              // Event Co-Funding Netting Switch
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Event / Welfare Co-Funding Netting'),
+                subtitle: const Text(
+                  'Enable if members contributed donations toward this event (e.g. EDU Hosting or Welfare) to calculate net purse deficit.',
+                  style: TextStyle(fontSize: 12),
+                ),
+                value: _isCoFunded,
+                onChanged: (val) {
+                  setState(() {
+                    _isCoFunded = val;
+                    if (val) {
+                      _recalculateNetAmount();
+                    }
+                  });
+                },
+              ),
+              if (_isCoFunded) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _grossAmountController,
+                        decoration: const InputDecoration(
+                          labelText: 'Gross Total Spent (₦)',
+                          hintText: 'e.g. 248500',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => _recalculateNetAmount(),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _contributionsController,
+                        decoration: const InputDecoration(
+                          labelText: 'Member Contributions (₦)',
+                          hintText: 'e.g. 219000',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => _recalculateNetAmount(),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // Note Reference (e.g., Note 7, Note 12)
+              TextFormField(
+                controller: _noteRefController,
+                decoration: const InputDecoration(
+                  labelText: 'Report Note Reference (Optional)',
+                  hintText: 'e.g., Note 5, Note 7, Note 12',
+                  prefixIcon: Icon(Icons.bookmark_border),
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -432,6 +542,14 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         return 'Events';
       case ExpenseCategory.administration:
         return 'Administration';
+      case ExpenseCategory.assetsAndUtensils:
+        return 'Utensils & Assets';
+      case ExpenseCategory.meetingRefreshment:
+        return 'Refreshment & Hosting';
+      case ExpenseCategory.delegationAndTransport:
+        return 'Transport & Delegations';
+      case ExpenseCategory.communications:
+        return 'SMS & Communications';
       case ExpenseCategory.miscellaneous:
         return 'Miscellaneous';
     }

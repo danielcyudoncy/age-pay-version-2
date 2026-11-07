@@ -212,6 +212,7 @@ class CloudFunctionPaymentService implements PaymentService {
             .toList();
 
         final docRef = FirebaseFirestore.instance.collection('payments').doc();
+        final paymentReference = 'PAY-${now.millisecondsSinceEpoch}';
         final receiptId = 'RCP-${docRef.id.substring(0, 6).toUpperCase()}';
         final receiptNumber = 'REC-${now.millisecondsSinceEpoch}';
 
@@ -230,10 +231,26 @@ class CloudFunctionPaymentService implements PaymentService {
         );
 
         final firestoreData = payment.toFirestore();
+        firestoreData['paymentReference'] = paymentReference;
         firestoreData['receiptId'] = receiptId;
         firestoreData['receiptNumber'] = receiptNumber;
 
         await docRef.set(firestoreData);
+
+        // Create receipt document in Firestore
+        final receiptDocRef =
+            FirebaseFirestore.instance.collection('receipts').doc();
+        await receiptDocRef.set({
+          'receiptNumber': receiptNumber,
+          'paymentId': docRef.id,
+          'paymentReference': paymentReference,
+          'memberId': memberId,
+          'amount': amount,
+          'method': 'cash',
+          'paymentDate': Timestamp.fromDate(now),
+          'allocatedObligations': allocations.map((a) => a.toMap()).toList(),
+          'createdAt': Timestamp.fromDate(now),
+        });
 
         // Update obligations
         for (final obId in obligationIds) {
@@ -266,7 +283,7 @@ class CloudFunctionPaymentService implements PaymentService {
         }
 
         return CashPaymentResult(
-          paymentId: docRef.id,
+          paymentId: paymentReference,
           receiptId: receiptId,
           receiptNumber: receiptNumber,
         );

@@ -19,6 +19,9 @@ class ExpenseModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? branchId;
+  final double? grossAmount;
+  final double? contributionsDeduction;
+  final String? noteRef;
 
   const ExpenseModel({
     required this.id,
@@ -38,6 +41,9 @@ class ExpenseModel {
     required this.createdAt,
     required this.updatedAt,
     this.branchId,
+    this.grossAmount,
+    this.contributionsDeduction,
+    this.noteRef,
   });
 
   factory ExpenseModel.fromFirestore(DocumentSnapshot doc) {
@@ -79,6 +85,9 @@ class ExpenseModel {
       createdAt: _parseDate(data['createdAt']),
       updatedAt: _parseDate(data['updatedAt']),
       branchId: data['branchId'] as String?,
+      grossAmount: (data['grossAmount'] as num?)?.toDouble(),
+      contributionsDeduction: (data['contributionsDeduction'] as num?)?.toDouble(),
+      noteRef: data['noteRef'] as String?,
     );
   }
 
@@ -98,6 +107,10 @@ class ExpenseModel {
       if (rejectedBy != null) 'rejectedBy': rejectedBy,
       if (rejectedAt != null) 'rejectedAt': Timestamp.fromDate(rejectedAt!),
       if (branchId != null) 'branchId': branchId,
+      if (grossAmount != null) 'grossAmount': grossAmount,
+      if (contributionsDeduction != null)
+        'contributionsDeduction': contributionsDeduction,
+      if (noteRef != null) 'noteRef': noteRef,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -178,6 +191,9 @@ class ExpenseModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? branchId,
+    double? grossAmount,
+    double? contributionsDeduction,
+    String? noteRef,
   }) {
     return ExpenseModel(
       id: id ?? this.id,
@@ -197,6 +213,10 @@ class ExpenseModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       branchId: branchId ?? this.branchId,
+      grossAmount: grossAmount ?? this.grossAmount,
+      contributionsDeduction:
+          contributionsDeduction ?? this.contributionsDeduction,
+      noteRef: noteRef ?? this.noteRef,
     );
   }
 }

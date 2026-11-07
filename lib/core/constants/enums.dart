@@ -158,7 +158,55 @@ enum ExpenseCategory {
   projects,
   events,
   administration,
+  assetsAndUtensils,
+  meetingRefreshment,
+  delegationAndTransport,
+  communications,
   miscellaneous,
+}
+
+extension ExpenseCategoryExtension on ExpenseCategory {
+  String get displayName {
+    switch (this) {
+      case ExpenseCategory.welfare:
+        return 'Welfare & Bereavement';
+      case ExpenseCategory.projects:
+        return 'Projects & Development';
+      case ExpenseCategory.events:
+        return 'Events & Hosting';
+      case ExpenseCategory.administration:
+        return 'Administration & Secretariat';
+      case ExpenseCategory.assetsAndUtensils:
+        return 'Utensils & Assets (Plates, Spoons)';
+      case ExpenseCategory.meetingRefreshment:
+        return 'Meeting Refreshment & Host Bailout';
+      case ExpenseCategory.delegationAndTransport:
+        return 'Delegation & Transportation';
+      case ExpenseCategory.communications:
+        return 'SMS, Calls & Broadcasts';
+      case ExpenseCategory.miscellaneous:
+        return 'Miscellaneous';
+    }
+  }
+}
+
+enum CashHandoverStatus {
+  pending,
+  accepted,
+  rejected,
+}
+
+extension CashHandoverStatusExtension on CashHandoverStatus {
+  String get displayName {
+    switch (this) {
+      case CashHandoverStatus.pending:
+        return 'Pending Handover';
+      case CashHandoverStatus.accepted:
+        return 'Received & Deposited';
+      case CashHandoverStatus.rejected:
+        return 'Disputed / Returned';
+    }
+  }
 }
 
 enum BranchTier {

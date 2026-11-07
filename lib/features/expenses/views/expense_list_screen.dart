@@ -402,6 +402,14 @@ class ExpenseListScreen extends ConsumerWidget {
         return 'Events';
       case ExpenseCategory.administration:
         return 'Administration';
+      case ExpenseCategory.assetsAndUtensils:
+        return 'Utensils & Assets';
+      case ExpenseCategory.meetingRefreshment:
+        return 'Refreshment & Hosting';
+      case ExpenseCategory.delegationAndTransport:
+        return 'Transport & Delegations';
+      case ExpenseCategory.communications:
+        return 'SMS & Calls';
       case ExpenseCategory.miscellaneous:
         return 'Miscellaneous';
     }
@@ -600,6 +608,14 @@ class _ExpenseCard extends StatelessWidget {
         return 'Events';
       case ExpenseCategory.administration:
         return 'Administration';
+      case ExpenseCategory.assetsAndUtensils:
+        return 'Utensils & Assets';
+      case ExpenseCategory.meetingRefreshment:
+        return 'Refreshment & Hosting';
+      case ExpenseCategory.delegationAndTransport:
+        return 'Transport & Delegations';
+      case ExpenseCategory.communications:
+        return 'SMS & Calls';
       case ExpenseCategory.miscellaneous:
         return 'Miscellaneous';
     }
