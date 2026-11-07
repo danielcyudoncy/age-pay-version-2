@@ -43,11 +43,13 @@ final memberTotalPaidProvider = Provider.autoDispose
             (sum, p) => sum + p.amount,
           );
 
-          final obligationsPaidTotal =
-              asyncObligations.valueOrNull?.fold<double>(
-                0.0,
-                (sum, o) => sum + o.paidAmount,
-              ) ??
+          final obligationsPaidTotal = asyncObligations.valueOrNull
+              ?.where((o) {
+                final isNationalObligation =
+                    o.scope.toLowerCase() == 'national';
+                return isNational ? isNationalObligation : !isNationalObligation;
+              })
+              .fold<double>(0.0, (sum, o) => sum + o.paidAmount) ??
               0.0;
 
           // Total paid is the total of approved payments recorded for this member in this scope,
@@ -60,14 +62,22 @@ final memberTotalPaidProvider = Provider.autoDispose
         },
         loading: () => asyncObligations.when(
           data: (obs) => AsyncValue.data(
-            obs.fold<double>(0.0, (sum, o) => sum + o.paidAmount),
+            obs.where((o) {
+              final isNationalObligation =
+                  o.scope.toLowerCase() == 'national';
+              return isNational ? isNationalObligation : !isNationalObligation;
+            }).fold<double>(0.0, (sum, o) => sum + o.paidAmount),
           ),
           loading: () => const AsyncValue.loading(),
           error: (e, st) => AsyncValue.error(e, st),
         ),
         error: (err, st) => asyncObligations.when(
           data: (obs) => AsyncValue.data(
-            obs.fold<double>(0.0, (sum, o) => sum + o.paidAmount),
+            obs.where((o) {
+              final isNationalObligation =
+                  o.scope.toLowerCase() == 'national';
+              return isNational ? isNationalObligation : !isNationalObligation;
+            }).fold<double>(0.0, (sum, o) => sum + o.paidAmount),
           ),
           loading: () => const AsyncValue.loading(),
           error: (e, s) => AsyncValue.error(err, st),

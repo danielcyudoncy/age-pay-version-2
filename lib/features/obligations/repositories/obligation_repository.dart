@@ -274,8 +274,6 @@ class ObligationRepository {
       } catch (_) {}
     }
 
-    final isCleared = resolvedStanding == MemberDuesStanding.cleared;
-
     final allMemberIds = <String>{
       targetMemberId,
       if (targetUserId != null && targetUserId.isNotEmpty) targetUserId,
@@ -297,8 +295,29 @@ class ObligationRepository {
         .where((o) => allMemberIds.contains(o.memberId))
         .toList();
 
-    // Self-healing: Deduplicate existing redundant unpaid obligations for this member
+    // Query approved payments to verify which obligations have legitimate allocations
+    final allocatedObligationIds = <String>{};
+    try {
+      final paymentsSnap = await _firestore
+          .collection('payments')
+          .where('memberId', whereIn: allMemberIds.take(10).toList())
+          .get();
+      for (final pDoc in paymentsSnap.docs) {
+        final pData = pDoc.data();
+        if (pData['status'] == PaymentStatus.approved.name) {
+          final allocs = pData['allocations'] as List<dynamic>? ?? [];
+          for (final a in allocs) {
+            if (a is Map && a['obligationId'] != null) {
+              allocatedObligationIds.add(a['obligationId'] as String);
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    // Self-healing: Deduplicate existing obligations & reset phantom paid amounts
     final duplicatesToDelete = <String>[];
+    final obligationsToReset = <ObligationModel>[];
     final seenKeys = <String, ObligationModel>{};
 
     for (final o in memberExisting) {
@@ -306,21 +325,23 @@ class ObligationRepository {
           ? 'levy_${o.levyId}'
           : 'title_${o.type.name}_${o.title.trim().toLowerCase()}';
 
+      // Check for phantom paid amounts (paidAmount > 0 but no actual payment allocated)
+      final hasRealPayment = allocatedObligationIds.contains(o.id);
+      if (o.paidAmount > 0 && !hasRealPayment) {
+        obligationsToReset.add(o);
+      }
+
       if (!seenKeys.containsKey(key)) {
         seenKeys[key] = o;
       } else {
         final existing = seenKeys[key]!;
-        final existingHasPayments = existing.paidAmount > 0;
-        final oHasPayments = o.paidAmount > 0;
+        final existingHasRealPayment = allocatedObligationIds.contains(existing.id);
+        final oHasRealPayment = allocatedObligationIds.contains(o.id);
 
-        if (existingHasPayments && !oHasPayments) {
-          if (o.paidAmount == 0 && o.status == ObligationStatus.unpaid) {
-            duplicatesToDelete.add(o.id);
-          }
-        } else if (!existingHasPayments && oHasPayments) {
-          if (existing.paidAmount == 0 && existing.status == ObligationStatus.unpaid) {
-            duplicatesToDelete.add(existing.id);
-          }
+        if (existingHasRealPayment && !oHasRealPayment) {
+          duplicatesToDelete.add(o.id);
+        } else if (!existingHasRealPayment && oHasRealPayment) {
+          duplicatesToDelete.add(existing.id);
           seenKeys[key] = o;
         } else {
           final existingIsDeterministic =
@@ -328,23 +349,32 @@ class ObligationRepository {
           final oIsDeterministic = o.id == '${o.levyId}_${o.memberId}';
 
           if (oIsDeterministic && !existingIsDeterministic) {
-            if (existing.paidAmount == 0 && existing.status == ObligationStatus.unpaid) {
-              duplicatesToDelete.add(existing.id);
-            }
+            duplicatesToDelete.add(existing.id);
             seenKeys[key] = o;
           } else {
-            if (o.paidAmount == 0 && o.status == ObligationStatus.unpaid) {
-              duplicatesToDelete.add(o.id);
-            }
+            duplicatesToDelete.add(o.id);
           }
         }
       }
     }
 
-    if (duplicatesToDelete.isNotEmpty) {
+    final now = DateTime.now();
+
+    if (duplicatesToDelete.isNotEmpty || obligationsToReset.isNotEmpty) {
       final cleanupBatch = _firestore.batch();
       for (final id in duplicatesToDelete) {
         cleanupBatch.delete(_collection.doc(id));
+      }
+      for (final o in obligationsToReset) {
+        if (!duplicatesToDelete.contains(o.id)) {
+          cleanupBatch.update(_collection.doc(o.id), {
+            'paidAmount': 0.0,
+            'outstandingBalance': o.amount,
+            'status': ObligationStatus.unpaid.name,
+            'settledAt': FieldValue.delete(),
+            'updatedAt': Timestamp.fromDate(now),
+          });
+        }
       }
       try {
         await cleanupBatch.commit();
@@ -352,32 +382,6 @@ class ObligationRepository {
         // Fallback if batch delete fails
       }
       memberExisting.removeWhere((o) => duplicatesToDelete.contains(o.id));
-    }
-
-    // If marked cleared, settle any existing unpaid obligations for this member
-    if (isCleared && memberExisting.isNotEmpty) {
-      final now = DateTime.now();
-      final batch = _firestore.batch();
-      bool needsUpdate = false;
-      for (final o in memberExisting) {
-        if (o.status != ObligationStatus.paid || o.outstandingBalance > 0.0) {
-          needsUpdate = true;
-          batch.update(_collection.doc(o.id), {
-            'paidAmount': o.amount,
-            'outstandingBalance': 0.0,
-            'status': ObligationStatus.paid.name,
-            'settledAt': Timestamp.fromDate(now),
-            'updatedAt': Timestamp.fromDate(now),
-          });
-        }
-      }
-      if (needsUpdate) {
-        try {
-          await batch.commit();
-        } catch (_) {
-          // Graceful fallback
-        }
-      }
     }
 
     final existingLevyIds = <String>{
@@ -390,7 +394,6 @@ class ObligationRepository {
     };
 
     final newObligations = <Map<String, dynamic>>[];
-    final now = DateTime.now();
 
     // 2. Source A: Active General Dues Levies from 'levies' collection
     // Enforce: Only general monthly dues shared with all members in the organization
@@ -448,13 +451,11 @@ class ObligationRepository {
           'title': levy.title,
           'description': levy.description,
           'amount': levy.amountPerMember,
-          'paidAmount': isCleared ? levy.amountPerMember : 0.0,
-          'outstandingBalance': isCleared ? 0.0 : levy.amountPerMember,
-          'status': isCleared
-              ? ObligationStatus.paid.name
-              : ObligationStatus.unpaid.name,
+          'paidAmount': 0.0,
+          'outstandingBalance': levy.amountPerMember,
+          'status': ObligationStatus.unpaid.name,
           'dueDate': Timestamp.fromDate(levy.dueDate),
-          'settledAt': isCleared ? Timestamp.fromDate(now) : null,
+          'settledAt': null,
           'createdAt': Timestamp.fromDate(now),
           'updatedAt': Timestamp.fromDate(now),
           'scope': levy.scope,
@@ -513,13 +514,11 @@ class ObligationRepository {
         'title': template.title,
         'description': template.description,
         'amount': template.amount,
-        'paidAmount': isCleared ? template.amount : 0.0,
-        'outstandingBalance': isCleared ? 0.0 : template.amount,
-        'status': isCleared
-            ? ObligationStatus.paid.name
-            : ObligationStatus.unpaid.name,
+        'paidAmount': 0.0,
+        'outstandingBalance': template.amount,
+        'status': ObligationStatus.unpaid.name,
         'dueDate': Timestamp.fromDate(template.dueDate),
-        'settledAt': isCleared ? Timestamp.fromDate(now) : null,
+        'settledAt': null,
         'createdAt': Timestamp.fromDate(now),
         'updatedAt': Timestamp.fromDate(now),
         'scope': template.scope,
@@ -578,9 +577,10 @@ class ObligationRepository {
     );
   }
 
-  /// Organization-wide cleanup of duplicate unpaid obligations created by race conditions.
-  /// Scans all unpaid obligations in the organization, groups them by (canonical memberId, levyId/title),
-  /// keeps the authoritative record, and deletes redundant duplicate documents where paidAmount == 0.
+  /// Organization-wide cleanup of duplicate and phantom obligations created by race conditions.
+  /// Scans all obligations in the organization, cross-references with approved payments,
+  /// deletes redundant duplicate documents without legitimate payment allocations,
+  /// and resets phantom paid obligations (paidAmount > 0 without approved payment) to unpaid.
   Future<int> cleanupOrganizationDuplicateObligations(
     String organizationId,
   ) async {
@@ -602,10 +602,29 @@ class ObligationRepository {
         }
       }
 
-      // 2. Fetch all unpaid obligations for this organization
+      // 2. Fetch all approved payments for this organization to identify legitimate allocations
+      final allocatedObligationIds = <String>{};
+      try {
+        final paymentsSnap = await _firestore
+            .collection('payments')
+            .where('organizationId', isEqualTo: organizationId)
+            .get();
+        for (final pDoc in paymentsSnap.docs) {
+          final pData = pDoc.data();
+          if (pData['status'] == PaymentStatus.approved.name) {
+            final allocs = pData['allocations'] as List<dynamic>? ?? [];
+            for (final a in allocs) {
+              if (a is Map && a['obligationId'] != null) {
+                allocatedObligationIds.add(a['obligationId'] as String);
+              }
+            }
+          }
+        }
+      } catch (_) {}
+
+      // 3. Fetch all obligations for this organization
       final snap = await _collection
           .where('organizationId', isEqualTo: organizationId)
-          .where('status', isEqualTo: ObligationStatus.unpaid.name)
           .get();
 
       if (snap.docs.isEmpty) return 0;
@@ -613,11 +632,9 @@ class ObligationRepository {
       final obligations =
           snap.docs.map((d) => ObligationModel.fromFirestore(d)).toList();
 
-      // 3. Group by canonical member ID + levy/title key
+      // 4. Group by canonical member ID + levy/title key
       final grouped = <String, List<ObligationModel>>{};
       for (final o in obligations) {
-        if (o.paidAmount > 0) continue; // Never touch records with payments
-
         final canonicalMemberId = userToDocId[o.memberId] ?? o.memberId;
         final dueKey = o.levyId.isNotEmpty
             ? 'levy_${o.levyId}'
@@ -627,45 +644,88 @@ class ObligationRepository {
       }
 
       final duplicatesToDelete = <String>[];
+      final obligationsToReset = <ObligationModel>[];
+      final now = DateTime.now();
+
       for (final list in grouped.values) {
-        if (list.length <= 1) continue;
+        if (list.length > 1) {
+          // Identify if any has real payment
+          final withRealPayment =
+              list.where((o) => allocatedObligationIds.contains(o.id)).toList();
+          final withoutRealPayment =
+              list.where((o) => !allocatedObligationIds.contains(o.id)).toList();
 
-        // Prefer keeping deterministic ID `${levyId}_${canonicalMemberId}` or earliest createdAt
-        ObligationModel keep = list.first;
-        for (final o in list) {
-          if (o.id == '${o.levyId}_${o.memberId}' ||
-              o.id.startsWith('${o.levyId}_')) {
-            keep = o;
-            break;
+          ObligationModel keep;
+          if (withRealPayment.isNotEmpty) {
+            keep = withRealPayment.first;
+            // Delete redundant without payment
+            for (final o in withoutRealPayment) {
+              duplicatesToDelete.add(o.id);
+            }
+            // If multiple with real payment, keep first, delete others
+            for (var i = 1; i < withRealPayment.length; i++) {
+              duplicatesToDelete.add(withRealPayment[i].id);
+            }
+          } else {
+            // None have real payment: prefer deterministic ID or earliest
+            keep = withoutRealPayment.first;
+            for (final o in withoutRealPayment) {
+              if (o.id == '${o.levyId}_${o.memberId}' ||
+                  o.id.startsWith('${o.levyId}_')) {
+                keep = o;
+                break;
+              }
+            }
+            for (final o in withoutRealPayment) {
+              if (o.id != keep.id) {
+                duplicatesToDelete.add(o.id);
+              }
+            }
+            // Check if kept record has phantom payment
+            if (keep.paidAmount > 0) {
+              obligationsToReset.add(keep);
+            }
           }
-        }
-
-        for (final o in list) {
-          if (o.id != keep.id && o.paidAmount == 0) {
-            duplicatesToDelete.add(o.id);
+        } else {
+          // Single record: check if phantom payment
+          final o = list.first;
+          if (o.paidAmount > 0 && !allocatedObligationIds.contains(o.id)) {
+            obligationsToReset.add(o);
           }
         }
       }
 
-      if (duplicatesToDelete.isEmpty) return 0;
+      if (duplicatesToDelete.isEmpty && obligationsToReset.isEmpty) return 0;
 
-      // 4. Batch delete duplicates (Firestore limit: 500 ops per batch)
-      const batchSize = 400;
-      for (var i = 0; i < duplicatesToDelete.length; i += batchSize) {
+      // 5. Batch delete duplicates and update phantom records (Firestore limit: 500 ops per batch)
+      const batchSize = 350;
+      final allOpDocIds = <String>{...duplicatesToDelete, ...obligationsToReset.map((o) => o.id)};
+      final allDocIdList = allOpDocIds.toList();
+
+      for (var i = 0; i < allDocIdList.length; i += batchSize) {
         final batch = _firestore.batch();
-        final chunk = duplicatesToDelete.sublist(
+        final chunk = allDocIdList.sublist(
           i,
-          (i + batchSize > duplicatesToDelete.length)
-              ? duplicatesToDelete.length
-              : i + batchSize,
+          (i + batchSize > allDocIdList.length) ? allDocIdList.length : i + batchSize,
         );
         for (final docId in chunk) {
-          batch.delete(_collection.doc(docId));
+          if (duplicatesToDelete.contains(docId)) {
+            batch.delete(_collection.doc(docId));
+          } else {
+            final o = obligationsToReset.firstWhere((item) => item.id == docId);
+            batch.update(_collection.doc(docId), {
+              'paidAmount': 0.0,
+              'outstandingBalance': o.amount,
+              'status': ObligationStatus.unpaid.name,
+              'settledAt': FieldValue.delete(),
+              'updatedAt': Timestamp.fromDate(now),
+            });
+          }
         }
         await batch.commit();
       }
 
-      return duplicatesToDelete.length;
+      return duplicatesToDelete.length + obligationsToReset.length;
     } catch (_) {
       return 0;
     }

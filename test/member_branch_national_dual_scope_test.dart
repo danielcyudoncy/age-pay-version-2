@@ -208,4 +208,42 @@ void main() {
     // In national scope, displays ₦15,000 outstanding
     expect(find.text('₦15,000'), findsOneWidget);
   });
+
+  testWidgets(
+      'Member with unpaid 20k levy and no payments shows Total Payments ₦0 and Outstanding ₦20,000',
+      (tester) async {
+    final newLevy = ObligationModel(
+      id: 'levy_dev_user_1',
+      organizationId: 'org_1',
+      memberId: 'user_1',
+      levyId: 'levy_dev',
+      type: ObligationType.specialLevy,
+      title: 'Branch Development Due',
+      description: 'Annual development levy',
+      amount: 20000,
+      paidAmount: 0,
+      outstandingBalance: 20000,
+      status: ObligationStatus.unpaid,
+      scope: 'branch',
+      branchId: 'branch_lagos',
+      dueDate: DateTime.now().add(const Duration(days: 15)),
+      createdAt: DateTime.now(),
+    );
+
+    await tester.pumpWidget(createWidget(
+      obligations: [newLevy],
+      payments: const [],
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Total Payments card displays ₦0
+    expect(find.text('₦0'), findsOneWidget);
+
+    // Outstanding Payments card displays ₦20,000
+    expect(find.text('₦20,000'), findsOneWidget);
+
+    // Active Levies card displays 1
+    expect(find.text('1'), findsWidgets);
+  });
 }
