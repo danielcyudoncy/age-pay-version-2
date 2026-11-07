@@ -196,3 +196,11 @@ final filteredObligationsProvider =
         error: (err, st) => AsyncValue.error(err, st),
       );
     });
+
+/// Auto-cleans up duplicate unpaid obligations across the entire organization
+final organizationObligationsCleanupProvider =
+    FutureProvider.autoDispose.family<int, String>((ref, organizationId) async {
+      if (organizationId.isEmpty) return 0;
+      final repo = ref.watch(obligationRepositoryProvider);
+      return repo.cleanupOrganizationDuplicateObligations(organizationId);
+    });

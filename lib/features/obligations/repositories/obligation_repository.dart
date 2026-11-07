@@ -577,4 +577,97 @@ class ObligationRepository {
       duesStanding: MemberDuesStanding.cleared,
     );
   }
+
+  /// Organization-wide cleanup of duplicate unpaid obligations created by race conditions.
+  /// Scans all unpaid obligations in the organization, groups them by (canonical memberId, levyId/title),
+  /// keeps the authoritative record, and deletes redundant duplicate documents where paidAmount == 0.
+  Future<int> cleanupOrganizationDuplicateObligations(
+    String organizationId,
+  ) async {
+    if (organizationId.isEmpty) return 0;
+
+    try {
+      // 1. Fetch all members in organization to map userId -> documentId
+      final membersSnap = await _firestore
+          .collection('members')
+          .where('organizationId', isEqualTo: organizationId)
+          .get();
+
+      final userToDocId = <String, String>{};
+      for (final doc in membersSnap.docs) {
+        final data = doc.data();
+        final uid = data['userId'] as String?;
+        if (uid != null && uid.isNotEmpty) {
+          userToDocId[uid] = doc.id;
+        }
+      }
+
+      // 2. Fetch all unpaid obligations for this organization
+      final snap = await _collection
+          .where('organizationId', isEqualTo: organizationId)
+          .where('status', isEqualTo: ObligationStatus.unpaid.name)
+          .get();
+
+      if (snap.docs.isEmpty) return 0;
+
+      final obligations =
+          snap.docs.map((d) => ObligationModel.fromFirestore(d)).toList();
+
+      // 3. Group by canonical member ID + levy/title key
+      final grouped = <String, List<ObligationModel>>{};
+      for (final o in obligations) {
+        if (o.paidAmount > 0) continue; // Never touch records with payments
+
+        final canonicalMemberId = userToDocId[o.memberId] ?? o.memberId;
+        final dueKey = o.levyId.isNotEmpty
+            ? 'levy_${o.levyId}'
+            : 'title_${o.type.name}_${o.title.trim().toLowerCase()}';
+        final compoundKey = '${canonicalMemberId}_$dueKey';
+        grouped.putIfAbsent(compoundKey, () => []).add(o);
+      }
+
+      final duplicatesToDelete = <String>[];
+      for (final list in grouped.values) {
+        if (list.length <= 1) continue;
+
+        // Prefer keeping deterministic ID `${levyId}_${canonicalMemberId}` or earliest createdAt
+        ObligationModel keep = list.first;
+        for (final o in list) {
+          if (o.id == '${o.levyId}_${o.memberId}' ||
+              o.id.startsWith('${o.levyId}_')) {
+            keep = o;
+            break;
+          }
+        }
+
+        for (final o in list) {
+          if (o.id != keep.id && o.paidAmount == 0) {
+            duplicatesToDelete.add(o.id);
+          }
+        }
+      }
+
+      if (duplicatesToDelete.isEmpty) return 0;
+
+      // 4. Batch delete duplicates (Firestore limit: 500 ops per batch)
+      const batchSize = 400;
+      for (var i = 0; i < duplicatesToDelete.length; i += batchSize) {
+        final batch = _firestore.batch();
+        final chunk = duplicatesToDelete.sublist(
+          i,
+          (i + batchSize > duplicatesToDelete.length)
+              ? duplicatesToDelete.length
+              : i + batchSize,
+        );
+        for (final docId in chunk) {
+          batch.delete(_collection.doc(docId));
+        }
+        await batch.commit();
+      }
+
+      return duplicatesToDelete.length;
+    } catch (_) {
+      return 0;
+    }
+  }
 }

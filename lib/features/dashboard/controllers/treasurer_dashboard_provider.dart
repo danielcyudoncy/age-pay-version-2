@@ -208,11 +208,9 @@ final totalCollectedProvider = Provider.autoDispose<AsyncValue<double>>((ref) {
 final totalOutstandingProvider = Provider.autoDispose<AsyncValue<double>>((
   ref,
 ) {
-  final obligationsAsync = ref.watch(allObligationsProvider);
-  return obligationsAsync.whenData(
-    (list) => list
-        .where((o) => o.status != ObligationStatus.paid)
-        .fold<double>(0.0, (sum, o) => sum + o.outstandingBalance),
+  final arrearsAsync = ref.watch(memberArrearsProvider);
+  return arrearsAsync.whenData(
+    (list) => list.fold<double>(0.0, (sum, a) => sum + a.totalOutstanding),
   );
 });
 
@@ -275,10 +273,27 @@ final memberArrearsProvider =
           (memberObligations[resolvedMemberId] ??= []).add(o);
         }
 
-        // Build result
+        // Build result with deduplication for each member
         final result = memberObligations.entries.map((e) {
           final member = memberByDocId[e.key];
-          final totalOutstanding = e.value.fold<double>(
+
+          final deduplicated = <String, ObligationModel>{};
+          for (final o in e.value) {
+            final key = o.levyId.isNotEmpty
+                ? 'levy_${o.levyId}'
+                : 'title_${o.type.name}_${o.title.trim().toLowerCase()}';
+            if (!deduplicated.containsKey(key)) {
+              deduplicated[key] = o;
+            } else {
+              final existing = deduplicated[key]!;
+              if (o.paidAmount > existing.paidAmount) {
+                deduplicated[key] = o;
+              }
+            }
+          }
+
+          final uniqueObligations = deduplicated.values.toList();
+          final totalOutstanding = uniqueObligations.fold<double>(
             0.0,
             (sum, o) => sum + o.outstandingBalance,
           );
@@ -286,7 +301,7 @@ final memberArrearsProvider =
             memberId: e.key,
             memberName: member?.fullName ?? 'Unknown',
             totalOutstanding: totalOutstanding,
-            unpaidCount: e.value
+            unpaidCount: uniqueObligations
                 .where((o) => o.status != ObligationStatus.paid)
                 .length,
           );
