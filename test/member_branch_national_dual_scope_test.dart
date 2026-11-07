@@ -246,4 +246,58 @@ void main() {
     // Active Levies card displays 1
     expect(find.text('1'), findsWidgets);
   });
+
+  testWidgets(
+      'Member with duplicate obligations for the same levy shows ₦20,000 (not ₦40,000)',
+      (tester) async {
+    final levyDup1 = ObligationModel(
+      id: 'levy_dev_user_1',
+      organizationId: 'org_1',
+      memberId: 'user_1',
+      levyId: 'levy_dev_20k',
+      type: ObligationType.specialLevy,
+      title: 'Branch Development Due',
+      description: 'Annual development levy',
+      amount: 20000,
+      paidAmount: 0,
+      outstandingBalance: 20000,
+      status: ObligationStatus.unpaid,
+      scope: 'branch',
+      branchId: 'branch_lagos',
+      dueDate: DateTime.now().add(const Duration(days: 15)),
+      createdAt: DateTime.now(),
+    );
+
+    final levyDup2 = ObligationModel(
+      id: 'levy_dev_user_1_legacy',
+      organizationId: 'org_1',
+      memberId: 'user_1',
+      levyId: 'levy_dev_20k',
+      type: ObligationType.specialLevy,
+      title: 'Branch Development Due',
+      description: 'Annual development levy',
+      amount: 20000,
+      paidAmount: 0,
+      outstandingBalance: 20000,
+      status: ObligationStatus.unpaid,
+      scope: 'branch',
+      branchId: 'branch_lagos',
+      dueDate: DateTime.now().add(const Duration(days: 15)),
+      createdAt: DateTime.now(),
+    );
+
+    await tester.pumpWidget(createWidget(
+      obligations: [levyDup1, levyDup2],
+      payments: const [],
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Outstanding Payments card displays ₦20,000 (deduplicated), NOT ₦40,000
+    expect(find.text('₦20,000'), findsOneWidget);
+    expect(find.text('₦40,000'), findsNothing);
+
+    // Active Levies card displays 1 (deduplicated), NOT 2
+    expect(find.text('1'), findsWidgets);
+  });
 }

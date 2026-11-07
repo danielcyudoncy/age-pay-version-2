@@ -85,9 +85,27 @@ final memberObligationsProvider = Provider.autoDispose
             }
           }
 
-          return AsyncValue.data(
-            obligations.where((o) => memberIds.contains(o.memberId)).toList(),
-          );
+          final matching = obligations
+              .where((o) => memberIds.contains(o.memberId))
+              .toList();
+
+          // Deduplicate by levyId or title to prevent duplicate charges for the same levy
+          final deduplicated = <String, ObligationModel>{};
+          for (final o in matching) {
+            final key = o.levyId.isNotEmpty
+                ? 'levy_${o.levyId}'
+                : 'title_${o.type.name}_${o.title.trim().toLowerCase()}';
+            if (!deduplicated.containsKey(key)) {
+              deduplicated[key] = o;
+            } else {
+              final existing = deduplicated[key]!;
+              if (o.paidAmount > existing.paidAmount) {
+                deduplicated[key] = o;
+              }
+            }
+          }
+
+          return AsyncValue.data(deduplicated.values.toList());
         },
         loading: () => const AsyncValue.loading(),
         error: (e, st) => AsyncValue.error(e, st),
