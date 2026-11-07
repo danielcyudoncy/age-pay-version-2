@@ -169,4 +169,43 @@ void main() {
     // Context banner reverts to Lagos Branch
     expect(find.textContaining('Lagos Branch Tier'), findsOneWidget);
   });
+
+  testWidgets(
+      'Total outstanding reflects branch-scoped levy (20,000) and switches to national (15,000)',
+      (tester) async {
+    final branchLevy20k = ObligationModel(
+      id: 'obl_branch_levy_1',
+      organizationId: 'org_1',
+      memberId: 'user_1',
+      levyId: 'levy_branch_new',
+      type: ObligationType.specialLevy,
+      title: 'Branch Development Levy',
+      description: 'New 20k branch levy',
+      amount: 20000,
+      paidAmount: 0,
+      outstandingBalance: 20000,
+      status: ObligationStatus.unpaid,
+      scope: 'branch',
+      branchId: 'branch_lagos',
+      dueDate: DateTime.now().add(const Duration(days: 10)),
+      createdAt: DateTime.now(),
+    );
+
+    await tester.pumpWidget(createWidget(
+      obligations: [branchLevy20k, nationalObligation],
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // In branch scope, displays ₦20,000 outstanding (not ₦40,000 or ₦35,000)
+    expect(find.text('₦20,000'), findsOneWidget);
+
+    // Switch to national scope
+    final nationalButton = find.text('National Body');
+    await tester.tap(nationalButton);
+    await tester.pumpAndSettle();
+
+    // In national scope, displays ₦15,000 outstanding
+    expect(find.text('₦15,000'), findsOneWidget);
+  });
 }

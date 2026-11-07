@@ -20,48 +20,69 @@ export const createObligationsOnLevy = functions.firestore
 
     const createdAt = admin.firestore.FieldValue.serverTimestamp();
 
-    // Query all active members
-    const membersSnap = await db
+    // Query active members, optionally scoped by organizationId
+    let membersQuery: admin.firestore.Query = db
       .collection('members')
-      .where('isActive', '==', true)
-      .get();
+      .where('isActive', '==', true);
+
+    if (levy['organizationId']) {
+      membersQuery = membersQuery.where('organizationId', '==', levy['organizationId']);
+    }
+
+    const membersSnap = await membersQuery.get();
 
     if (membersSnap.empty) {
       console.log(`No active members found for levy ${levyId}`);
       return;
     }
 
-    // Build batch writes for obligations
+    // Build batch writes for obligations with deterministic IDs and merge
     const batch = db.batch();
+    const levyScope = (levy['scope'] || 'branch').toLowerCase();
+    const levyBranchId = levy['branchId'];
 
     for (const memberDoc of membersSnap.docs) {
       const memberId = memberDoc.id;
       const memberData = memberDoc.data();
       const userId = memberData['userId'] || memberId;
+      const memberBranchId = memberData['branchId'];
 
-      const obligationRef = db.collection('obligations').doc();
+      // If levy is branch-scoped, only apply to members belonging to that branch
+      if (levyScope === 'branch' && levyBranchId && memberBranchId && levyBranchId !== memberBranchId) {
+        continue;
+      }
+
+      const obligationRef = db.collection('obligations').doc(`${levyId}_${memberId}`);
       const amount = levy['amountPerMember'] || 0;
 
-      batch.set(obligationRef, {
-        memberId: memberId,
-        userId: userId,
-        levyId: levyId,
-        type: levy['type'] || 'specialLevy',
-        title: levy['title'] || 'New Levy',
-        description: levy['description'] || '',
-        amount: amount,
-        paidAmount: 0,
-        outstandingBalance: amount,
-        status: 'unpaid',
-        dueDate: levy['dueDate'] || null,
-        createdAt: createdAt,
-        updatedAt: createdAt,
-      });
+      batch.set(
+        obligationRef,
+        {
+          id: `${levyId}_${memberId}`,
+          memberId: memberId,
+          userId: userId,
+          levyId: levyId,
+          scope: levyScope,
+          branchId: levyBranchId || memberBranchId || null,
+          organizationId: levy['organizationId'] || memberData['organizationId'] || '',
+          type: levy['type'] || 'specialLevy',
+          title: levy['title'] || 'New Levy',
+          description: levy['description'] || '',
+          amount: amount,
+          paidAmount: 0,
+          outstandingBalance: amount,
+          status: 'unpaid',
+          dueDate: levy['dueDate'] || null,
+          createdAt: createdAt,
+          updatedAt: createdAt,
+        },
+        { merge: true }
+      );
     }
 
     await batch.commit();
     console.log(
-      `Created ${membersSnap.size} obligations for levy ${levyId}`
+      `Created / reconciled obligations for levy ${levyId}`
     );
   });
 
@@ -95,6 +116,8 @@ export const createLevyWithObligations = functions.https.onCall(
       );
     }
 
+    const callerData = userDoc.data() || {};
+
     const {
       title,
       description,
@@ -102,6 +125,9 @@ export const createLevyWithObligations = functions.https.onCall(
       amountPerMember,
       dueDate,
       targetGroup,
+      scope,
+      branchId,
+      organizationId,
     } = data;
 
     if (!title || !amountPerMember || !dueDate) {
@@ -110,6 +136,10 @@ export const createLevyWithObligations = functions.https.onCall(
         'Missing required fields: title, amountPerMember, dueDate'
       );
     }
+
+    const resolvedOrgId = organizationId || callerData['organizationId'] || '';
+    const resolvedBranchId = branchId || callerData['branchId'] || null;
+    const resolvedScope = (scope || 'branch').toLowerCase();
 
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
 
@@ -124,13 +154,19 @@ export const createLevyWithObligations = functions.https.onCall(
       dueDate: admin.firestore.Timestamp.fromDate(new Date(dueDate)),
       targetGroup: targetGroup || null,
       createdBy: callerUid,
+      scope: resolvedScope,
+      branchId: resolvedScope === 'national' ? null : resolvedBranchId,
+      organizationId: resolvedOrgId,
       isActive: true,
       createdAt: timestamp,
       updatedAt: timestamp,
     });
 
     // Fetch active members
-    let memberQuery = db.collection('members').where('isActive', '==', true);
+    let memberQuery: admin.firestore.Query = db.collection('members').where('isActive', '==', true);
+    if (resolvedOrgId) {
+      memberQuery = memberQuery.where('organizationId', '==', resolvedOrgId);
+    }
     if (targetGroup) {
       // If targetGroup is specified, filter by it (requires members to have a group field)
       memberQuery = memberQuery.where('group', '==', targetGroup);
@@ -148,27 +184,43 @@ export const createLevyWithObligations = functions.https.onCall(
     let count = 0;
     let obligationsCreated = 0;
 
+    const levyScope = (scope || 'branch').toLowerCase();
+
     for (const memberDoc of membersSnap.docs) {
       const memberId = memberDoc.id;
       const memberData = memberDoc.data();
       const userId = memberData['userId'] || memberId;
+      const memberBranchId = memberData['branchId'];
 
-      const obligationRef = db.collection('obligations').doc();
-      batch.set(obligationRef, {
-        memberId: memberId,
-        userId: userId,
-        levyId: levyRef.id,
-        type: type || 'specialLevy',
-        title: title,
-        description: description || '',
-        amount: Number(amountPerMember),
-        paidAmount: 0,
-        outstandingBalance: Number(amountPerMember),
-        status: 'unpaid',
-        dueDate: admin.firestore.Timestamp.fromDate(new Date(dueDate)),
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      });
+      // If levy is branch-scoped, skip members belonging to other branches
+      if (resolvedScope === 'branch' && resolvedBranchId && memberBranchId && resolvedBranchId !== memberBranchId) {
+        continue;
+      }
+
+      const obligationRef = db.collection('obligations').doc(`${levyRef.id}_${memberId}`);
+      batch.set(
+        obligationRef,
+        {
+          id: `${levyRef.id}_${memberId}`,
+          memberId: memberId,
+          userId: userId,
+          levyId: levyRef.id,
+          scope: resolvedScope,
+          branchId: resolvedBranchId || memberBranchId || null,
+          organizationId: resolvedOrgId || memberData['organizationId'] || '',
+          type: type || 'specialLevy',
+          title: title,
+          description: description || '',
+          amount: Number(amountPerMember),
+          paidAmount: 0,
+          outstandingBalance: Number(amountPerMember),
+          status: 'unpaid',
+          dueDate: admin.firestore.Timestamp.fromDate(new Date(dueDate)),
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        },
+        { merge: true }
+      );
 
       count++;
       obligationsCreated++;

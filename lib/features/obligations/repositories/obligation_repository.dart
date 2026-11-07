@@ -135,7 +135,21 @@ class ObligationRepository {
     try {
       final batch = _firestore.batch();
       for (final map in maps) {
-        final docRef = _collection.doc();
+        final explicitId = map['id'] as String?;
+        final levyId = map['levyId'] as String?;
+        final memberId = map['memberId'] as String?;
+        final resolvedId = (explicitId != null && explicitId.isNotEmpty)
+            ? explicitId
+            : ((levyId != null &&
+                    levyId.isNotEmpty &&
+                    memberId != null &&
+                    memberId.isNotEmpty)
+                ? '${levyId}_$memberId'
+                : null);
+
+        final docRef = resolvedId != null
+            ? _collection.doc(resolvedId)
+            : _collection.doc();
         final data = {...map};
         data['id'] = docRef.id;
         if (!data.containsKey('outstandingBalance')) {
@@ -143,7 +157,7 @@ class ObligationRepository {
           final paidAmount = data['paidAmount'] ?? 0;
           data['outstandingBalance'] = amount - paidAmount;
         }
-        batch.set(docRef, data);
+        batch.set(docRef, data, SetOptions(merge: true));
       }
       await batch.commit();
     } catch (_) {
@@ -175,26 +189,42 @@ class ObligationRepository {
     String targetMemberId = memberOrUserId;
     String? targetUserId = userId;
     String? resolvedOrgId = organizationId;
+    String? targetBranchId;
 
     try {
-      if (userId == null || resolvedOrgId == null || resolvedOrgId.isEmpty) {
-        final memberByUid = await _firestore
-            .collection('members')
-            .where('userId', isEqualTo: memberOrUserId)
-            .limit(1)
-            .get();
-        if (memberByUid.docs.isNotEmpty) {
-          targetMemberId = memberByUid.docs.first.id;
-          targetUserId = memberOrUserId;
-          resolvedOrgId ??=
-              memberByUid.docs.first.data()['organizationId'] as String?;
-        } else {
-          final memberDoc =
-              await _firestore.collection('members').doc(memberOrUserId).get();
-          if (memberDoc.exists) {
-            targetMemberId = memberDoc.id;
-            targetUserId = memberDoc.data()?['userId'] as String?;
-            resolvedOrgId ??= memberDoc.data()?['organizationId'] as String?;
+      // Always query members to resolve both member doc ID and user UID
+      final memberByUid = await _firestore
+          .collection('members')
+          .where('userId', isEqualTo: memberOrUserId)
+          .limit(1)
+          .get();
+      if (memberByUid.docs.isNotEmpty) {
+        targetMemberId = memberByUid.docs.first.id;
+        targetUserId = memberOrUserId;
+        final data = memberByUid.docs.first.data();
+        resolvedOrgId ??= data['organizationId'] as String?;
+        targetBranchId = data['branchId'] as String?;
+      } else {
+        final memberDoc =
+            await _firestore.collection('members').doc(memberOrUserId).get();
+        if (memberDoc.exists) {
+          targetMemberId = memberDoc.id;
+          final data = memberDoc.data();
+          targetUserId ??= data?['userId'] as String?;
+          resolvedOrgId ??= data?['organizationId'] as String?;
+          targetBranchId = data?['branchId'] as String?;
+        } else if (userId != null && userId.isNotEmpty) {
+          final memberByParamUid = await _firestore
+              .collection('members')
+              .where('userId', isEqualTo: userId)
+              .limit(1)
+              .get();
+          if (memberByParamUid.docs.isNotEmpty) {
+            targetMemberId = memberByParamUid.docs.first.id;
+            targetUserId = userId;
+            final data = memberByParamUid.docs.first.data();
+            resolvedOrgId ??= data['organizationId'] as String?;
+            targetBranchId = data['branchId'] as String?;
           }
         }
       }
@@ -202,15 +232,17 @@ class ObligationRepository {
       // Best-effort ID resolution fallback
     }
 
-    // Fallback: check users collection for organizationId if still missing
-    if (resolvedOrgId == null || resolvedOrgId.isEmpty) {
+    // Fallback: check users collection for organizationId / branchId if still missing
+    if (resolvedOrgId == null || resolvedOrgId.isEmpty || targetBranchId == null) {
       try {
         final checkUid =
             targetUserId ?? (memberOrUserId.isNotEmpty ? memberOrUserId : null);
         if (checkUid != null) {
           final uDoc = await _firestore.collection('users').doc(checkUid).get();
           if (uDoc.exists) {
-            resolvedOrgId ??= uDoc.data()?['organizationId'] as String?;
+            final uData = uDoc.data();
+            resolvedOrgId ??= uData?['organizationId'] as String?;
+            targetBranchId ??= uData?['branchId'] as String?;
           }
         }
       } catch (_) {}
@@ -264,6 +296,63 @@ class ObligationRepository {
     final memberExisting = allObligations
         .where((o) => allMemberIds.contains(o.memberId))
         .toList();
+
+    // Self-healing: Deduplicate existing redundant unpaid obligations for this member
+    final duplicatesToDelete = <String>[];
+    final seenKeys = <String, ObligationModel>{};
+
+    for (final o in memberExisting) {
+      final key = o.levyId.isNotEmpty
+          ? 'levy_${o.levyId}'
+          : 'title_${o.type.name}_${o.title.trim().toLowerCase()}';
+
+      if (!seenKeys.containsKey(key)) {
+        seenKeys[key] = o;
+      } else {
+        final existing = seenKeys[key]!;
+        final existingHasPayments = existing.paidAmount > 0;
+        final oHasPayments = o.paidAmount > 0;
+
+        if (existingHasPayments && !oHasPayments) {
+          if (o.paidAmount == 0 && o.status == ObligationStatus.unpaid) {
+            duplicatesToDelete.add(o.id);
+          }
+        } else if (!existingHasPayments && oHasPayments) {
+          if (existing.paidAmount == 0 && existing.status == ObligationStatus.unpaid) {
+            duplicatesToDelete.add(existing.id);
+          }
+          seenKeys[key] = o;
+        } else {
+          final existingIsDeterministic =
+              existing.id == '${existing.levyId}_${existing.memberId}';
+          final oIsDeterministic = o.id == '${o.levyId}_${o.memberId}';
+
+          if (oIsDeterministic && !existingIsDeterministic) {
+            if (existing.paidAmount == 0 && existing.status == ObligationStatus.unpaid) {
+              duplicatesToDelete.add(existing.id);
+            }
+            seenKeys[key] = o;
+          } else {
+            if (o.paidAmount == 0 && o.status == ObligationStatus.unpaid) {
+              duplicatesToDelete.add(o.id);
+            }
+          }
+        }
+      }
+    }
+
+    if (duplicatesToDelete.isNotEmpty) {
+      final cleanupBatch = _firestore.batch();
+      for (final id in duplicatesToDelete) {
+        cleanupBatch.delete(_collection.doc(id));
+      }
+      try {
+        await cleanupBatch.commit();
+      } catch (_) {
+        // Fallback if batch delete fails
+      }
+      memberExisting.removeWhere((o) => duplicatesToDelete.contains(o.id));
+    }
 
     // If marked cleared, settle any existing unpaid obligations for this member
     if (isCleared && memberExisting.isNotEmpty) {
@@ -328,6 +417,17 @@ class ObligationRepository {
           continue;
         }
 
+        // Branch scoping check
+        final isBranchScope = levy.scope.toLowerCase() == 'branch';
+        if (isBranchScope &&
+            levy.branchId != null &&
+            levy.branchId!.isNotEmpty &&
+            targetBranchId != null &&
+            targetBranchId.isNotEmpty &&
+            levy.branchId != targetBranchId) {
+          continue;
+        }
+
         final normTitle = levy.title.trim().toLowerCase();
         if (existingLevyIds.contains(levy.id) ||
             existingTitles.contains(normTitle)) {
@@ -338,6 +438,7 @@ class ObligationRepository {
         existingTitles.add(normTitle);
 
         newObligations.add({
+          'id': '${levy.id}_$targetMemberId',
           'organizationId': resolvedOrgId ??
               (levy.organizationId.isNotEmpty ? levy.organizationId : ''),
           'memberId': targetMemberId,
@@ -403,6 +504,7 @@ class ObligationRepository {
       if (template.levyId.isNotEmpty) existingLevyIds.add(template.levyId);
 
       newObligations.add({
+        if (template.levyId.isNotEmpty) 'id': '${template.levyId}_$targetMemberId',
         'organizationId': resolvedOrgId ?? template.organizationId,
         'memberId': targetMemberId,
         'userId': targetUserId ?? targetMemberId,
@@ -431,6 +533,7 @@ class ObligationRepository {
         resolvedOpeningBalance > 0 &&
         !existingTitles.contains('opening balance')) {
       newObligations.add({
+        'id': 'opening_balance_$targetMemberId',
         'organizationId': resolvedOrgId ?? '',
         'memberId': targetMemberId,
         'userId': targetUserId ?? targetMemberId,

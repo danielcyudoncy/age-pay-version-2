@@ -78,8 +78,14 @@ final memberTotalPaidProvider = Provider.autoDispose
 final memberTotalOutstandingProvider = Provider.autoDispose
     .family<AsyncValue<double>, String>((ref, memberId) {
       final asyncObligations = ref.watch(memberObligationsProvider(memberId));
+      final activeScope = ref.watch(activeExecutiveScopeProvider);
+      final isNational = activeScope == ExecutiveScope.national;
+
       return asyncObligations.whenData(
-        (list) => list.fold(0.0, (sum, o) => sum + o.outstandingBalance),
+        (list) => list.where((o) {
+          final isNationalObligation = o.scope.toLowerCase() == 'national';
+          return isNational ? isNationalObligation : !isNationalObligation;
+        }).fold(0.0, (sum, o) => sum + o.outstandingBalance),
       );
     });
 
@@ -88,7 +94,13 @@ final memberActiveLeviesProvider = Provider.autoDispose
       final asyncObligations = ref.watch(
         memberActiveObligationsProvider(memberId),
       );
-      return asyncObligations.whenData((list) => list.length);
+      final activeScope = ref.watch(activeExecutiveScopeProvider);
+      final isNational = activeScope == ExecutiveScope.national;
+
+      return asyncObligations.whenData((list) => list.where((o) {
+        final isNationalObligation = o.scope.toLowerCase() == 'national';
+        return isNational ? isNationalObligation : !isNationalObligation;
+      }).length);
     });
 
 final memberRecentPaymentsProvider = Provider.autoDispose

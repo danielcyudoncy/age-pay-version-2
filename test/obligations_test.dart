@@ -191,7 +191,7 @@ void main() {
       await tester.pumpWidget(buildScreen([]));
       await tester.pumpAndSettle();
 
-      expect(find.text('My Obligations'), findsOneWidget);
+      expect(find.text('Branch Obligations'), findsOneWidget);
       expect(find.text('No obligations found'), findsOneWidget);
       expect(find.text('You are all caught up!'), findsOneWidget);
     });

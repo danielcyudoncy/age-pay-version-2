@@ -173,6 +173,7 @@ class LevyCreationNotifier extends StateNotifier<LevyCreationState> {
       final createdAt = Timestamp.now();
       final obligations = targetMemberIds.map((memberId) {
         return {
+          'id': '${levyId}_$memberId',
           'organizationId': organizationId ?? '',
           'memberId': memberId,
           'levyId': levyId,
