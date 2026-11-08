@@ -553,7 +553,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
             const SizedBox(height: 12),
             _buildPrivilegeRow(
               Icons.domain_verification,
-              'Multi-Tenant Organization Verification & Platform Gate',
+              'Multi-Tenant Organisation Verification & Platform Gate',
               Colors.green,
             ),
             const SizedBox(height: 8),

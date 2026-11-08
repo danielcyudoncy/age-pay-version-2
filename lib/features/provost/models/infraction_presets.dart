@@ -54,7 +54,7 @@ class InfractionPreset {
     InfractionPreset(
       type: PenaltyInfractionType.custom,
       title: 'Custom Sanction',
-      description: 'Other disciplinary infraction defined in organizational bylaws.',
+      description: 'Other disciplinary infraction defined in organisational bylaws.',
       defaultAmount: 1000.0,
       icon: Icons.gavel_outlined,
       color: Colors.blueGrey,

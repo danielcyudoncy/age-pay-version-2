@@ -222,7 +222,7 @@ class _IssuePenaltySheetState extends ConsumerState<IssuePenaltySheet> {
                   final members = rawMembers.whereType<MemberModel>().toList();
                   if (members.isEmpty) {
                     return const Text(
-                      'No members registered in this organization.',
+                      'No members registered in this organisation.',
                       style: TextStyle(color: Colors.red),
                     );
                   }

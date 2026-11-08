@@ -33,11 +33,11 @@ class _OrganizationManagementScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Organizations'),
+        title: const Text('Organisations'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: 'Add Organization',
+            tooltip: 'Add Organisation',
             onPressed: () => _showCreateDialog(context),
           ),
         ],
@@ -49,7 +49,7 @@ class _OrganizationManagementScreenState
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search organizations...',
+                hintText: 'Search organisations...',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -81,7 +81,7 @@ class _OrganizationManagementScreenState
                 if (filtered.isEmpty) {
                   return const Center(
                     child: Text(
-                      'No organizations found',
+                      'No organisations found',
                       style: TextStyle(color: Colors.grey),
                     ),
                   );
@@ -176,7 +176,7 @@ class _OrganizationManagementScreenState
               const SizedBox(width: 10),
               const Expanded(
                 child: Text(
-                  'Provision Organization',
+                  'Provision Organisation',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
               ),
@@ -192,7 +192,7 @@ class _OrganizationManagementScreenState
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'As Super Admin, creating this organization pre-verifies it and immediately provisions its primary branch so members can join easily without verification delays.',
+                      'As Super Admin, creating this organisation pre-verifies it and immediately provisions its primary branch so members can join easily without verification delays.',
                       style: TextStyle(fontSize: 12, color: Colors.grey.shade700, height: 1.3),
                     ),
                     const SizedBox(height: 16),
@@ -364,7 +364,7 @@ class _OrganizationManagementScreenState
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Open for join', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                       subtitle: const Text(
-                        'Allow members to select and join this organization on registration',
+                        'Allow members to select and join this organisation on registration',
                         style: TextStyle(fontSize: 12),
                       ),
                       value: openForJoin,
@@ -484,7 +484,7 @@ class _OrganizationManagementScreenState
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Edit Organization'),
+          title: const Text('Edit Organisation'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -645,7 +645,7 @@ class _OrganizationManagementScreenState
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Delete Organization',
+                'Delete Organisation',
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -661,7 +661,7 @@ class _OrganizationManagementScreenState
             ),
             const SizedBox(height: 8),
             Text(
-              'This action cannot be undone. All branches and associated data for this organization will be removed.',
+              'This action cannot be undone. All branches and associated data for this organisation will be removed.',
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context).colorScheme.error,
@@ -689,7 +689,7 @@ class _OrganizationManagementScreenState
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Organization "${org.name}" deleted successfully',
+                        'Organisation "${org.name}" deleted successfully',
                       ),
                       backgroundColor: Colors.red.shade700,
                       duration: const Duration(seconds: 2),
@@ -700,7 +700,7 @@ class _OrganizationManagementScreenState
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Failed to delete organization: $e'),
+                      content: Text('Failed to delete organisation: $e'),
                       backgroundColor: Colors.red,
                     ),
                   );

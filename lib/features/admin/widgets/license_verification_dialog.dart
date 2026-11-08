@@ -109,7 +109,7 @@ class _LicenseVerificationDialogState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'This will mark the payment proof as rejected and notify the organization to re-upload a valid transfer slip.',
+              'This will mark the payment proof as rejected and notify the organisation to re-upload a valid transfer slip.',
             ),
             const SizedBox(height: 16),
             TextField(

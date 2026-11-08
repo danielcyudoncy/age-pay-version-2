@@ -68,7 +68,7 @@ class _CoFounderVerificationDialogState
           SnackBar(
             backgroundColor: Colors.green.shade700,
             content: Text(
-              '${widget.invitation.organizationName} co-signed! Organization submitted for SuperAdmin platform verification.',
+              '${widget.invitation.organizationName} co-signed! Organisation submitted for SuperAdmin platform verification.',
             ),
           ),
         );
@@ -89,7 +89,7 @@ class _CoFounderVerificationDialogState
       builder: (ctx) => AlertDialog(
         title: const Text('Decline Invitation?'),
         content: const Text(
-          'Are you sure you want to decline this executive invitation? The organization will not be activated.',
+          'Are you sure you want to decline this executive invitation? The organisation will not be activated.',
         ),
         actions: [
           TextButton(
@@ -175,7 +175,7 @@ class _CoFounderVerificationDialogState
               const Divider(),
               const SizedBox(height: 12),
               Text(
-                'You have been invited by the President to co-found and verify a new organization on AgePay:',
+                'You have been invited by the President to co-found and verify a new organisation on AgePay:',
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
@@ -224,7 +224,7 @@ class _CoFounderVerificationDialogState
                   ),
                 ),
               Text(
-                'By approving, you confirm this organization is legitimate and accept the role of General Secretary.',
+                'By approving, you confirm this organisation is legitimate and accept the role of General Secretary.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
@@ -242,7 +242,7 @@ class _CoFounderVerificationDialogState
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.check_circle_outline),
-                  label: const Text('Approve & Activate Organization'),
+                  label: const Text('Approve & Activate Organisation'),
                 ),
               ),
               const SizedBox(height: 8),

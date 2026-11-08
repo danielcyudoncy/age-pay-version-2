@@ -1367,7 +1367,7 @@ class _GovernanceSection extends StatelessWidget {
                   Icons.calendar_month_outlined,
                   color: Colors.blue,
                 ),
-                title: const Text('Organizational Calendar'),
+                title: const Text('Organisational Calendar'),
                 subtitle: const Text('Scheduled dates, deadlines, and events'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 14),
                 onTap: () {

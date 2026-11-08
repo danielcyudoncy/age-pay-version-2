@@ -208,7 +208,7 @@ class _ExecutiveApprovalQueueCardState
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'The following members registered and are awaiting your approval to gain access to the organization:',
+                  'The following members registered and are awaiting your approval to gain access to the organisation:',
                   style: TextStyle(
                     color: Colors.amber.shade900.withValues(alpha: 0.85),
                     fontSize: 13,

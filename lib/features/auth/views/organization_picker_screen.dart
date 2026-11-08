@@ -23,7 +23,7 @@ class _OrganizationPickerScreenState
 
   Future<void> _save() async {
     if (_selectedId == null || _selectedId!.isEmpty) {
-      setState(() => _error = 'Please select your organization');
+      setState(() => _error = 'Please select your organisation');
       return;
     }
     setState(() {
@@ -66,7 +66,7 @@ class _OrganizationPickerScreenState
     final orgsAsync = ref.watch(organizationsFutureProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Select Organization')),
+      appBar: AppBar(title: const Text('Select Organisation')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -83,7 +83,7 @@ class _OrganizationPickerScreenState
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Choose your organization',
+                    'Choose your organisation',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -122,7 +122,7 @@ class _OrganizationPickerScreenState
                     data: (orgs) {
                       if (orgs.isEmpty) {
                         return const Text(
-                          'No organizations are available yet.',
+                          'No organisations are available yet.',
                           textAlign: TextAlign.center,
                         );
                       }
@@ -131,7 +131,7 @@ class _OrganizationPickerScreenState
                       return DropdownButtonFormField<String>(
                         initialValue: _selectedId,
                         decoration: const InputDecoration(
-                          labelText: 'Organization',
+                          labelText: 'Organisation',
                           prefixIcon: Icon(Icons.business_outlined),
                         ),
                         items: sortedOrgs
@@ -145,7 +145,7 @@ class _OrganizationPickerScreenState
                         onChanged: (value) =>
                             setState(() => _selectedId = value),
                         validator: (value) => value == null || value.isEmpty
-                            ? 'Select your organization'
+                            ? 'Select your organisation'
                             : null,
                       );
                     },
@@ -153,7 +153,7 @@ class _OrganizationPickerScreenState
                       child: CircularProgressIndicator(),
                     ),
                     error: (_, _) => const Text(
-                      'Unable to load organizations.',
+                      'Unable to load organisations.',
                       textAlign: TextAlign.center,
                     ),
                   ),

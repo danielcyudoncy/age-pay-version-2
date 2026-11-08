@@ -169,7 +169,7 @@ class NotificationRepository {
                 id: 'pending_$applicantUid',
                 title: 'New Member Registration',
                 body:
-                    '$displayName has registered for ${branchName ?? "your organization"} and is awaiting approval and role assignment.',
+                    '$displayName has registered for ${branchName ?? "your organisation"} and is awaiting approval and role assignment.',
                 type: 'pending_approval',
                 payload: applicantUid,
                 targetRole: 'president',

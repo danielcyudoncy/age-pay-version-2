@@ -118,7 +118,7 @@ class OrganizationListItem extends ConsumerWidget {
                     Icons.more_vert,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
-                  tooltip: 'Organization options',
+                  tooltip: 'Organisation options',
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -482,7 +482,7 @@ class OrganizationListItem extends ConsumerWidget {
               data: (branches) {
                 if (branches.isEmpty) {
                   return Text(
-                    'No branches registered yet under this organization.',
+                    'No branches registered yet under this organisation.',
                     style: TextStyle(
                       fontSize: 12,
                       fontStyle: FontStyle.italic,

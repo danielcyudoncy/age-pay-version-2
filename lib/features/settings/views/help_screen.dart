@@ -99,7 +99,7 @@ class HelpScreen extends StatelessWidget {
                 color: theme.colorScheme.primary,
               ),
               title: const Text('Still need help?'),
-              subtitle: const Text('Call your organization administrator.'),
+              subtitle: const Text('Call your organisation administrator.'),
               trailing: const Icon(Icons.call),
               onTap: () async {
                 final uri = Uri(scheme: 'tel', path: _supportPhone);

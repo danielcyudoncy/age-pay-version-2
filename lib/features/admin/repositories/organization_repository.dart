@@ -34,11 +34,11 @@ class OrganizationRepository {
   /// Public org list used by the register / org-picker screens, which run
   /// before the user is authenticated. The query is filtered to active,
   /// joinable orgs so it matches the Firestore read rule for anonymous users.
+  /// Sorter is run in memory to avoid requiring a Cloud Firestore composite index.
   Stream<List<OrganizationModel>> getPublicOrganizations() {
     return _collection
         .where('isActive', isEqualTo: true)
         .where('openForJoin', isEqualTo: true)
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
           (snapshot) {
@@ -48,7 +48,10 @@ class OrganizationRepository {
             list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
             return list;
           },
-        );
+        )
+        .handleError((error) {
+          return <OrganizationModel>[];
+        });
   }
 
   Future<OrganizationModel?> getOrganizationById(String id) async {

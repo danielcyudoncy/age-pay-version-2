@@ -34,7 +34,7 @@ class IdentityVerificationService {
     if (_blacklistedIds.contains(cleanId)) {
       return const IdentityVerificationResult(
         isValid: false,
-        message: 'Security Alert: This identification has been flagged on the fraud prevention registry. Organization creation blocked.',
+        message: 'Security Alert: This identification has been flagged on the fraud prevention registry. Organisation creation blocked.',
       );
     }
 

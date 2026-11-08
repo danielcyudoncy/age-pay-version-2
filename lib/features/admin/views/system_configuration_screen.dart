@@ -361,7 +361,7 @@ class _SystemConfigurationScreenState
                       DropdownMenuItem(
                         value: 'organization',
                         child: Text(
-                          'Organization Absorbs Fee',
+                          'Organisation Absorbs Fee',
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

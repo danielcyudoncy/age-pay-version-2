@@ -138,7 +138,7 @@ class _SystemResetDialogState extends ConsumerState<SystemResetDialog> {
                   _BulletItem('Delete all collections (₦0 balance & ₦0 disbursed)'),
                   _BulletItem('Delete all expenses, levies, obligations & receipts'),
                   _BulletItem('Delete all meetings, announcements & notifications'),
-                  _BulletItem('Delete all organizations & branches (0 Organizations)'),
+                  _BulletItem('Delete all organisations & branches (0 Organisations)'),
                   _BulletItem('Delete all users & members EXCEPT danielcyudoncy@gmail.com'),
                   _BulletItem('Preserve your Super Admin master access'),
                 ],

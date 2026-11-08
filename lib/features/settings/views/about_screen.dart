@@ -13,7 +13,7 @@ class AboutScreen extends StatelessWidget {
       title: 'Members & contributions',
       body:
           'Manage members, track contributions, and keep records organized '
-          'for your organization.',
+          'for your organisation.',
     ),
     _AboutItem(
       icon: Icons.payments_outlined,
@@ -33,7 +33,7 @@ class AboutScreen extends StatelessWidget {
       icon: Icons.lock_outline,
       title: 'Secure & multi-tenant',
       body:
-          'Each organization works within its own isolated, secure '
+          'Each organisation works within its own isolated, secure '
           'workspace.',
     ),
   ];

@@ -152,7 +152,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                       items: [
                         const DropdownMenuItem(
                           value: null,
-                          child: Text('All Organizations', style: TextStyle(fontSize: 12)),
+                          child: Text('All Organisations', style: TextStyle(fontSize: 12)),
                         ),
                         ...orgs.map((o) {
                           return DropdownMenuItem(
@@ -797,7 +797,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                                 orgNameById[user.organizationId] ??
                                     (user.organizationId.isNotEmpty
                                         ? user.organizationId
-                                        : 'No Organization'),
+                                        : 'No Organisation'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,

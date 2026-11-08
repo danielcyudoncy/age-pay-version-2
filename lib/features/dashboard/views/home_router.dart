@@ -74,7 +74,7 @@ class HomeRouter extends ConsumerWidget {
           final org = orgAsync.valueOrNull;
           if (org != null && org.verificationStatus == 'rejected') {
             return Scaffold(
-              appBar: AppBar(title: const Text('Organization Status')),
+              appBar: AppBar(title: const Text('Organisation Status')),
               body: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -84,7 +84,7 @@ class HomeRouter extends ConsumerWidget {
                       const Icon(Icons.gavel_rounded, size: 64, color: Colors.red),
                       const SizedBox(height: 16),
                       Text(
-                        'Organization Verification Declined',
+                        'Organisation Verification Declined',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -168,7 +168,7 @@ class HomeRouter extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '🛡️ Compliance Notice: Organization is pending Platform SuperAdmin verification before opening for public join and payments.',
+                            '🛡️ Compliance Notice: Organisation is pending Platform SuperAdmin verification before opening for public join and payments.',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,

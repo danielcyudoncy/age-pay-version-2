@@ -224,7 +224,7 @@ class AuthService {
               'id': notifDoc.id,
               'organizationId': finalOrgId,
               'title': 'Dual-Executive Verification Required',
-              'body': '$displayName appointed you as General Secretary for $newOrganizationName. Please verify to activate the organization.',
+              'body': '$displayName appointed you as General Secretary for $newOrganizationName. Please verify to activate the organisation.',
               'type': 'co_founder_invite',
               'payload': coFounderPhone,
               'targetRole': 'secretary',

@@ -174,7 +174,7 @@ void main() {
 
     // Verify empty branches state
     expect(
-      find.text('No branches registered yet under this organization.'),
+      find.text('No branches registered yet under this organisation.'),
       findsOneWidget,
     );
 

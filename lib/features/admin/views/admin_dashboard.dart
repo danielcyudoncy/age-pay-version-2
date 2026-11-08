@@ -204,7 +204,7 @@ class _AdminConsoleTab extends ConsumerWidget {
                       ),
                       const SizedBox(width: 12),
                       AdminMetricCard(
-                        label: 'Organizations',
+                        label: 'Organisations',
                         value: data.totalOrganizations.toString(),
                         icon: Icons.business,
                         color: theme.colorScheme.primary,
@@ -308,8 +308,8 @@ class _AdminConsoleTab extends ConsumerWidget {
                           ),
                           const SizedBox(width: 12),
                           QuickActionCard(
-                            title: 'Organizations',
-                            subtitle: 'Manage organizations',
+                            title: 'Organisations',
+                            subtitle: 'Manage organisations',
                             icon: Icons.business,
                             color: theme.colorScheme.primary,
                             onTap: () {

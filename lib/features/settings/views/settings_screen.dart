@@ -30,7 +30,7 @@ class SettingsScreen extends ConsumerWidget {
           MediaQuery.paddingOf(context).bottom + 32,
         ),
         children: [
-          _SectionHeader(title: 'Organization Account', icon: Icons.account_balance_outlined),
+          _SectionHeader(title: 'Organisation Account', icon: Icons.account_balance_outlined),
           const _OrganizationBankCard(),
           if (user != null &&
               (user.role == UserRole.treasurer ||
@@ -234,7 +234,7 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'This will purge all organizations, branches, collections (payments, expenses, obligations, levies, receipts, announcements) and delete all users except danielcyudoncy@gmail.com, restoring the app to an empty, brand new state.',
+                      'This will purge all organisations, branches, collections (payments, expenses, obligations, levies, receipts, announcements) and delete all users except danielcyudoncy@gmail.com, restoring the app to an empty, brand new state.',
                       style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 16),

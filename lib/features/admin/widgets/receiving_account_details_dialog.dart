@@ -51,7 +51,7 @@ class ReceivingAccountDetailsDialog extends ConsumerWidget {
                 children: [
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 12),
-                  Text('Failed to load organization: $err'),
+                  Text('Failed to load organisation: $err'),
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
@@ -71,7 +71,7 @@ class ReceivingAccountDetailsDialog extends ConsumerWidget {
                       color: Colors.orange,
                     ),
                     const SizedBox(height: 12),
-                    const Text('No organization profile found.'),
+                    const Text('No organisation profile found.'),
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
@@ -330,7 +330,7 @@ class ReceivingAccountDetailsDialog extends ConsumerWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Your organization does not have an official receiving bank account set up yet. Members will not be able to pay dues via bank transfer until this is configured.',
+                            'Your organisation does not have an official receiving bank account set up yet. Members will not be able to pay dues via bank transfer until this is configured.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 12,

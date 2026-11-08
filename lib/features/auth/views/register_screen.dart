@@ -99,7 +99,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
     } else {
       if (_selectedOrganizationId == null || _selectedOrganizationId!.isEmpty) {
-        setState(() => _error = 'Please select your Age Grade');
+        setState(() => _error = 'Please select your organisation');
         return;
       }
       if (!_isCreatingNewBranch &&
@@ -364,7 +364,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 28),
                     // Multi-Level Organization & Branch Section
                     Text(
-                      'Organization & Branch',
+                      'Organisation & Branch',
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary,
@@ -377,7 +377,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       children: [
                         Expanded(
                           child: ChoiceChip(
-                            label: const Text('Join Existing Age Grade'),
+                            label: const Text('Join Existing Organisation'),
                             selected: !_isCreatingNewOrg,
                             onSelected: (selected) {
                               if (selected) {
@@ -962,7 +962,7 @@ class _OrganizationPicker extends ConsumerWidget {
         return DropdownButtonFormField<String>(
           initialValue: items.any((i) => i.value == selectedId) ? selectedId : null,
           decoration: const InputDecoration(
-            labelText: 'Select Age Grade',
+            labelText: 'Select Organisation',
             prefixIcon: Icon(Icons.business_outlined),
           ),
           items: items,
@@ -974,15 +974,15 @@ class _OrganizationPicker extends ConsumerWidget {
             }
           },
           validator: (value) =>
-              value == null || value.isEmpty ? 'Select your Age Grade' : null,
+              value == null || value.isEmpty ? 'Select your organisation' : null,
         );
       },
       loading: () => const InputDecorator(
         decoration: InputDecoration(
-          labelText: 'Age Grade',
+          labelText: 'Organisation',
           prefixIcon: Icon(Icons.business_outlined),
         ),
-        child: Text('Loading Age Grades...'),
+        child: Text('Loading organisations...'),
       ),
       error: (_, _) => Container(
         padding: const EdgeInsets.all(12),
@@ -992,7 +992,7 @@ class _OrganizationPicker extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            const Expanded(child: Text('Unable to load Age Grades')),
+            const Expanded(child: Text('Unable to load organisations')),
             TextButton.icon(
               onPressed: onRegisterNewTapped,
               icon: const Icon(Icons.add, size: 16),

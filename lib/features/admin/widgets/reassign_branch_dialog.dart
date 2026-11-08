@@ -43,7 +43,7 @@ class _ReassignBranchDialogState extends ConsumerState<ReassignBranchDialog> {
         fit: BoxFit.scaleDown,
         alignment: Alignment.centerLeft,
         child: Text(
-          'Reassign Organization / Branch',
+          'Reassign Organisation / Branch',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
@@ -61,14 +61,14 @@ class _ReassignBranchDialogState extends ConsumerState<ReassignBranchDialog> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Select Organization',
+                'Select Organisation',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 6),
               orgsAsync.when(
                 data: (orgs) {
                   if (orgs.isEmpty) {
-                    return const Text('No organizations found.');
+                    return const Text('No organisations found.');
                   }
                   final validOrgId = orgs.any((o) => o.id == _selectedOrgId)
                       ? _selectedOrgId
@@ -115,7 +115,7 @@ class _ReassignBranchDialogState extends ConsumerState<ReassignBranchDialog> {
                   data: (branches) {
                     if (branches.isEmpty) {
                       return const Text(
-                        'No branches available in this organization.',
+                        'No branches available in this organisation.',
                         style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
                       );
                     }
@@ -156,7 +156,7 @@ class _ReassignBranchDialogState extends ConsumerState<ReassignBranchDialog> {
                   error: (err, _) => Text('Error loading branches: $err'),
                 )
               else
-                const Text('Select an organization first.'),
+                const Text('Select an organisation first.'),
             ],
           ),
         ),
@@ -175,7 +175,7 @@ class _ReassignBranchDialogState extends ConsumerState<ReassignBranchDialog> {
               Navigator.of(context).pop();
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Please select both organization and branch.')),
+                const SnackBar(content: Text('Please select both organisation and branch.')),
               );
             }
           },

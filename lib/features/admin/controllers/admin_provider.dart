@@ -39,14 +39,13 @@ final organizationsStreamProvider =
   return ref.watch(organizationRepositoryProvider).getOrganizations();
 });
 
-final organizationsFutureProvider = FutureProvider<List<OrganizationModel>>((
-  ref,
-) {
-  return ref
-      .watch(organizationRepositoryProvider)
-      .getPublicOrganizations()
-      .first;
+final organizationsFutureProvider =
+    StreamProvider.autoDispose<List<OrganizationModel>>((ref) {
+  return ref.watch(organizationRepositoryProvider).getPublicOrganizations();
 });
+
+/// Alias for [organizationsFutureProvider] with idiomatic StreamProvider naming.
+final publicOrganizationsStreamProvider = organizationsFutureProvider;
 
 final totalOrganizationsProvider =
     Provider.autoDispose<AsyncValue<int>>((ref) {

@@ -93,7 +93,7 @@ class _OrganizationVerificationDialogState
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.red),
             SizedBox(width: 8),
-            Text('Reject Organization?'),
+            Text('Reject Organisation?'),
           ],
         ),
         content: Column(
@@ -101,7 +101,7 @@ class _OrganizationVerificationDialogState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'This will mark the organization as rejected and prevent it from appearing publicly or accepting member payments.',
+              'This will mark the organisation as rejected and prevent it from appearing publicly or accepting member payments.',
             ),
             const SizedBox(height: 16),
             TextField(

@@ -92,7 +92,7 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
                   const SizedBox(height: 8),
                   Text(
                     isRejected
-                        ? 'Your registration was reviewed and not approved by the organization executive.'
+                        ? 'Your registration was reviewed and not approved by the organisation executive.'
                         : isPioneerPresident
                             ? 'Your new Age Grade requires dual-executive verification before going live.'
                             : 'Your application has been received and is awaiting approval by your Branch Executive.',

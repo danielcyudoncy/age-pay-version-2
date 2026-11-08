@@ -45,7 +45,7 @@ class ProCommunicationTemplate {
       name: 'Urgent Advisory',
       title: 'URGENT: Executive Community Advisory',
       body:
-          'Please take note of this urgent advisory regarding member welfare and organizational decorum. '
+          'Please take note of this urgent advisory regarding member welfare and organisational decorum. '
           'All members are expected to comply with the standard guidelines. '
           'Thank you for your prompt cooperation.',
       urgency: 'urgent',

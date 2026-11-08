@@ -280,7 +280,7 @@ class _AnnualLicenseScreenState extends ConsumerState<AnnualLicenseScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'This will mark the payment proof as rejected and notify the organization to re-upload a valid transfer slip.',
+              'This will mark the payment proof as rejected and notify the organisation to re-upload a valid transfer slip.',
             ),
             const SizedBox(height: 16),
             TextField(
@@ -378,7 +378,7 @@ class _AnnualLicenseScreenState extends ConsumerState<AnnualLicenseScreen> {
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (org) {
           if (org == null) {
-            return const Center(child: Text('Organization not found'));
+            return const Center(child: Text('Organisation not found'));
           }
 
           final systemSettings = systemSettingsAsync.valueOrNull ??

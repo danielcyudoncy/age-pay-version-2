@@ -297,7 +297,7 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                             const SizedBox(height: 10),
                             Text(
                               obligations.isEmpty
-                                  ? 'Set initial onboarding dues/arrears for this new member based on organization inception.'
+                                  ? 'Set initial onboarding dues/arrears for this new member based on organisation inception.'
                                   : 'Update or assign dues owed by this member. Changes reflect immediately on the member dashboard.',
                               style: TextStyle(
                                 fontSize: 12,
@@ -909,7 +909,7 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
         return AlertDialog(
           title: const Text('Import All Active Levies?'),
           content: Text(
-            'This will automatically calculate and assign all active organization levies to ${member.fullName}.\n\n'
+            'This will automatically calculate and assign all active organisation levies to ${member.fullName}.\n\n'
             'Their total outstanding dues will automatically update on their dashboard.',
           ),
           actions: [
