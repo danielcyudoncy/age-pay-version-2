@@ -938,7 +938,10 @@ class _OrganizationPicker extends ConsumerWidget {
           ...sortedOrgs.map(
             (org) => DropdownMenuItem(
               value: org.id,
-              child: Text(org.name),
+              child: Text(
+                org.name,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
           const DropdownMenuItem(
@@ -947,11 +950,14 @@ class _OrganizationPicker extends ConsumerWidget {
               children: [
                 Icon(Icons.add, size: 18, color: Colors.blue),
                 SizedBox(width: 8),
-                Text(
-                  '+ Register New Organisation',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    '+ Register New Organisation',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -960,6 +966,7 @@ class _OrganizationPicker extends ConsumerWidget {
         ];
 
         return DropdownButtonFormField<String>(
+          isExpanded: true,
           initialValue: items.any((i) => i.value == selectedId) ? selectedId : null,
           decoration: const InputDecoration(
             labelText: 'Select Organisation',
@@ -1031,7 +1038,10 @@ class _BranchPicker extends ConsumerWidget {
           ...sortedBranches.map(
             (b) => DropdownMenuItem(
               value: b.id,
-              child: Text(b.name),
+              child: Text(
+                b.name,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
           const DropdownMenuItem(
@@ -1040,11 +1050,16 @@ class _BranchPicker extends ConsumerWidget {
               children: [
                 Icon(Icons.add, size: 18, color: Colors.blue),
                 SizedBox(width: 8),
-                Text('+ Add New Branch',
+                Expanded(
+                  child: Text(
+                    '+ Add New Branch',
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: Colors.blue,
                       fontWeight: FontWeight.bold,
-                    )),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1053,6 +1068,7 @@ class _BranchPicker extends ConsumerWidget {
         final currentValue = isCreatingNew ? '__NEW__' : selectedBranchId;
 
         return DropdownButtonFormField<String>(
+          isExpanded: true,
           initialValue: items.any((i) => i.value == currentValue) ? currentValue : null,
           decoration: const InputDecoration(
             labelText: 'Branch Name',

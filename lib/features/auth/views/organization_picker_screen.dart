@@ -129,6 +129,7 @@ class _OrganizationPickerScreenState
                       final sortedOrgs = List.of(orgs)
                         ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
                       return DropdownButtonFormField<String>(
+                        isExpanded: true,
                         initialValue: _selectedId,
                         decoration: const InputDecoration(
                           labelText: 'Organisation',
@@ -138,7 +139,10 @@ class _OrganizationPickerScreenState
                             .map(
                               (org) => DropdownMenuItem(
                                 value: org.id,
-                                child: Text(org.name),
+                                child: Text(
+                                  org.name,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             )
                             .toList(),
