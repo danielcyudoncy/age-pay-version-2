@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../models/organization_model.dart';
 import '../controllers/admin_provider.dart';
+import 'edit_organization_bank_dialog.dart';
 
 class OrganizationVerificationDialog extends ConsumerStatefulWidget {
   final OrganizationModel organization;
@@ -32,8 +33,15 @@ class OrganizationVerificationDialog extends ConsumerStatefulWidget {
 
 class _OrganizationVerificationDialogState
     extends ConsumerState<OrganizationVerificationDialog> {
+  late OrganizationModel _organization;
   bool _isLoading = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _organization = widget.organization;
+  }
 
   void _copyToClipboard(String text, String label) {
     if (text.isEmpty) return;
@@ -165,7 +173,7 @@ class _OrganizationVerificationDialogState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final org = widget.organization;
+    final org = _organization;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -544,6 +552,41 @@ class _OrganizationVerificationDialogState
                 ),
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () async {
+              final updated = await EditOrganizationBankDialog.show(
+                context,
+                organization: org,
+              );
+              if (updated == true && mounted) {
+                try {
+                  final latest = await ref
+                      .read(organizationRepositoryProvider)
+                      .getOrganizationById(org.id);
+                  if (latest != null && mounted) {
+                    setState(() => _organization = latest);
+                  }
+                } catch (_) {}
+                ref.invalidate(organizationsStreamProvider);
+                ref.invalidate(currentOrganizationProvider);
+              }
+            },
+            icon: const Icon(Icons.account_balance, size: 16),
+            label: Text(
+              hasBankConfigured
+                  ? 'Update Bank Account Details'
+                  : 'Set Up Receiving Bank Account',
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.teal.shade800,
+              side: BorderSide(color: Colors.teal.shade300),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+            ),
           ),
         ),
       ],

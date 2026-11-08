@@ -89,6 +89,7 @@ void main() {
       find.text('Association Name Verified: Bank account name matches registered Age Grade records.'),
       findsOneWidget,
     );
+    expect(find.text('Update Bank Account Details'), findsOneWidget);
 
     // 6. Verify Actions
     expect(find.text('Close'), findsOneWidget);

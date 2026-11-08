@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/constants/enums.dart';
+import '../../auth/controllers/auth_provider.dart';
 import '../models/organization_model.dart';
 import '../controllers/admin_provider.dart';
 import '../services/bank_verification_service.dart';
@@ -118,7 +120,12 @@ class _EditOrganizationBankDialogState
           );
 
       final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
+      final authUser = ref.read(authProvider).valueOrNull;
+      final isSuperAdmin = authUser != null &&
+          (authUser.role == UserRole.superAdmin ||
+              authUser.email.toLowerCase().contains('superadmin'));
+
+      if (currentUser != null && !isSuperAdmin) {
         FirebaseFirestore.instance
             .collection('users')
             .doc(currentUser.uid)
@@ -126,6 +133,7 @@ class _EditOrganizationBankDialogState
             .ignore();
       }
 
+      ref.invalidate(organizationsStreamProvider);
       ref.invalidate(currentOrganizationProvider);
 
       if (mounted) {
