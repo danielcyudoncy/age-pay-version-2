@@ -39,7 +39,7 @@ const List<String> kNigerianStates = [
   'Zamfara',
 ];
 
-/// Common diaspora & commercial state hubs where traditional age grades frequently establish chapters.
+/// Common diaspora & commercial state hubs where organisations and associations frequently establish chapters.
 const List<String> kCommonAgeGradeHubs = [
   'Lagos',
   'FCT - Abuja',

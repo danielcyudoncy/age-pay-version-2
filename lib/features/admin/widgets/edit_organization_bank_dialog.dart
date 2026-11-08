@@ -388,7 +388,7 @@ class _EditOrganizationBankDialogState
                   textCapitalization: TextCapitalization.words,
                   decoration: InputDecoration(
                     labelText: 'Account Name *',
-                    hintText: 'e.g. Age Grade Association Central Fund',
+                    hintText: 'e.g. Association Central Fund',
                     prefixIcon: const Icon(Icons.badge),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),

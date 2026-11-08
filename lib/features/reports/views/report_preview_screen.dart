@@ -334,7 +334,7 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
           fiscalPeriod: activePeriod,
           startDate: _startDate ?? activePeriod?.startDate ?? DateTime(2025, 7, 1),
           endDate: _endDate ?? activePeriod?.endDate ?? DateTime(2026, 10, 31),
-          organizationName: orgName ?? 'Onyirimba Age Grade',
+          organizationName: orgName ?? 'Central Organisation',
           branchName: user?.branchId ?? 'Elu Ohafia, Lagos Branch',
         );
     }

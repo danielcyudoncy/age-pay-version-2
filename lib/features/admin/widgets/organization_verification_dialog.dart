@@ -539,7 +539,7 @@ class _OrganizationVerificationDialogState
               Expanded(
                 child: Text(
                   org.isBankVerified
-                      ? 'Association Name Verified: Bank account name matches registered Age Grade records.'
+                      ? 'Association Name Verified: Bank account name matches registered organisation records.'
                       : 'Association Check Pending: Ensure registered bank account belongs to ${org.name} prior to activating.',
                   style: TextStyle(
                     fontSize: 12,

@@ -157,7 +157,7 @@ class AuthService {
       String? finalBranchId = branchId;
       String? finalBranchName = branchName;
 
-      // 1. If registering a new Age Grade
+      // 1. If registering a new organisation
       if (isNewOrganization && newOrganizationName != null && newOrganizationName.isNotEmpty) {
         final orgDoc = _firestore.collection('organizations').doc();
         finalOrgId = orgDoc.id;

@@ -39,7 +39,7 @@ final receiptByPaymentIdProvider = FutureProvider.autoDispose
 final receiptPdfGenerationProvider = FutureProvider.autoDispose
     .family<Uint8List, ReceiptModel>((ref, receipt) async {
       final service = ref.watch(_receiptServiceProvider);
-      String orgName = 'Age Grade Association';
+      String orgName = 'Organisation Association';
       try {
         final orgId = await ref.watch(organizationIdProvider.future);
         if (orgId.isNotEmpty) {

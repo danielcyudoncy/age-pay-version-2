@@ -89,7 +89,7 @@ class BankVerificationService {
       return BankMatchResult(
         status: BankMatchStatus.personalAccountBlocked,
         message:
-            'Security Warning: Personal bank accounts are prohibited for community funds. The account name ("$accountName") does not match your Age Grade ("$organizationName"). Corporate/Association account required.',
+            'Security Warning: Personal bank accounts are prohibited for community funds. The account name ("$accountName") does not match your organisation ("$organizationName"). Corporate/Association account required.',
         isApproved: false,
         similarityScore: 0.0,
       );
@@ -106,7 +106,7 @@ class BankVerificationService {
       return BankMatchResult(
         status: BankMatchStatus.verifiedAssociation,
         message:
-            'Verified Association Account: Account name matches registered Age Grade entity.',
+            'Verified Association Account: Account name matches registered organisation entity.',
         isApproved: true,
         similarityScore: score > 0 ? score : 0.85,
       );
@@ -115,7 +115,7 @@ class BankVerificationService {
     return BankMatchResult(
       status: BankMatchStatus.mismatched,
       message:
-          'Account name ("$accountName") does not sufficiently match "$organizationName". Please ensure the bank account was opened in the name of the Age Grade.',
+          'Account name ("$accountName") does not sufficiently match "$organizationName". Please ensure the bank account was opened in the name of the organisation.',
       isApproved: false,
       similarityScore: score,
     );

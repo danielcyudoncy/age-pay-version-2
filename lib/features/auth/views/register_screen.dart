@@ -75,7 +75,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (_isCreatingNewOrg) {
       if (_newOrgNameController.text.trim().isEmpty) {
-        setState(() => _error = 'Please enter the name of your Age Grade');
+        setState(() => _error = 'Please enter the name of your organisation');
         return;
       }
       if (_secretaryPhoneController.text.trim().isEmpty) {
@@ -247,7 +247,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Join or register your Age Grade on AgePay',
+                      'Join or register your organisation',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -407,7 +407,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 16),
 
                     if (_isCreatingNewOrg) ...[
-                      // Registering a brand new Age Grade
+                      // Registering a brand new organisation
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
@@ -423,7 +423,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                '🛡️ Dual-Executive Verification:\nAs pioneer founder, you will be registered as President. Provide your General Secretary\'s details below—they will receive an alert to co-sign and activate the Age Grade.',
+                                '🛡️ Dual-Executive Verification:\nAs pioneer founder, you will be registered as President. Provide your General Secretary\'s details below—they will receive an alert to co-sign and activate the organisation.',
                                 style: TextStyle(
                                   color: Colors.blue.shade900,
                                   fontSize: 12,
@@ -439,12 +439,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         controller: _newOrgNameController,
                         textCapitalization: TextCapitalization.words,
                         decoration: const InputDecoration(
-                          labelText: 'Age Grade Name',
-                          hintText: 'e.g. Udoka Age Grade',
+                          labelText: 'Organisation Name',
+                          hintText: 'e.g. Udoka Association / Club',
                           prefixIcon: Icon(Icons.corporate_fare_outlined),
                         ),
                         validator: (v) => _isCreatingNewOrg && (v == null || v.isEmpty)
-                            ? 'Enter the Age Grade name'
+                            ? 'Enter the organisation name'
                             : null,
                       ),
                       const SizedBox(height: 16),
@@ -587,7 +587,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         child: const Text('President (Pioneer Founder)'),
                       ),
                     ] else ...[
-                      // Joining existing Age Grade
+                      // Joining existing organisation
                       _OrganizationPicker(
                         selectedId: _selectedOrganizationId,
                         onChanged: (id) {
@@ -901,7 +901,7 @@ class _OrganizationPicker extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'No Age Grades registered yet',
+                        'No organisations registered yet',
                         style: TextStyle(
                           color: Colors.blue.shade900,
                           fontWeight: FontWeight.bold,
@@ -912,14 +912,14 @@ class _OrganizationPicker extends ConsumerWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Be the pioneer to register your Age Grade and primary branch.',
+                  'Be the pioneer to register your organisation and primary branch.',
                   style: TextStyle(fontSize: 12, color: Colors.blue.shade800),
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton.icon(
                   onPressed: onRegisterNewTapped,
                   icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Register New Age Grade'),
+                  label: const Text('Register New Organisation'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue.shade700,
                     foregroundColor: Colors.white,
@@ -948,7 +948,7 @@ class _OrganizationPicker extends ConsumerWidget {
                 Icon(Icons.add, size: 18, color: Colors.blue),
                 SizedBox(width: 8),
                 Text(
-                  '+ Register New Age Grade',
+                  '+ Register New Organisation',
                   style: TextStyle(
                     color: Colors.blue,
                     fontWeight: FontWeight.bold,

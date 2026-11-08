@@ -82,7 +82,7 @@ class ProMemberContactCard extends ConsumerWidget {
                 tooltip: 'WhatsApp ${member.fullName}',
                 onPressed: () {
                   ref.read(proCommunicationServiceProvider).shareToWhatsApp(
-                    message: 'Hello ${member.fullName}, regarding our Age Grade community on AgePay:',
+                    message: 'Hello ${member.fullName}, regarding our organisation on AgePay:',
                     phoneNumber: member.phoneNumber,
                   );
                 },

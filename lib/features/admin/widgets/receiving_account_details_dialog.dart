@@ -294,7 +294,7 @@ class ReceivingAccountDetailsDialog extends ConsumerWidget {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'All members in your Age Grade see this account when making dues and levy payments via bank transfer.',
+                      'All members in your organisation see this account when making dues and levy payments via bank transfer.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,

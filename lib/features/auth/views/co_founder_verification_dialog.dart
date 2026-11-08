@@ -188,7 +188,7 @@ class _CoFounderVerificationDialogState
                 ),
                 child: Column(
                   children: [
-                    _infoRow('Age Grade', widget.invitation.organizationName),
+                    _infoRow('Organisation', widget.invitation.organizationName),
                     const SizedBox(height: 8),
                     _infoRow('Branch', widget.invitation.branchName),
                     const SizedBox(height: 8),

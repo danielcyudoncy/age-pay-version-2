@@ -587,7 +587,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
             ? org!.accountName!
             : (org?.name.isNotEmpty == true
                 ? '${org!.name} Central Treasury'
-                : 'Age Grade Central Treasury'));
+                : 'Organisation Central Treasury'));
 
     final accountLabel = isNational
         ? 'NATIONAL TREASURY ACCOUNT'

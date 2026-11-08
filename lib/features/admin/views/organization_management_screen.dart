@@ -214,8 +214,8 @@ class _OrganizationManagementScreenState
                       controller: nameController,
                       textCapitalization: TextCapitalization.words,
                       decoration: const InputDecoration(
-                        labelText: 'Age Grade Name *',
-                        hintText: 'e.g. Udoka Age Grade',
+                        labelText: 'Organisation Name *',
+                        hintText: 'e.g. Udoka Association / Club',
                         prefixIcon: Icon(Icons.corporate_fare_outlined),
                       ),
                       onChanged: (val) {
@@ -229,7 +229,7 @@ class _OrganizationManagementScreenState
                         }
                       },
                       validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Age Grade name is required'
+                          ? 'Organisation name is required'
                           : null,
                     ),
                     const SizedBox(height: 12),
@@ -237,7 +237,7 @@ class _OrganizationManagementScreenState
                       controller: slugController,
                       decoration: const InputDecoration(
                         labelText: 'Platform Slug *',
-                        hintText: 'e.g. udoka-age-grade',
+                        hintText: 'e.g. udoka-association',
                         prefixIcon: Icon(Icons.alternate_email),
                       ),
                       onChanged: (_) => slugManuallyEdited = true,
@@ -353,7 +353,7 @@ class _OrganizationManagementScreenState
                         textCapitalization: TextCapitalization.words,
                         decoration: const InputDecoration(
                           labelText: 'Account Name',
-                          hintText: 'e.g. Udoka Age Grade Central',
+                          hintText: 'e.g. Udoka Association Central',
                           prefixIcon: Icon(Icons.badge),
                         ),
                       ),

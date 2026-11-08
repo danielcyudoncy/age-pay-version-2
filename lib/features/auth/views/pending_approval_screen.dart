@@ -94,7 +94,7 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
                     isRejected
                         ? 'Your registration was reviewed and not approved by the organisation executive.'
                         : isPioneerPresident
-                            ? 'Your new Age Grade requires dual-executive verification before going live.'
+                            ? 'Your new organisation requires dual-executive verification before going live.'
                             : 'Your application has been received and is awaiting approval by your Branch Executive.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -207,7 +207,7 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  'Tell ${widget.user.coFounderName ?? 'your Secretary'} to open AgePay and sign in or register with phone number ${widget.user.coFounderPhone}. They will see an instant prompt to co-sign and activate your Age Grade.',
+                                  'Tell ${widget.user.coFounderName ?? 'your Secretary'} to open AgePay and sign in or register with phone number ${widget.user.coFounderPhone}. They will see an instant prompt to co-sign and activate your organisation.',
                                   style: TextStyle(
                                     color: Colors.blue.shade900,
                                     fontSize: 13,
@@ -223,7 +223,7 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
                               final phone = widget.user.coFounderPhone ?? '';
                               final name = widget.user.coFounderName ?? 'General Secretary';
                               final message =
-                                  'Hello $name, I have registered our Age Grade on AgePay and listed you as General Secretary. Please download/open the AgePay app and sign in with your phone number ($phone) to co-sign and activate our Age Grade!';
+                                  'Hello $name, I have registered our organisation on AgePay and listed you as General Secretary. Please download/open the AgePay app and sign in with your phone number ($phone) to co-sign and activate our organisation!';
                               Share.share(message);
                             },
                             icon: const Icon(Icons.share, size: 18),
