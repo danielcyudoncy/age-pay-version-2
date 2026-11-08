@@ -73,6 +73,7 @@ void main() {
     // 2. Verify status pills & slug tag are displayed
     expect(find.text('Active'), findsOneWidget);
     expect(find.text('Join Open'), findsOneWidget);
+    expect(find.text('No Bank'), findsOneWidget);
     expect(find.text('@naat-national'), findsOneWidget);
 
     // 3. Verify metadata row (Tier 2) is displayed
@@ -104,6 +105,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Edit details'), findsOneWidget);
+    expect(find.text('Bank Account Setup'), findsOneWidget);
     expect(find.text('Close Join'), findsOneWidget);
     expect(find.text('Deactivate'), findsOneWidget);
     expect(find.text('Delete'), findsOneWidget);
@@ -184,5 +186,50 @@ void main() {
 
     expect(find.text('Activate'), findsOneWidget);
     expect(find.text('Open Join'), findsOneWidget);
+  });
+
+  testWidgets('OrganizationListItem displays bank details and pill when bank is configured', (tester) async {
+    final bankOrg = testOrg.copyWith(
+      bankName: 'Zenith Bank',
+      accountNumber: '1020304050',
+      accountName: 'National Association Central Account',
+      isBankVerified: true,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          branchesStreamFamily('org-1').overrideWith(
+            (ref) => Stream.value([]),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 360,
+              child: OrganizationListItem(
+                organization: bankOrg,
+                onToggleStatus: () {},
+                onToggleJoin: () {},
+                onEdit: () {},
+                onAddBranch: () {},
+                onDelete: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Verify bank pill displays bank name
+    expect(find.text('Zenith Bank'), findsOneWidget);
+
+    // Verify bank row in metadata section
+    expect(
+      find.text('Zenith Bank • 1020304050 (National Association Central Account)'),
+      findsOneWidget,
+    );
   });
 }

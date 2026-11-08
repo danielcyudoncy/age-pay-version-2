@@ -5,6 +5,7 @@ import 'package:cls/features/admin/models/branch_model.dart';
 import 'package:cls/features/admin/models/organization_model.dart';
 import 'organization_verification_dialog.dart';
 import 'license_verification_dialog.dart';
+import 'edit_organization_bank_dialog.dart';
 
 class OrganizationListItem extends ConsumerWidget {
   final OrganizationModel organization;
@@ -87,6 +88,7 @@ class OrganizationListItem extends ConsumerWidget {
                         children: [
                           _buildStatusPill(context, isActive: organization.isActive),
                           _buildVerificationPill(context, status: organization.verificationStatus),
+                          _buildBankPill(context, organization: organization),
                           _buildLicensePill(context, organization: organization),
                           _buildJoinPill(context, openForJoin: organization.openForJoin),
                           Container(
@@ -136,6 +138,12 @@ class OrganizationListItem extends ConsumerWidget {
                           organization: organization,
                         );
                         break;
+                      case 'bank':
+                        EditOrganizationBankDialog.show(
+                          context,
+                          organization: organization,
+                        );
+                        break;
                       case 'edit':
                         onEdit();
                         break;
@@ -168,6 +176,16 @@ class OrganizationListItem extends ConsumerWidget {
                           Icon(Icons.receipt_long_rounded, size: 20, color: Colors.amber),
                           SizedBox(width: 12),
                           Expanded(child: Text('Review License Payment')),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'bank',
+                      child: Row(
+                        children: [
+                          Icon(Icons.account_balance_outlined, size: 20, color: Colors.teal),
+                          SizedBox(width: 12),
+                          Expanded(child: Text('Bank Account Setup')),
                         ],
                       ),
                     ),
@@ -299,10 +317,11 @@ class OrganizationListItem extends ConsumerWidget {
               ),
             ],
 
-            // Tier 2: Metadata / Contact details
+            // Tier 2: Metadata / Contact & Banking details
             if (organization.contactEmail.isNotEmpty ||
                 organization.contactPhone.isNotEmpty ||
-                organization.address.isNotEmpty) ...[
+                organization.address.isNotEmpty ||
+                (organization.bankName != null && organization.bankName!.trim().isNotEmpty)) ...[
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
@@ -383,6 +402,34 @@ class OrganizationListItem extends ConsumerWidget {
                               style: TextStyle(
                                 fontSize: 11,
                                 color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (organization.bankName != null &&
+                        organization.bankName!.trim().isNotEmpty) ...[
+                      if (organization.contactEmail.isNotEmpty ||
+                          organization.contactPhone.isNotEmpty ||
+                          organization.address.isNotEmpty)
+                        const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.account_balance,
+                            size: 13,
+                            color: Colors.teal.shade700,
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              '${organization.bankName!} • ${organization.accountNumber ?? ''}${organization.accountName?.isNotEmpty == true ? " (${organization.accountName!})" : ""}',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.teal.shade900,
                               ),
                             ),
                           ),
@@ -729,6 +776,45 @@ class OrganizationListItem extends ConsumerWidget {
               color: isPending
                   ? Colors.amber.shade900
                   : (isActive ? Colors.teal.shade800 : Colors.red.shade800),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBankPill(
+    BuildContext context, {
+    required OrganizationModel organization,
+  }) {
+    final hasBank = organization.bankName != null &&
+        organization.bankName!.trim().isNotEmpty &&
+        organization.accountNumber != null &&
+        organization.accountNumber!.trim().isNotEmpty;
+    final color = hasBank ? Colors.teal : Colors.grey;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: hasBank ? 0.12 : 0.08),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            hasBank ? Icons.account_balance : Icons.account_balance_outlined,
+            size: 11,
+            color: hasBank ? Colors.teal.shade800 : Colors.grey.shade700,
+          ),
+          const SizedBox(width: 3),
+          Text(
+            hasBank ? organization.bankName! : 'No Bank',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: hasBank ? Colors.teal.shade800 : Colors.grey.shade700,
             ),
           ),
         ],
