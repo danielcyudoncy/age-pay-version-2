@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../controllers/admin_provider.dart';
 import '../models/system_settings_model.dart';
+import '../../../core/constants/app_version.dart';
 
 class SystemConfigurationScreen extends ConsumerStatefulWidget {
   const SystemConfigurationScreen({super.key});
@@ -34,6 +35,11 @@ class _SystemConfigurationScreenState
   late TextEditingController _companyAccountNameController;
   late TextEditingController _companyAccountNumberController;
   late TextEditingController _annualFeeController;
+  late TextEditingController _latestVersionController;
+  late TextEditingController _minVersionController;
+  late TextEditingController _apkUrlController;
+  late TextEditingController _releaseNotesController;
+  late bool _forceUpdate;
   bool _isSaving = false;
 
   void _initValues(SystemSettingsModel settings) {
@@ -66,6 +72,19 @@ class _SystemConfigurationScreenState
     _annualFeeController = TextEditingController(
       text: settings.annualLicenseFee.toStringAsFixed(0),
     );
+    _latestVersionController = TextEditingController(
+      text: settings.latestAppVersion,
+    );
+    _minVersionController = TextEditingController(
+      text: settings.minimumRequiredVersion,
+    );
+    _apkUrlController = TextEditingController(
+      text: settings.apkDownloadUrl,
+    );
+    _releaseNotesController = TextEditingController(
+      text: settings.releaseNotes,
+    );
+    _forceUpdate = settings.forceUpdate;
     _initialized = true;
   }
 
@@ -78,6 +97,10 @@ class _SystemConfigurationScreenState
       _companyAccountNameController.dispose();
       _companyAccountNumberController.dispose();
       _annualFeeController.dispose();
+      _latestVersionController.dispose();
+      _minVersionController.dispose();
+      _apkUrlController.dispose();
+      _releaseNotesController.dispose();
     }
     super.dispose();
   }
@@ -744,7 +767,163 @@ class _SystemConfigurationScreenState
           ),
           const SizedBox(height: 20),
 
-          // 5. Diagnostics & Audit Metadata
+          // 5. App Release & In-App Distribution
+          _buildSectionHeader(
+            title: 'App Release & In-App Distribution',
+            icon: Icons.system_update_outlined,
+            color: Colors.indigo,
+          ),
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.indigo.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.indigo.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          size: 18,
+                          color: Colors.indigo,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Installed App Version: v${AppVersion.currentVersion} (Build ${AppVersion.currentBuildNumber})',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.indigo,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _latestVersionController,
+                          decoration: InputDecoration(
+                            labelText: 'Latest Released Version',
+                            hintText: 'e.g. 1.0.1',
+                            prefixIcon: const Icon(
+                              Icons.new_releases_outlined,
+                              size: 20,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _minVersionController,
+                          decoration: InputDecoration(
+                            labelText: 'Min Required Version',
+                            hintText: 'e.g. 1.0.0',
+                            prefixIcon: const Icon(
+                              Icons.gavel_outlined,
+                              size: 20,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _apkUrlController,
+                    keyboardType: TextInputType.url,
+                    decoration: InputDecoration(
+                      labelText: 'APK Download URL (Firebase Storage / CDN)',
+                      hintText: 'https://firebasestorage.googleapis.com/...',
+                      prefixIcon: const Icon(Icons.link_outlined, size: 20),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _releaseNotesController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: 'Release Notes / What\'s New',
+                      hintText:
+                          'List changes, bug fixes, or new features in this version...',
+                      prefixIcon: const Icon(Icons.notes_outlined, size: 20),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text(
+                      'Enforce Mandatory Update',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'When enabled, users running versions older than the minimum required version must update to continue using the application.',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                    value: _forceUpdate,
+                    onChanged: (val) => setState(() => _forceUpdate = val),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 6. Diagnostics & Audit Metadata
           _buildSectionHeader(
             title: 'System Diagnostics & Information',
             icon: Icons.info_outline,
@@ -831,6 +1010,11 @@ class _SystemConfigurationScreenState
         emailNotificationsEnabled: _emailNotificationsEnabled,
         maintenanceMode: _maintenanceMode,
         maintenanceMessage: _maintenanceMsgController.text.trim(),
+        latestAppVersion: _latestVersionController.text.trim(),
+        minimumRequiredVersion: _minVersionController.text.trim(),
+        apkDownloadUrl: _apkUrlController.text.trim(),
+        releaseNotes: _releaseNotesController.text.trim(),
+        forceUpdate: _forceUpdate,
         updatedAt: DateTime.now(),
         updatedBy: adminEmail,
       );
