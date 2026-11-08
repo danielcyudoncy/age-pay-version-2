@@ -2,7 +2,7 @@
 
 ## Introduction
 
-AgePay is a modern **Flutter-powered Community Financial Management Platform** designed to help organizations efficiently manage members, finances, meetings, projects, communication, and organizational activities from a single application.
+AgePay is a modern **Community Financial Management Platform** designed to help organizations efficiently manage members, finances, meetings, projects, communication, and organizational activities from a single application.
 
 Unlike traditional contribution tracking applications that focus only on payments, AgePay is designed to become the **operating system for community organizations**, combining financial transparency with collaboration and organizational management.
 
@@ -14,7 +14,7 @@ The application is built using **Flutter**, **Firebase**, and **Riverpod**, prov
 
 ## Why AgePay?
 
-Many community organizations still rely on spreadsheets, notebooks, WhatsApp messages, and manual bookkeeping to manage finances and member activities.
+Many community organizations still rely on spreadsheets, notebooks, WhatsApp messages, and manual book-keeping to manage finances and member activities.
 
 These approaches often lead to:
 
