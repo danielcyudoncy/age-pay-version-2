@@ -19,6 +19,10 @@ import '../../auth/views/co_founder_verification_dialog.dart';
 import '../../national/controllers/national_provider.dart';
 import '../../admin/controllers/admin_provider.dart';
 import '../../notifications/controllers/notification_provider.dart';
+import '../../system/views/force_update_screen.dart';
+import '../../system/widgets/app_update_dialog.dart';
+import '../../admin/models/system_settings_model.dart';
+import '../../../core/constants/app_version.dart';
 
 class HomeRouter extends ConsumerWidget {
   const HomeRouter({super.key});
@@ -31,6 +35,14 @@ class HomeRouter extends ConsumerWidget {
       data: (user) {
         if (user == null) {
           return const LoginScreen();
+        }
+
+        // 0. App Release Gating (Mandatory Force Update Check)
+        final settings = ref.watch(systemSettingsStreamProvider).valueOrNull;
+        if (settings != null && user.role != UserRole.superAdmin) {
+          if (settings.isUpdateRequired(AppVersion.currentVersion)) {
+            return ForceUpdateScreen(settings: settings);
+          }
         }
 
         ref.watch(initializeNotificationsProvider);
@@ -186,13 +198,61 @@ class HomeRouter extends ConsumerWidget {
           }
         }
 
-        return _RootBackExitWrapper(child: content);
+        return _RootBackExitWrapper(
+          child: _UpdateCheckWrapper(child: content),
+        );
       },
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (_, _) =>
           const Scaffold(body: Center(child: Text('Something went wrong'))),
     );
+  }
+}
+
+class _UpdateCheckWrapper extends ConsumerStatefulWidget {
+  final Widget child;
+  const _UpdateCheckWrapper({required this.child});
+
+  @override
+  ConsumerState<_UpdateCheckWrapper> createState() =>
+      _UpdateCheckWrapperState();
+}
+
+class _UpdateCheckWrapperState extends ConsumerState<_UpdateCheckWrapper> {
+  bool _dialogPrompted = false;
+
+  void _checkAndPromptUpdate(SystemSettingsModel? settings) {
+    if (settings == null || _dialogPrompted) return;
+    if (settings.isUpdateAvailable(AppVersion.currentVersion) &&
+        !settings.isUpdateRequired(AppVersion.currentVersion)) {
+      _dialogPrompted = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          AppUpdateDialog.show(context, settings);
+        }
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final settings = ref.read(systemSettingsStreamProvider).valueOrNull;
+        _checkAndPromptUpdate(settings);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(systemSettingsStreamProvider, (prev, next) {
+      _checkAndPromptUpdate(next.valueOrNull);
+    });
+
+    return widget.child;
   }
 }
 

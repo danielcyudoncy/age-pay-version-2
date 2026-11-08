@@ -79,10 +79,6 @@ final systemSettingsRepositoryProvider =
 
 final systemSettingsStreamProvider =
     StreamProvider.autoDispose<SystemSettingsModel>((ref) {
-  final user = ref.watch(authProvider).valueOrNull;
-  if (user == null) {
-    return const Stream.empty();
-  }
   return ref.watch(systemSettingsRepositoryProvider).streamSettings();
 });
 

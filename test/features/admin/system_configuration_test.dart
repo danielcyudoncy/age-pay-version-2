@@ -92,6 +92,7 @@ void main() {
     expect(find.text('Payment Gateway & Financial Policies'), findsOneWidget);
     expect(find.text('Platform Policies & Security'), findsOneWidget);
     expect(find.text('Communication & Gateways'), findsOneWidget);
+    expect(find.text('App Release & In-App Distribution'), findsOneWidget);
     expect(find.text('System Diagnostics & Information'), findsOneWidget);
 
     // 3. Verify Switches & Chips
@@ -101,6 +102,9 @@ void main() {
     expect(find.text('Require President Approval for New Members'), findsOneWidget);
     expect(find.text('Push Notifications (FCM)'), findsOneWidget);
     expect(find.text('SMS Broadcast Notifications'), findsOneWidget);
+    expect(find.text('Enforce Mandatory Update'), findsOneWidget);
+    expect(find.text('Latest Released Version'), findsOneWidget);
+    expect(find.text('Min Required Version'), findsOneWidget);
 
     // 4. Verify Save Configuration Button
     expect(find.text('Save Configuration'), findsOneWidget);

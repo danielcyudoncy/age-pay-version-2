@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/constants/app_version.dart';
 
 class SystemSettingsModel {
   final String id;
@@ -30,6 +31,14 @@ class SystemSettingsModel {
   // Maintenance & System State
   final bool maintenanceMode;
   final String maintenanceMessage;
+
+  // App Release & Distribution (In-App Direct Updates)
+  final String latestAppVersion;
+  final String minimumRequiredVersion;
+  final String apkDownloadUrl;
+  final String releaseNotes;
+  final bool forceUpdate;
+
   final DateTime updatedAt;
   final String updatedBy;
 
@@ -55,9 +64,29 @@ class SystemSettingsModel {
     this.maintenanceMode = false,
     this.maintenanceMessage =
         'System is undergoing scheduled maintenance. Please check back shortly.',
+    this.latestAppVersion = '1.0.0',
+    this.minimumRequiredVersion = '1.0.0',
+    this.apkDownloadUrl = '',
+    this.releaseNotes = '',
+    this.forceUpdate = false,
     required this.updatedAt,
     this.updatedBy = 'system',
   });
+
+  bool get hasValidApkUrl =>
+      apkDownloadUrl.trim().isNotEmpty &&
+      apkDownloadUrl.trim().startsWith('http');
+
+  /// Returns `true` if an update is available compared to [currentVersion].
+  bool isUpdateAvailable(String currentVersion) =>
+      hasValidApkUrl &&
+      AppVersion.isVersionOlder(currentVersion, latestAppVersion);
+
+  /// Returns `true` if this update is strictly required (force update).
+  bool isUpdateRequired(String currentVersion) =>
+      hasValidApkUrl &&
+      (forceUpdate ||
+          AppVersion.isVersionOlder(currentVersion, minimumRequiredVersion));
 
   factory SystemSettingsModel.fromFirestore(DocumentSnapshot doc) {
     if (!doc.exists || doc.data() == null) {
@@ -88,6 +117,12 @@ class SystemSettingsModel {
       maintenanceMode: data['maintenanceMode'] ?? false,
       maintenanceMessage: data['maintenanceMessage'] ??
           'System is undergoing scheduled maintenance. Please check back shortly.',
+      latestAppVersion: data['latestAppVersion'] as String? ?? '1.0.0',
+      minimumRequiredVersion:
+          data['minimumRequiredVersion'] as String? ?? '1.0.0',
+      apkDownloadUrl: data['apkDownloadUrl'] as String? ?? '',
+      releaseNotes: data['releaseNotes'] as String? ?? '',
+      forceUpdate: data['forceUpdate'] as bool? ?? false,
       updatedAt: _parseDate(data['updatedAt']),
       updatedBy: data['updatedBy'] ?? 'system',
     );
@@ -120,6 +155,11 @@ class SystemSettingsModel {
       'emailNotificationsEnabled': emailNotificationsEnabled,
       'maintenanceMode': maintenanceMode,
       'maintenanceMessage': maintenanceMessage,
+      'latestAppVersion': latestAppVersion,
+      'minimumRequiredVersion': minimumRequiredVersion,
+      'apkDownloadUrl': apkDownloadUrl,
+      'releaseNotes': releaseNotes,
+      'forceUpdate': forceUpdate,
       'updatedAt': Timestamp.fromDate(updatedAt),
       'updatedBy': updatedBy,
     };
@@ -152,6 +192,11 @@ class SystemSettingsModel {
     bool? emailNotificationsEnabled,
     bool? maintenanceMode,
     String? maintenanceMessage,
+    String? latestAppVersion,
+    String? minimumRequiredVersion,
+    String? apkDownloadUrl,
+    String? releaseNotes,
+    bool? forceUpdate,
     DateTime? updatedAt,
     String? updatedBy,
   }) {
@@ -182,6 +227,12 @@ class SystemSettingsModel {
           emailNotificationsEnabled ?? this.emailNotificationsEnabled,
       maintenanceMode: maintenanceMode ?? this.maintenanceMode,
       maintenanceMessage: maintenanceMessage ?? this.maintenanceMessage,
+      latestAppVersion: latestAppVersion ?? this.latestAppVersion,
+      minimumRequiredVersion:
+          minimumRequiredVersion ?? this.minimumRequiredVersion,
+      apkDownloadUrl: apkDownloadUrl ?? this.apkDownloadUrl,
+      releaseNotes: releaseNotes ?? this.releaseNotes,
+      forceUpdate: forceUpdate ?? this.forceUpdate,
       updatedAt: updatedAt ?? this.updatedAt,
       updatedBy: updatedBy ?? this.updatedBy,
     );
