@@ -85,7 +85,7 @@ class _EditBranchBankDialogState extends ConsumerState<EditBranchBankDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: AppTheme.brandGreen,
+            backgroundColor: AppTheme.primary(context),
             content: Text(
               '${widget.branch.name} receiving account updated successfully',
             ),
@@ -120,7 +120,7 @@ class _EditBranchBankDialogState extends ConsumerState<EditBranchBankDialog> {
         children: [
           Icon(
             isNational ? Icons.account_balance : Icons.savings_outlined,
-            color: AppTheme.brandGreen,
+            color: AppTheme.primary(context),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -208,7 +208,7 @@ class _EditBranchBankDialogState extends ConsumerState<EditBranchBankDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _save,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.brandGreen,
+            backgroundColor: AppTheme.primary(context),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),

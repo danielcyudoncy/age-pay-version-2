@@ -286,7 +286,7 @@ class _HomeTab extends ConsumerWidget {
                       label: 'Pending Reviews',
                       value: data.pendingVerificationsCount.toString(),
                       icon: Icons.fact_check_outlined,
-                      color: Colors.amber.shade800,
+                      color: AppTheme.statusColor(context, Colors.amber),
                       onTap: () => onNavigate(1),
                     ),
                   ),
@@ -728,7 +728,7 @@ class _HomeTab extends ConsumerWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: AppTheme.cardBorder(context),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -747,14 +747,14 @@ class _HomeTab extends ConsumerWidget {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading:
-                    const Icon(Icons.payments, color: AppTheme.brandGreen),
+                    Icon(Icons.payments, color: AppTheme.primary(context)),
                 title: const Text('Cash in Hand (To Remit)'),
                 trailing: Text(
                   currency.format(data.cashCollected),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: AppTheme.brandGreen,
+                    color: AppTheme.primary(context),
                   ),
                 ),
               ),
@@ -809,7 +809,7 @@ class _HomeTab extends ConsumerWidget {
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.brandGreen,
+                    backgroundColor: AppTheme.primary(context),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -1584,7 +1584,7 @@ class _FilterChip extends StatelessWidget {
       onSelected: (_) => onSelected(),
       labelStyle: TextStyle(
         fontSize: 12,
-        color: selected ? chipColor : Colors.black87,
+        color: selected ? chipColor : Theme.of(context).colorScheme.onSurface,
         fontWeight: selected ? FontWeight.bold : FontWeight.normal,
       ),
     );
@@ -1603,7 +1603,7 @@ class _StatusBadge extends StatelessWidget {
 
     switch (status) {
       case PaymentStatus.approved:
-        bg = Colors.green.shade50;
+        bg = AppTheme.statusBg(context, Colors.green);
         fg = Colors.green.shade700;
         text = 'Approved';
         break;

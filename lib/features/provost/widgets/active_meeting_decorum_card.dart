@@ -25,9 +25,9 @@ class ActiveMeetingDecorumCard extends ConsumerWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.blueGrey.shade50,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.blueGrey.shade200),
+          border: Border.all(color: AppTheme.cardBorder(context)),
         ),
         child: Row(
           children: [
@@ -53,7 +53,7 @@ class ActiveMeetingDecorumCard extends ConsumerWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: Colors.blueGrey.shade900,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -76,9 +76,9 @@ class ActiveMeetingDecorumCard extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [
-            AppTheme.brandGreen,
+            AppTheme.primary(context),
             Color.fromARGB(255, 18, 80, 32),
           ],
           begin: Alignment.topLeft,
@@ -87,7 +87,7 @@ class ActiveMeetingDecorumCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.brandGreen.withValues(alpha: 0.3),
+            color: AppTheme.primary(context).withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -187,7 +187,7 @@ class ActiveMeetingDecorumCard extends ConsumerWidget {
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amberAccent.shade400,
-                    foregroundColor: Colors.black87,
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     shape: RoundedRectangleBorder(

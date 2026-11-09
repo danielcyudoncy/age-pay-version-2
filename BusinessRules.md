@@ -109,6 +109,7 @@ To eliminate collusion, unauthorized age-grade creation, and fund siphoning:
 * Personal bank accounts are strictly prohibited from receiving association dues.
 * Receiving bank accounts must be in the name of the Age Grade or contain corporate/association keywords.
 * Account names must be verified via NUBAN lookup and matched against the organization entity before being activated.
+* **Super Admin Authority Override:** In legitimate administrative edge cases (such as when an organization changes its operating name but its commercial bank account remains titled under its former CAC registered corporate name or registered business name), Platform Super Admins possess the authority to override automated name mismatch blockers. Every override mandates a recorded justification (minimum 5 characters) and writes an immutable audit trail (`bankVerificationOverridden`, `bankVerificationOverrideReason`, `bankVerificationOverriddenBy`, `bankVerificationOverriddenAt`). Local organization executives cannot self-override.
 
 ---
 
@@ -219,6 +220,7 @@ Organizations may create custom roles.
 3. **Privilege Elevation**: Super Admin status can only be granted or revoked by another active Super Admin.
 4. **System Configuration**: Only the Super Admin can configure global payment gateway modes (live/sandbox), fee bearer policies, dual-approval expense thresholds, maintenance mode, and communication integrations.
 5. **Maintenance Mode Enforcement**: When maintenance mode is activated, standard user logins and operations are temporarily restricted with a custom public announcement notice.
+6. **Dual-Persona & Home Branch Affiliation**: Every user in AgePay is first and foremost a community member, including the Super Admin. A Super Admin operates in a dual capacity: (a) *Global Platform Governor* with platform-wide audit, configuration, and oversight authority across all organizations, and (b) *Active Community Member* affiliated with their personal Home Organisation and Home Branch. In their Super Admin Profile, the admin can configure or update their Home Organisation and Branch. Affiliating updates `users/{uid}` and automatically synchronizes or provisions an active `MemberModel` in the `members` collection (`status: 'approved'`, `isActive: true`, `duesStanding: 'cleared'`), enabling the Super Admin to access personal obligations, dues, levies, meeting attendance, and digital membership identification in their Member Dashboard.
 
 ---
 

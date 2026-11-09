@@ -3,6 +3,7 @@ import '../../../core/constants/enums.dart';
 
 class MemberModel {
   final String id;
+  final String? organizationId;
   final String userId;
   final String fullName;
   final String email;
@@ -26,6 +27,7 @@ class MemberModel {
 
   const MemberModel({
     required this.id,
+    this.organizationId,
     required this.userId,
     required this.fullName,
     required this.email,
@@ -76,6 +78,7 @@ class MemberModel {
 
     return MemberModel(
       id: doc.id,
+      organizationId: data['organizationId'] as String?,
       userId: data['userId'] ?? '',
       fullName: data['fullName'] ?? '',
       email: data['email'] ?? '',
@@ -103,6 +106,7 @@ class MemberModel {
 
   Map<String, dynamic> toFirestore() {
     return {
+      if (organizationId != null) 'organizationId': organizationId,
       'userId': userId,
       'fullName': fullName,
       'email': email,
@@ -136,6 +140,7 @@ class MemberModel {
 
   MemberModel copyWith({
     String? id,
+    String? organizationId,
     String? userId,
     String? fullName,
     String? email,
@@ -159,6 +164,7 @@ class MemberModel {
   }) {
     return MemberModel(
       id: id ?? this.id,
+      organizationId: organizationId ?? this.organizationId,
       userId: userId ?? this.userId,
       fullName: fullName ?? this.fullName,
       email: email ?? this.email,

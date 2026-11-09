@@ -161,6 +161,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     required String displayName,
     required String phoneNumber,
     String? ninOrBvn,
+    String? organizationId,
+    String? branchId,
+    String? branchName,
   }) async {
     final currentUser = state.valueOrNull;
     if (currentUser == null) return;
@@ -170,6 +173,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
       displayName: displayName,
       phoneNumber: phoneNumber,
       ninOrBvn: ninOrBvn,
+      organizationId: organizationId,
+      branchId: branchId,
+      branchName: branchName,
     );
     state = AsyncValue.data(updated);
   }

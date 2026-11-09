@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../admin/controllers/admin_provider.dart';
@@ -122,7 +123,7 @@ class _DeleteMemberDialogState extends ConsumerState<DeleteMemberDialog> {
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: Colors.green.shade800,
+          backgroundColor: AppTheme.statusColor(context, Colors.green),
           behavior: SnackBarBehavior.floating,
           content: Text(message),
         ),
@@ -155,7 +156,7 @@ class _DeleteMemberDialogState extends ConsumerState<DeleteMemberDialog> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: AppTheme.statusBg(context, Colors.red),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -210,11 +211,11 @@ class _DeleteMemberDialogState extends ConsumerState<DeleteMemberDialog> {
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundColor: Colors.red.shade100,
+                      backgroundColor: AppTheme.statusBg(context, Colors.red),
                       child: Text(
                         member.fullName.isNotEmpty ? member.fullName[0].toUpperCase() : '?',
                         style: TextStyle(
-                          color: Colors.red.shade800,
+                          color: AppTheme.statusColor(context, Colors.red),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -305,7 +306,7 @@ class _DeleteMemberDialogState extends ConsumerState<DeleteMemberDialog> {
                           Icon(
                             Icons.shield_outlined,
                             size: 18,
-                            color: Colors.amber.shade900,
+                            color: AppTheme.statusColor(context, Colors.amber),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -314,7 +315,7 @@ class _DeleteMemberDialogState extends ConsumerState<DeleteMemberDialog> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.amber.shade900,
+                                color: AppTheme.statusColor(context, Colors.amber),
                               ),
                             ),
                           ),
@@ -330,7 +331,7 @@ class _DeleteMemberDialogState extends ConsumerState<DeleteMemberDialog> {
                         '• Retain ledger records for accounting audits',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.amber.shade900,
+                          color: AppTheme.statusColor(context, Colors.amber),
                           height: 1.35,
                         ),
                       ),
@@ -354,7 +355,7 @@ class _DeleteMemberDialogState extends ConsumerState<DeleteMemberDialog> {
                           Icon(
                             Icons.verified_outlined,
                             size: 18,
-                            color: Colors.green.shade800,
+                            color: AppTheme.statusColor(context, Colors.green),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -363,7 +364,7 @@ class _DeleteMemberDialogState extends ConsumerState<DeleteMemberDialog> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green.shade800,
+                                color: AppTheme.statusColor(context, Colors.green),
                               ),
                             ),
                           ),
@@ -374,7 +375,7 @@ class _DeleteMemberDialogState extends ConsumerState<DeleteMemberDialog> {
                         'This member has no recorded payments. As a SuperAdmin with cross-branch governance, you can either archive this member or permanently purge their document from the database.',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.green.shade900,
+                          color: AppTheme.statusColor(context, Colors.green),
                           height: 1.35,
                         ),
                       ),
@@ -387,7 +388,7 @@ class _DeleteMemberDialogState extends ConsumerState<DeleteMemberDialog> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: AppTheme.statusBg(context, Colors.red),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.red.shade200),
                   ),

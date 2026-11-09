@@ -271,6 +271,7 @@ class _ObligationAdminCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildAmountColumn(
+                    context,
                     'Total',
                     obligation.amount,
                     isBold: true,
@@ -278,6 +279,7 @@ class _ObligationAdminCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: _buildAmountColumn(
+                    context,
                     'Paid',
                     obligation.paidAmount,
                     color: Colors.green,
@@ -285,6 +287,7 @@ class _ObligationAdminCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: _buildAmountColumn(
+                    context,
                     'Outstanding',
                     obligation.outstandingBalance,
                     color: Colors.red,
@@ -295,7 +298,7 @@ class _ObligationAdminCard extends StatelessWidget {
             const SizedBox(height: 8),
             LinearProgressIndicator(
               value: progress,
-              backgroundColor: Colors.grey.shade200,
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation<Color>(
                 _statusColor(obligation.status),
               ),
@@ -349,6 +352,7 @@ class _ObligationAdminCard extends StatelessWidget {
   }
 
   Widget _buildAmountColumn(
+    BuildContext context,
     String label,
     double value, {
     bool isBold = false,
@@ -367,7 +371,7 @@ class _ObligationAdminCard extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-            color: color ?? Colors.black87,
+            color: color ?? Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],

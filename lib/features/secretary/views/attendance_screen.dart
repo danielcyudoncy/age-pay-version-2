@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 // features/secretary/views/attendance_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1125,7 +1126,7 @@ class _MeetingMemberRoster extends ConsumerWidget {
                                   'Excuse: ${rsvp.reason.isNotEmpty ? rsvp.reason : "Apology submitted"}',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.purple.shade800,
+                                    color: AppTheme.statusColor(context, Colors.purple),
                                     fontWeight: FontWeight.w600,
                                   ),
                                   maxLines: 1,
@@ -1139,7 +1140,7 @@ class _MeetingMemberRoster extends ConsumerWidget {
                             'RSVP: Coming late${rsvp.reason.isNotEmpty ? " (${rsvp.reason})" : ""}',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.orange.shade800,
+                              color: AppTheme.statusColor(context, Colors.orange),
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -1150,7 +1151,7 @@ class _MeetingMemberRoster extends ConsumerWidget {
                             'RSVP: Confirmed Coming',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.green.shade800,
+                              color: AppTheme.statusColor(context, Colors.green),
                               fontWeight: FontWeight.w500,
                             ),
                           ),

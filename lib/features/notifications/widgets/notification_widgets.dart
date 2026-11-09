@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import '../models/notification_model.dart';
 
@@ -19,7 +20,7 @@ class NotificationCard extends StatelessWidget {
   (IconData, Color) _iconAndColor(BuildContext context) {
     switch (notification.type) {
       case 'pending_approval':
-        return (Icons.person_add_alt_1, Colors.amber.shade800);
+        return (Icons.person_add_alt_1, AppTheme.statusColor(context, Colors.amber));
       case 'approval_success':
         return (Icons.verified_user, Colors.green);
       case 'co_founder_invite':

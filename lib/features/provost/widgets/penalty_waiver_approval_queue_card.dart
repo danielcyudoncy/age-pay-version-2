@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -176,16 +177,9 @@ class _PenaltyWaiverApprovalQueueCardState
         return Container(
           margin: const EdgeInsets.only(bottom: 20),
           decoration: BoxDecoration(
-            color: Colors.teal.shade50,
+            color: AppTheme.statusBg(context, Colors.teal),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.teal.shade300, width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.teal.shade100.withValues(alpha: 0.5),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            border: Border.all(color: AppTheme.statusColor(context, Colors.teal).withValues(alpha: 0.3), width: 1.5),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -202,7 +196,7 @@ class _PenaltyWaiverApprovalQueueCardState
                       ),
                       child: Icon(
                         Icons.healing_outlined,
-                        color: Colors.teal.shade900,
+                        color: AppTheme.statusColor(context, Colors.teal),
                         size: 20,
                       ),
                     ),
@@ -223,7 +217,7 @@ class _PenaltyWaiverApprovalQueueCardState
                             'Provost requested disciplinary waivers awaiting countersignature',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.teal.shade800,
+                              color: AppTheme.statusColor(context, Colors.teal),
                             ),
                           ),
                         ],
@@ -265,7 +259,7 @@ class _PenaltyWaiverApprovalQueueCardState
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.teal.shade200),
+                        border: Border.all(color: AppTheme.statusColor(context, Colors.teal).withValues(alpha: 0.3)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,7 +292,7 @@ class _PenaltyWaiverApprovalQueueCardState
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade800,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           Text(
@@ -313,7 +307,7 @@ class _PenaltyWaiverApprovalQueueCardState
                             width: double.infinity,
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(

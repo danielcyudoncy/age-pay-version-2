@@ -146,22 +146,23 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppTheme.brandGreen.withValues(alpha: 0.1),
+                          color: AppTheme.primaryContainer(context),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppTheme.brandGreen.withValues(alpha: 0.3),
+                            color:
+                                AppTheme.primary(context).withValues(alpha: 0.3),
                           ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'TOTAL COLLECTED',
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.5,
-                                color: AppTheme.brandGreen,
+                                color: AppTheme.primary(context),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -170,10 +171,10 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
                               alignment: Alignment.centerLeft,
                               child: Text(
                                 currency.format(totalCollected),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.brandGreen,
+                                  color: AppTheme.primary(context),
                                 ),
                               ),
                             ),
@@ -403,10 +404,10 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
       onSelected: (_) {
         setState(() => _statusFilter = label);
       },
-      selectedColor: AppTheme.brandGreen.withValues(alpha: 0.15),
-      checkmarkColor: AppTheme.brandGreen,
+      selectedColor: AppTheme.primaryContainer(context),
+      checkmarkColor: AppTheme.primary(context),
       labelStyle: TextStyle(
-        color: isSelected ? AppTheme.brandGreen : theme.colorScheme.onSurface,
+        color: isSelected ? AppTheme.primary(context) : theme.colorScheme.onSurface,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
     );
@@ -421,18 +422,18 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
   ) {
     final (statusColor, statusBg, statusText) = switch (payment.status) {
       PaymentStatus.approved => (
-          Colors.green.shade800,
-          Colors.green.shade50,
+          AppTheme.statusColor(context, Colors.green),
+          AppTheme.statusBg(context, Colors.green),
           'Approved',
         ),
       PaymentStatus.pending => (
-          Colors.amber.shade900,
-          Colors.amber.shade50,
+          AppTheme.statusColor(context, Colors.amber),
+          AppTheme.statusBg(context, Colors.amber),
           'Pending Verification',
         ),
       PaymentStatus.rejected => (
-          Colors.red.shade800,
-          Colors.red.shade50,
+          AppTheme.statusColor(context, Colors.red),
+          AppTheme.statusBg(context, Colors.red),
           'Rejected',
         ),
     };
@@ -470,11 +471,11 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: AppTheme.brandGreen.withValues(alpha: 0.1),
+                  backgroundColor: AppTheme.primaryContainer(context),
                   child: Text(
                     memberDisplayName.isNotEmpty ? memberDisplayName[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                      color: AppTheme.brandGreen,
+                    style: TextStyle(
+                      color: AppTheme.primary(context),
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),

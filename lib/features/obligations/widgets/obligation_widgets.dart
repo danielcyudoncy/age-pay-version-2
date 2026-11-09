@@ -176,7 +176,7 @@ class AmountRow extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-            color: color ?? Colors.black87,
+            color: color ?? Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],

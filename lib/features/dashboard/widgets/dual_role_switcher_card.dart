@@ -51,7 +51,7 @@ class DualRoleSwitcherCard extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               duration: const Duration(milliseconds: 1500),
-              backgroundColor: AppTheme.brandGreen,
+              backgroundColor: AppTheme.primary(context),
               content: Text(
                 newScope == ExecutiveScope.national
                     ? 'Switched to National View ($nationalRoleTitle)'
@@ -95,8 +95,8 @@ class DualRoleSwitcherCard extends ConsumerWidget {
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
                 color: isNational
-                    ? AppTheme.brandGreen
-                    : Colors.amber.shade900,
+                    ? AppTheme.primary(context)
+                    : AppTheme.statusColor(context, Colors.amber),
               ),
             ),
             Container(
@@ -106,8 +106,8 @@ class DualRoleSwitcherCard extends ConsumerWidget {
               ),
               decoration: BoxDecoration(
                 color: isNational
-                    ? AppTheme.brandGreen.withValues(alpha: 0.15)
-                    : Colors.amber.shade200,
+                    ? AppTheme.primaryContainer(context)
+                    : AppTheme.statusBg(context, Colors.amber),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -116,7 +116,7 @@ class DualRoleSwitcherCard extends ConsumerWidget {
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   color: isNational
-                      ? AppTheme.brandGreen
+                      ? AppTheme.primary(context)
                       : Colors.amber.shade900,
                 ),
                 maxLines: 1,
@@ -140,13 +140,13 @@ class DualRoleSwitcherCard extends ConsumerWidget {
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
             color: isNational
-                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
-                : Colors.amber.shade50,
+                ? AppTheme.primaryContainer(context)
+                : AppTheme.statusBg(context, Colors.amber),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isNational
-                  ? theme.colorScheme.primary.withValues(alpha: 0.35)
-                  : Colors.amber.shade300,
+                  ? AppTheme.primary(context).withValues(alpha: 0.35)
+                  : AppTheme.statusColor(context, Colors.amber).withValues(alpha: 0.3),
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -160,8 +160,8 @@ class DualRoleSwitcherCard extends ConsumerWidget {
                         CircleAvatar(
                           radius: 18,
                           backgroundColor: isNational
-                              ? AppTheme.brandGreen
-                              : Colors.amber.shade800,
+                              ? AppTheme.primary(context)
+                              : AppTheme.statusColor(context, Colors.amber),
                           child: Icon(
                             isNational
                                 ? Icons.stars_rounded
@@ -195,7 +195,7 @@ class DualRoleSwitcherCard extends ConsumerWidget {
                     CircleAvatar(
                       radius: 20,
                       backgroundColor: isNational
-                          ? AppTheme.brandGreen
+                          ? AppTheme.primary(context)
                           : Colors.amber.shade800,
                       child: Icon(
                         isNational

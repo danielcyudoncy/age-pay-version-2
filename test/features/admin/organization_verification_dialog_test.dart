@@ -86,7 +86,7 @@ void main() {
     expect(find.text('Zenith Bank  •  1029384756'), findsOneWidget);
     expect(find.text('UMUALOMA YOUTHS AGE GRADE'), findsOneWidget);
     expect(
-      find.text('Association Name Verified: Bank account name matches registered Age Grade records.'),
+      find.text('Association Name Verified: Bank account name matches registered organisation records.'),
       findsOneWidget,
     );
     expect(find.text('Update Bank Account Details'), findsOneWidget);

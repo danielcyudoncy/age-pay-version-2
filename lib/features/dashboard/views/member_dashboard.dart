@@ -26,6 +26,7 @@ import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
 import 'package:cls/features/payments/widgets/payment_detail_sheet.dart';
 import 'package:cls/features/national/controllers/national_provider.dart';
+import 'package:cls/features/admin/views/admin_profile_screen.dart';
 
 class MemberDashboard extends ConsumerWidget {
   const MemberDashboard({super.key});
@@ -66,7 +67,7 @@ class MemberDashboard extends ConsumerWidget {
             extraActions: [
               IconButton(
                 visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.assessment_outlined, color: AppTheme.brandGreen),
+                icon: Icon(Icons.assessment_outlined, color: AppTheme.primary(context)),
                 tooltip: 'Financial Reports & Purse',
                 onPressed: () {
                   Navigator.push(
@@ -77,7 +78,7 @@ class MemberDashboard extends ConsumerWidget {
               ),
               IconButton(
                 visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.person_outline, color: AppTheme.brandGreen),
+                icon: Icon(Icons.person_outline, color: AppTheme.primary(context)),
                 tooltip: 'My Profile',
                 onPressed: () {
                   Navigator.push(
@@ -214,6 +215,74 @@ class MemberDashboard extends ConsumerWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
+          if (user?.role == UserRole.superAdmin &&
+              (user?.organizationId.isEmpty ?? true)) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppTheme.statusBg(context, Colors.amber),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.statusColor(context, Colors.amber)
+                      .withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: AppTheme.statusColor(context, Colors.amber),
+                    size: 22,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Platform Admin Mode',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.statusColor(context, Colors.amber),
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'You are not yet affiliated with a Home Branch. Link your community organisation in your profile to view personal dues and membership standing.',
+                          style: TextStyle(
+                            color: AppTheme.onSurface(context),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminProfileScreen(),
+                        ),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      foregroundColor:
+                          AppTheme.statusColor(context, Colors.amber),
+                    ),
+                    child: const Text(
+                      'Link Branch',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 14),
           _BranchNationalScopeToggle(
             activeScope: activeScope,
@@ -1445,7 +1514,7 @@ class _BranchNationalScopeToggle extends StatelessWidget {
               icon: Icons.location_on_outlined,
               selectedIcon: Icons.location_on,
               label: resolvedBranchName,
-              selectedColor: AppTheme.brandGreen,
+              selectedColor: AppTheme.primary(context),
               onTap: () => onScopeChanged(ExecutiveScope.branch),
             ),
           ),
@@ -1587,12 +1656,12 @@ class _ScopeContextBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: isNational
             ? const Color(0xFFB8860B).withValues(alpha: 0.10)
-            : AppTheme.brandGreen.withValues(alpha: 0.08),
+            : AppTheme.primaryContainer(context),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isNational
               ? const Color(0xFFB8860B).withValues(alpha: 0.25)
-              : AppTheme.brandGreen.withValues(alpha: 0.2),
+              : AppTheme.primary(context).withValues(alpha: 0.25),
         ),
       ),
       child: Row(
@@ -1600,7 +1669,7 @@ class _ScopeContextBanner extends StatelessWidget {
           Icon(
             isNational ? Icons.shield_outlined : Icons.info_outline,
             size: 16,
-            color: isNational ? const Color(0xFFB8860B) : AppTheme.brandGreen,
+            color: isNational ? const Color(0xFFB8860B) : AppTheme.primary(context),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -1612,8 +1681,8 @@ class _ScopeContextBanner extends StatelessWidget {
                 fontSize: 11.5,
                 fontWeight: FontWeight.w500,
                 color: isNational
-                    ? const Color(0xFF7A5900)
-                    : AppTheme.brandGreen,
+                    ? const Color(0xFFB8860B)
+                    : AppTheme.primary(context),
               ),
             ),
           ),

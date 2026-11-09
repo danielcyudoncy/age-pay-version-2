@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -75,7 +76,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (_isCreatingNewOrg) {
       if (_newOrgNameController.text.trim().isEmpty) {
-        setState(() => _error = 'Please enter the name of your Age Grade');
+        setState(() => _error = 'Please enter the name of your organisation');
         return;
       }
       if (_secretaryPhoneController.text.trim().isEmpty) {
@@ -247,7 +248,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Join or register your Age Grade on AgePay',
+                      'Join or register your organisation',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -407,7 +408,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 16),
 
                     if (_isCreatingNewOrg) ...[
-                      // Registering a brand new Age Grade
+                      // Registering a brand new organisation
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
@@ -419,13 +420,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(Icons.shield_outlined,
-                                color: Colors.blue.shade800, size: 22),
+                                color: AppTheme.statusColor(context, Colors.blue), size: 22),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                '🛡️ Dual-Executive Verification:\nAs pioneer founder, you will be registered as President. Provide your General Secretary\'s details below—they will receive an alert to co-sign and activate the Age Grade.',
+                                '🛡️ Dual-Executive Verification:\nAs pioneer founder, you will be registered as President. Provide your General Secretary\'s details below—they will receive an alert to co-sign and activate the organisation.',
                                 style: TextStyle(
-                                  color: Colors.blue.shade900,
+                                  color: AppTheme.statusColor(context, Colors.blue),
                                   fontSize: 12,
                                   height: 1.4,
                                 ),
@@ -439,12 +440,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         controller: _newOrgNameController,
                         textCapitalization: TextCapitalization.words,
                         decoration: const InputDecoration(
-                          labelText: 'Age Grade Name',
-                          hintText: 'e.g. Udoka Age Grade',
+                          labelText: 'Organisation Name',
+                          hintText: 'e.g. Udoka Association / Club',
                           prefixIcon: Icon(Icons.corporate_fare_outlined),
                         ),
                         validator: (v) => _isCreatingNewOrg && (v == null || v.isEmpty)
-                            ? 'Enter the Age Grade name'
+                            ? 'Enter the organisation name'
                             : null,
                       ),
                       const SizedBox(height: 16),
@@ -587,7 +588,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         child: const Text('President (Pioneer Founder)'),
                       ),
                     ] else ...[
-                      // Joining existing Age Grade
+                      // Joining existing organisation
                       _OrganizationPicker(
                         selectedId: _selectedOrganizationId,
                         onChanged: (id) {
@@ -651,7 +652,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             Icon(
                               Icons.verified_user_outlined,
                               size: 20,
-                              color: Colors.blue.shade800,
+                              color: AppTheme.statusColor(context, Colors.blue),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -659,7 +660,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 'Your registration will be submitted to the Branch Executive for review and role assignment.',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.blue.shade900,
+                                  color: AppTheme.statusColor(context, Colors.blue),
                                   height: 1.3,
                                 ),
                               ),
@@ -901,9 +902,9 @@ class _OrganizationPicker extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'No Age Grades registered yet',
+                        'No organisations registered yet',
                         style: TextStyle(
-                          color: Colors.blue.shade900,
+                          color: AppTheme.statusColor(context, Colors.blue),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -912,14 +913,14 @@ class _OrganizationPicker extends ConsumerWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Be the pioneer to register your Age Grade and primary branch.',
-                  style: TextStyle(fontSize: 12, color: Colors.blue.shade800),
+                  'Be the pioneer to register your organisation and primary branch.',
+                  style: TextStyle(fontSize: 12, color: AppTheme.statusColor(context, Colors.blue)),
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton.icon(
                   onPressed: onRegisterNewTapped,
                   icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Register New Age Grade'),
+                  label: const Text('Register New Organisation'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue.shade700,
                     foregroundColor: Colors.white,
@@ -938,7 +939,10 @@ class _OrganizationPicker extends ConsumerWidget {
           ...sortedOrgs.map(
             (org) => DropdownMenuItem(
               value: org.id,
-              child: Text(org.name),
+              child: Text(
+                org.name,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
           const DropdownMenuItem(
@@ -947,11 +951,14 @@ class _OrganizationPicker extends ConsumerWidget {
               children: [
                 Icon(Icons.add, size: 18, color: Colors.blue),
                 SizedBox(width: 8),
-                Text(
-                  '+ Register New Age Grade',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    '+ Register New Organisation',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -960,6 +967,7 @@ class _OrganizationPicker extends ConsumerWidget {
         ];
 
         return DropdownButtonFormField<String>(
+          isExpanded: true,
           initialValue: items.any((i) => i.value == selectedId) ? selectedId : null,
           decoration: const InputDecoration(
             labelText: 'Select Organisation',
@@ -1031,7 +1039,10 @@ class _BranchPicker extends ConsumerWidget {
           ...sortedBranches.map(
             (b) => DropdownMenuItem(
               value: b.id,
-              child: Text(b.name),
+              child: Text(
+                b.name,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
           const DropdownMenuItem(
@@ -1040,11 +1051,16 @@ class _BranchPicker extends ConsumerWidget {
               children: [
                 Icon(Icons.add, size: 18, color: Colors.blue),
                 SizedBox(width: 8),
-                Text('+ Add New Branch',
+                Expanded(
+                  child: Text(
+                    '+ Add New Branch',
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: Colors.blue,
                       fontWeight: FontWeight.bold,
-                    )),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1053,6 +1069,7 @@ class _BranchPicker extends ConsumerWidget {
         final currentValue = isCreatingNew ? '__NEW__' : selectedBranchId;
 
         return DropdownButtonFormField<String>(
+          isExpanded: true,
           initialValue: items.any((i) => i.value == currentValue) ? currentValue : null,
           decoration: const InputDecoration(
             labelText: 'Branch Name',

@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/controllers/auth_provider.dart';
@@ -144,16 +145,9 @@ class _ExecutiveApprovalQueueCardState
         return Container(
           margin: const EdgeInsets.only(bottom: 20),
           decoration: BoxDecoration(
-            color: Colors.amber.shade50,
+            color: AppTheme.statusBg(context, Colors.amber),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.amber.shade300, width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.amber.shade100.withValues(alpha: 0.5),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            border: Border.all(color: AppTheme.statusColor(context, Colors.amber).withValues(alpha: 0.3), width: 1.5),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -165,12 +159,12 @@ class _ExecutiveApprovalQueueCardState
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.amber.shade200,
+                        color: AppTheme.statusBg(context, Colors.amber),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.person_add_alt_1,
-                        color: Colors.amber.shade900,
+                        color: AppTheme.statusColor(context, Colors.amber),
                         size: 20,
                       ),
                     ),
@@ -179,7 +173,7 @@ class _ExecutiveApprovalQueueCardState
                       child: Text(
                         'Pending Member Approvals (${pendingList.length})',
                         style: TextStyle(
-                          color: Colors.amber.shade900,
+                          color: AppTheme.statusColor(context, Colors.amber),
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
@@ -191,7 +185,7 @@ class _ExecutiveApprovalQueueCardState
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.amber.shade800,
+                        color: AppTheme.statusColor(context, Colors.amber),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
@@ -230,7 +224,7 @@ class _ExecutiveApprovalQueueCardState
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.amber.shade200),
+                        border: Border.all(color: AppTheme.statusColor(context, Colors.amber).withValues(alpha: 0.3)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,12 +303,12 @@ class _ExecutiveApprovalQueueCardState
                                 isExpanded: true,
                                 icon: Icon(
                                   Icons.arrow_drop_down,
-                                  color: Colors.amber.shade900,
+                                  color: AppTheme.statusColor(context, Colors.amber),
                                 ),
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade900,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 items: UserRole.values
                                     .where((role) => role != UserRole.superAdmin)
@@ -326,7 +320,7 @@ class _ExecutiveApprovalQueueCardState
                                         Icon(
                                           Icons.badge_outlined,
                                           size: 15,
-                                          color: Colors.amber.shade800,
+                                          color: AppTheme.statusColor(context, Colors.amber),
                                         ),
                                         const SizedBox(width: 6),
                                         Expanded(
@@ -433,12 +427,12 @@ class _ExecutiveApprovalQueueCardState
                                 isExpanded: true,
                                 icon: Icon(
                                   Icons.arrow_drop_down,
-                                  color: Colors.green.shade800,
+                                  color: AppTheme.statusColor(context, Colors.green),
                                 ),
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade900,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 items: const [
                                   DropdownMenuItem(
@@ -536,9 +530,9 @@ class _ExecutiveApprovalQueueCardState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: AppTheme.cardBorder(context)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -550,7 +544,7 @@ class _ExecutiveApprovalQueueCardState
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: Colors.grey.shade800,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],

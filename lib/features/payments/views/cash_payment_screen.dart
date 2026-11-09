@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -189,13 +190,13 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: Colors.teal.shade50,
+                        backgroundColor: AppTheme.statusBg(context, Colors.teal),
                         child: Text(
                           member.fullName.isNotEmpty
                               ? member.fullName[0].toUpperCase()
                               : '?',
                           style: TextStyle(
-                            color: Colors.teal.shade800,
+                            color: AppTheme.statusColor(context, Colors.teal),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -669,10 +670,10 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
               const SizedBox(height: 24),
               Card(
                 elevation: 0,
-                color: Colors.grey.shade50,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: Colors.grey.shade200),
+                  side: BorderSide(color: AppTheme.cardBorder(context)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -766,7 +767,10 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          style: TextStyle(
+            fontSize: 13,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(width: 12),
         Flexible(
@@ -776,7 +780,7 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-              color: valueColor ?? Colors.black87,
+              color: valueColor ?? Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),

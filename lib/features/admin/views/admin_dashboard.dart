@@ -106,7 +106,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
           currentIndex: _selectedIndex,
           onTap: _onSelectTab,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppTheme.brandGreen,
+          selectedItemColor: AppTheme.primary(context),
           unselectedItemColor: theme.colorScheme.onSurfaceVariant,
           selectedFontSize: 12,
           unselectedFontSize: 11,
@@ -437,13 +437,13 @@ class _AdminConsoleTab extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.brandGreen.withValues(alpha: 0.12),
+                    color: AppTheme.primaryContainer(context),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.badge_outlined,
                     size: 20,
-                    color: AppTheme.brandGreen,
+                    color: AppTheme.primary(context),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -478,10 +478,10 @@ class _AdminConsoleTab extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.location_on_outlined,
                     size: 20,
-                    color: AppTheme.brandGreen,
+                    color: AppTheme.primary(context),
                   ),
                   const SizedBox(width: 10),
                   Expanded(

@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -178,7 +179,7 @@ class _ExpenseApprovalQueueCardState
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.amber.shade300, width: 1.2),
+            side: BorderSide(color: AppTheme.statusColor(context, Colors.amber).withValues(alpha: 0.3), width: 1.2),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -193,12 +194,12 @@ class _ExpenseApprovalQueueCardState
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.amber.shade100,
+                            color: AppTheme.statusBg(context, Colors.amber),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.rate_review_outlined,
-                            color: Colors.amber.shade900,
+                            color: AppTheme.statusColor(context, Colors.amber),
                             size: 20,
                           ),
                         ),
@@ -227,7 +228,7 @@ class _ExpenseApprovalQueueCardState
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.amber.shade800,
+                        color: AppTheme.statusColor(context, Colors.amber),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(

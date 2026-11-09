@@ -69,15 +69,15 @@ class _BranchDirectoryScreenState extends ConsumerState<BranchDirectoryScreen> {
             margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.brandGreen.withValues(alpha: 0.1),
+              color: AppTheme.primaryContainer(context),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppTheme.brandGreen.withValues(alpha: 0.25),
+                color: AppTheme.primary(context).withValues(alpha: 0.25),
               ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.phone_in_talk, color: AppTheme.brandGreen, size: 20),
+                Icon(Icons.phone_in_talk, color: AppTheme.primary(context), size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(

@@ -291,12 +291,12 @@ class _IssuePenaltySheetState extends ConsumerState<IssuePenaltySheet> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: isSelected ? Colors.white : Colors.black87,
+                        color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     selected: isSelected,
                     selectedColor: Colors.red.shade700,
-                    backgroundColor: Colors.grey.shade100,
+                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                     onSelected: (selected) {
                       if (selected) _onSelectPreset(preset);
                     },

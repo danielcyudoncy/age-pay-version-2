@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 // features/payments/views/make_payment_screen.dart
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -587,7 +588,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
             ? org!.accountName!
             : (org?.name.isNotEmpty == true
                 ? '${org!.name} Central Treasury'
-                : 'Age Grade Central Treasury'));
+                : 'Organisation Central Treasury'));
 
     final accountLabel = isNational
         ? 'NATIONAL TREASURY ACCOUNT'
@@ -939,7 +940,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.amber.shade100,
+                          color: AppTheme.statusBg(context, Colors.amber),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -947,7 +948,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: Colors.amber.shade900,
+                            color: AppTheme.statusColor(context, Colors.amber),
                           ),
                         ),
                       ),
@@ -1317,7 +1318,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                           subtitle: Text(
                             'Outstanding: ${currency.format(obligation.outstandingBalance)}',
                             style: TextStyle(
-                              color: Colors.grey.shade700,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontSize: 13,
                             ),
                           ),
@@ -1329,8 +1330,8 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                             decoration: BoxDecoration(
                               color: obligation.status ==
                                       ObligationStatus.unpaid
-                                  ? Colors.red.shade100
-                                  : Colors.orange.shade100,
+                                  ? AppTheme.statusBg(context, Colors.red)
+                                  : AppTheme.statusBg(context, Colors.orange),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -1340,8 +1341,8 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                               style: TextStyle(
                                 color: obligation.status ==
                                         ObligationStatus.unpaid
-                                    ? Colors.red.shade900
-                                    : Colors.orange.shade900,
+                                    ? AppTheme.statusColor(context, Colors.red)
+                                    : AppTheme.statusColor(context, Colors.orange),
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1395,7 +1396,7 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
           ),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            border: Border(top: BorderSide(color: Colors.grey.shade200)),
+            border: Border(top: BorderSide(color: AppTheme.cardBorder(context))),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.04),
@@ -1418,15 +1419,15 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                           : 'Total to Pay:',
                       style: TextStyle(
                         fontSize: 15,
-                        color: Colors.grey.shade700,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     Text(
                       currency.format(_getTotalToPay(items)),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],

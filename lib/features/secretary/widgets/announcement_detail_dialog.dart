@@ -261,7 +261,7 @@ class AnnouncementDetailDialog extends StatelessWidget {
                     Expanded(
                       child: FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppTheme.brandGreen,
+                          backgroundColor: AppTheme.primary(context),
                         ),
                         icon: const Icon(Icons.history_edu, size: 18),
                         label: const Text('View Meetings & RSVP'),

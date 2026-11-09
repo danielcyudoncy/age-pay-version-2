@@ -176,10 +176,10 @@ class _FiscalPeriodScreenState extends ConsumerState<FiscalPeriodScreen> {
                 const SizedBox(height: 12),
               ],
               Card(
-                    color: AppTheme.brandGreen.withValues(alpha: 0.08),
+                    color: AppTheme.primaryContainer(context),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: AppTheme.brandGreen.withValues(alpha: 0.3)),
+                      side: BorderSide(color: AppTheme.primary(context).withValues(alpha: 0.3)),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(14),
@@ -187,15 +187,15 @@ class _FiscalPeriodScreenState extends ConsumerState<FiscalPeriodScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            children: const [
-                              Icon(Icons.account_balance, color: AppTheme.brandGreen),
-                              SizedBox(width: 8),
+                            children: [
+                              Icon(Icons.account_balance, color: AppTheme.primary(context)),
+                              const SizedBox(width: 8),
                               Text(
                                 'Accounting Tenure & Bal b/f',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
-                                  color: AppTheme.brandGreen,
+                                  color: AppTheme.primary(context),
                                 ),
                               ),
                             ],
@@ -321,7 +321,7 @@ class _FiscalPeriodScreenState extends ConsumerState<FiscalPeriodScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _isSaving ? null : _savePeriod,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.brandGreen,
+                        backgroundColor: AppTheme.primary(context),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

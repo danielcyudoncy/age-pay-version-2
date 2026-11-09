@@ -118,8 +118,8 @@ class _ProCommunicationHubScreenState
           );
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                backgroundColor: AppTheme.brandGreen,
+              SnackBar(
+                backgroundColor: AppTheme.primary(context),
                 content: Text('Dispatched to WhatsApp successfully!'),
               ),
             );

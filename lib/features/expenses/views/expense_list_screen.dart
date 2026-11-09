@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -48,11 +49,11 @@ class ExpenseListScreen extends ConsumerWidget {
                       'Total: ${currencyFormat.format(approvedTotal)} (Approved)',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.green.shade900,
+                        color: AppTheme.statusColor(context, Colors.green),
                       ),
                     ),
-                    backgroundColor: Colors.green.shade50,
-                    side: BorderSide(color: Colors.green.shade200),
+                    backgroundColor: AppTheme.statusBg(context, Colors.green),
+                    side: BorderSide(color: AppTheme.statusColor(context, Colors.green).withValues(alpha: 0.3)),
                   ),
                   if (pendingTotal > 0) ...[
                     const SizedBox(width: 8),
@@ -62,7 +63,7 @@ class ExpenseListScreen extends ConsumerWidget {
                         'Pending Sign-off: ${currencyFormat.format(pendingTotal)}',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.amber.shade900,
+                          color: AppTheme.statusColor(context, Colors.amber),
                         ),
                       ),
                       backgroundColor: Colors.amber.shade50,
@@ -522,7 +523,7 @@ class _ExpenseCard extends StatelessWidget {
                   Text(
                     currencyFormat.format(expense.amount),
                     style: theme.textTheme.titleSmall?.copyWith(
-                      color: isApproved ? Colors.red.shade700 : Colors.grey.shade800,
+                      color: isApproved ? AppTheme.statusColor(context, Colors.red) : theme.colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

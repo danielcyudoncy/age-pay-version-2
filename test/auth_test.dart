@@ -11,7 +11,11 @@ void main() {
         const ProviderScope(child: MaterialApp(home: LoginScreen())),
       );
 
-      expect(find.text('Age Grade Finance'), findsOneWidget);
+      expect(find.text('AgePay'), findsOneWidget);
+      expect(
+        find.text('Financial Management for Organisations & Associations'),
+        findsOneWidget,
+      );
       expect(find.byType(TextFormField), findsNWidgets(2));
       expect(find.widgetWithText(ElevatedButton, 'Sign In'), findsOneWidget);
       expect(find.text("Don't have an account? Register"), findsOneWidget);

@@ -67,7 +67,7 @@ class ProCommunicationTemplate {
       name: 'Goodwill & Felicitation',
       title: 'Warm Goodwill Greetings to All Members',
       body:
-          'The executives and the entire Age Grade family extend warm goodwill greetings and congratulations '
+          'The executives and the entire organisation family extend warm goodwill greetings and congratulations '
           'to our members and their families on this special occasion. '
           'May peace, prosperity, and success abide with us all.',
       urgency: 'normal',

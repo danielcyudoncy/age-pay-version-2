@@ -103,9 +103,9 @@ class _MeetingListScreenState extends ConsumerState<MeetingListScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppTheme.brandGreen,
+          labelColor: AppTheme.primary(context),
           unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-          indicatorColor: AppTheme.brandGreen,
+          indicatorColor: AppTheme.primary(context),
           indicatorWeight: 3,
           tabs: const [
             Tab(
@@ -261,7 +261,7 @@ class _MeetingListScreenState extends ConsumerState<MeetingListScreen>
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         color: isSelected ? Colors.white : null,
       ),
-      selectedColor: AppTheme.brandGreen,
+      selectedColor: AppTheme.primary(context),
       onSelected: (_) {
         setState(() {
           _selectedFilter = filterId;
@@ -443,7 +443,7 @@ class _MeetingsListTab extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.deepOrange.shade800,
+                                  color: AppTheme.statusColor(context, Colors.deepOrange),
                                 ),
                               ),
                             ],
@@ -473,7 +473,7 @@ class _MeetingsListTab extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: meeting.hasMinutes ? Colors.green.shade800 : Colors.grey.shade700,
+                                  color: meeting.hasMinutes ? AppTheme.statusColor(context, Colors.green) : Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -556,7 +556,7 @@ class _MeetingsListTab extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.green.shade800,
+                                    color: AppTheme.statusColor(context, Colors.green),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -579,7 +579,7 @@ class _MeetingsListTab extends StatelessWidget {
                                 : 'Attached scan/document available. Tap to view full proceedings.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade800,
+                              color: Theme.of(context).colorScheme.onSurface,
                               height: 1.3,
                             ),
                             maxLines: 2,

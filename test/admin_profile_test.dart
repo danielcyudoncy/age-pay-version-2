@@ -5,6 +5,8 @@ import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/auth/services/auth_service.dart';
+import 'package:cls/features/admin/controllers/admin_provider.dart';
+import 'package:cls/features/admin/models/organization_model.dart';
 import 'package:cls/features/admin/views/admin_profile_screen.dart';
 
 class MockAuthServiceForProfile implements AuthService {
@@ -24,11 +26,17 @@ class MockAuthServiceForProfile implements AuthService {
     required String displayName,
     required String phoneNumber,
     String? ninOrBvn,
+    String? organizationId,
+    String? branchId,
+    String? branchName,
   }) async {
     _currentUser = _currentUser.copyWith(
       displayName: displayName,
       phoneNumber: phoneNumber,
       ninOrBvn: ninOrBvn,
+      organizationId: organizationId ?? _currentUser.organizationId,
+      branchId: branchId ?? _currentUser.branchId,
+      branchName: branchName ?? _currentUser.branchName,
     );
     return _currentUser;
   }
@@ -55,10 +63,11 @@ void main() {
     mockAuthService = MockAuthServiceForProfile(testAdmin);
   });
 
-  Widget buildTestWidget() {
+  Widget buildTestWidget({List<dynamic> extraOverrides = const []}) {
     return ProviderScope(
       overrides: [
         authServiceProvider.overrideWithValue(mockAuthService),
+        ...extraOverrides.cast(),
       ],
       child: const MaterialApp(
         home: AdminProfileScreen(),
@@ -154,6 +163,65 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('Edit Profile Information'), findsOneWidget);
+    });
+
+    testWidgets('Renders Home Community & Branch card with affiliated organisation and branch', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      testAdmin = testAdmin.copyWith(
+        organizationId: 'org-test-1',
+        branchId: 'branch-test-1',
+        branchName: 'Lagos Branch',
+      );
+      mockAuthService = MockAuthServiceForProfile(testAdmin);
+
+      await tester.pumpWidget(buildTestWidget(
+        extraOverrides: [
+          organizationsStreamProvider.overrideWith((ref) => Stream.value([
+            OrganizationModel(
+              id: 'org-test-1',
+              name: 'Iremba Eluhafe Corporate Association',
+              slug: 'iremba-eluhafe',
+              createdAt: DateTime(2026, 1, 1),
+              updatedAt: DateTime(2026, 1, 1),
+            ),
+          ])),
+        ],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home Community & Branch Membership'), findsOneWidget);
+      expect(find.text('Iremba Eluhafe Corporate Association'), findsOneWidget);
+      expect(find.text('Lagos Branch'), findsWidgets);
+      expect(find.text('Verified'), findsWidgets);
+    });
+
+    testWidgets('Displays Global Platform Mode notice when unlinked, and Link Branch button opens edit mode', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      testAdmin = testAdmin.copyWith(
+        organizationId: '',
+        branchId: null,
+        branchName: null,
+      );
+      mockAuthService = MockAuthServiceForProfile(testAdmin);
+
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home Community & Branch Membership'), findsOneWidget);
+      expect(find.text('Global Platform Mode Only'), findsOneWidget);
+      expect(find.text('Link Home Community & Branch'), findsOneWidget);
+
+      await tester.tap(find.text('Link Home Community & Branch'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Profile Information'), findsOneWidget);
+      expect(find.text('Home Community & Branch Affiliation'), findsOneWidget);
     });
   });
 }

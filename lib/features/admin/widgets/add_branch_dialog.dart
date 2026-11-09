@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/nigerian_states.dart';
@@ -301,7 +302,7 @@ class _AddBranchDialogState extends ConsumerState<AddBranchDialog> {
                     Expanded(
                       child: Text(
                         _errorMessage!,
-                        style: TextStyle(color: Colors.red.shade800, fontSize: 12),
+                        style: TextStyle(color: AppTheme.statusColor(context, Colors.red), fontSize: 12),
                       ),
                     ),
                   ],

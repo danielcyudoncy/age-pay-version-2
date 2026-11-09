@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../../auth/controllers/auth_provider.dart';
 import '../../auth/models/user_model.dart';
 import '../../auth/services/identity_verification_service.dart';
 import '../../auth/views/login_screen.dart';
+import '../controllers/admin_provider.dart';
 
 class AdminProfileScreen extends ConsumerStatefulWidget {
   const AdminProfileScreen({super.key});
@@ -26,6 +28,10 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _ninController;
 
+  String? _selectedOrganizationId;
+  String? _selectedBranchId;
+  String? _selectedBranchName;
+
   @override
   void initState() {
     super.initState();
@@ -33,6 +39,10 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
     _nameController = TextEditingController(text: user?.displayName ?? '');
     _phoneController = TextEditingController(text: user?.phoneNumber ?? '');
     _ninController = TextEditingController(text: user?.ninOrBvn ?? '');
+    _selectedOrganizationId =
+        user?.organizationId.isNotEmpty == true ? user!.organizationId : null;
+    _selectedBranchId = user?.branchId;
+    _selectedBranchName = user?.branchName;
   }
 
   @override
@@ -50,13 +60,22 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
       _nameController.text = user.displayName;
       _phoneController.text = user.phoneNumber;
       _ninController.text = user.ninOrBvn ?? '';
+      _selectedOrganizationId =
+          user.organizationId.isNotEmpty ? user.organizationId : null;
+      _selectedBranchId = user.branchId;
+      _selectedBranchName = user.branchName;
     });
   }
 
   void _cancelEdit() {
+    final user = ref.read(authProvider).valueOrNull;
     setState(() {
       _isEditing = false;
       _errorMessage = null;
+      _selectedOrganizationId =
+          user?.organizationId.isNotEmpty == true ? user!.organizationId : null;
+      _selectedBranchId = user?.branchId;
+      _selectedBranchName = user?.branchName;
     });
   }
 
@@ -85,6 +104,9 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
             displayName: _nameController.text.trim(),
             phoneNumber: _phoneController.text.trim(),
             ninOrBvn: ninVal.isNotEmpty ? ninVal : null,
+            organizationId: _selectedOrganizationId ?? '',
+            branchId: _selectedBranchId,
+            branchName: _selectedBranchName,
           );
 
       if (mounted) {
@@ -220,18 +242,18 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: AppTheme.statusBg(context, Colors.red),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.red.shade200),
+                  border: Border.all(color: AppTheme.statusColor(context, Colors.red).withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                    Icon(Icons.error_outline, color: AppTheme.statusColor(context, Colors.red), size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _errorMessage!,
-                        style: TextStyle(color: Colors.red.shade800, fontSize: 13),
+                        style: TextStyle(color: AppTheme.statusColor(context, Colors.red), fontSize: 13),
                       ),
                     ),
                   ],
@@ -245,6 +267,8 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
               _buildEditForm(theme)
             else ...[
               _buildPersonalInfoSection(user, maskedNin, createdAtFormatted, theme),
+              const SizedBox(height: 16),
+              _buildHomeBranchCard(user, theme),
               const SizedBox(height: 16),
               _buildGovernancePrivilegesCard(theme),
               const SizedBox(height: 16),
@@ -476,7 +500,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                   ? Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.green.shade50,
+                        color: AppTheme.statusBg(context, Colors.green),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -484,7 +508,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green.shade800,
+                          color: AppTheme.statusColor(context, Colors.green),
                         ),
                       ),
                     )
@@ -515,6 +539,175 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                   : 'National Assembly & Council',
               theme: theme,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeBranchCard(UserModel user, ThemeData theme) {
+    final orgsAsync = ref.watch(organizationsStreamProvider);
+    final orgs = orgsAsync.valueOrNull ?? [];
+    final affiliatedOrg = user.organizationId.isNotEmpty
+        ? orgs.where((o) => o.id == user.organizationId).firstOrNull
+        : null;
+    final orgName = affiliatedOrg?.name ??
+        (user.organizationId.isNotEmpty ? user.organizationId : null);
+    final hasAffiliation = orgName != null && orgName.isNotEmpty;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: AppTheme.cardBorder(context),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.account_balance_outlined,
+                        color: AppTheme.primary(context),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Home Community & Branch Membership',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => _enterEditMode(user),
+                  icon: Icon(hasAffiliation ? Icons.sync_alt : Icons.link, size: 14),
+                  label: Text(
+                    hasAffiliation ? 'Change' : 'Link Branch',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                ),
+              ],
+            ),
+            const Divider(height: 20),
+            if (hasAffiliation) ...[
+              _buildDetailTile(
+                icon: Icons.corporate_fare,
+                label: 'Affiliated Community Organisation',
+                value: orgName,
+                theme: theme,
+              ),
+              const SizedBox(height: 12),
+              _buildDetailTile(
+                icon: Icons.location_on_outlined,
+                label: 'Home Branch',
+                value: user.branchName?.isNotEmpty == true
+                    ? user.branchName!
+                    : 'Primary Branch',
+                theme: theme,
+              ),
+              const SizedBox(height: 12),
+              _buildDetailTile(
+                icon: Icons.how_to_reg_outlined,
+                label: 'Community Membership Standing',
+                value: 'Active Member (${user.duesStanding.name.toUpperCase()})',
+                theme: theme,
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.statusBg(context, Colors.green),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        size: 12,
+                        color: AppTheme.statusColor(context, Colors.green),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Verified',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.statusColor(context, Colors.green),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.statusBg(context, Colors.amber),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppTheme.statusColor(context, Colors.amber).withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: AppTheme.statusColor(context, Colors.amber),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Global Platform Mode Only',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.statusColor(context, Colors.amber),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'You currently operate with global platform privileges across all organisations, but without an active home branch affiliation. Link your home community to view personal dues, levies, attendance, and member ID card.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.onSurface(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _enterEditMode(user),
+                  icon: const Icon(Icons.link, size: 18),
+                  label: const Text('Link Home Community & Branch'),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -587,10 +780,10 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
         Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: color.shade50,
+            color: AppTheme.statusBg(context, color),
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Icon(icon, color: color.shade700, size: 16),
+          child: Icon(icon, color: AppTheme.statusColor(context, color), size: 16),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -763,6 +956,151 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                   helperText: 'Executive verification identity for platform audits',
                 ),
               ),
+              const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(
+                    Icons.account_balance_outlined,
+                    color: AppTheme.primary(context),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Home Community & Branch Affiliation',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Affiliate your Super Admin account with a specific community organisation and branch to participate as an active member in dues, levies, and meetings.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppTheme.onSurfaceVariant(context),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Builder(
+                builder: (context) {
+                  final orgsAsync = ref.watch(organizationsStreamProvider);
+                  final orgs = orgsAsync.valueOrNull ?? [];
+                  final isOrgValid =
+                      orgs.any((o) => o.id == _selectedOrganizationId);
+                  final effectiveOrgId = isOrgValid
+                      ? _selectedOrganizationId
+                      : (_selectedOrganizationId?.isEmpty == true ? '' : null);
+
+                  return DropdownButtonFormField<String>(
+                    key: ValueKey(effectiveOrgId),
+                    initialValue: effectiveOrgId,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'Home Organisation',
+                      hintText: orgsAsync.isLoading
+                          ? 'Loading organisations...'
+                          : (orgs.isEmpty
+                              ? 'No organisations registered yet'
+                              : 'Select community organisation'),
+                      prefixIcon: const Icon(Icons.corporate_fare_outlined),
+                      border: const OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem<String>(
+                        value: '',
+                        child: Text(
+                          'None (Global Platform Mode Only)',
+                          style: TextStyle(fontStyle: FontStyle.italic),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      ...orgs.map((org) {
+                        return DropdownMenuItem<String>(
+                          value: org.id,
+                          child: Text(
+                            org.name,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }),
+                    ],
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedOrganizationId = val;
+                        _selectedBranchId = null;
+                        _selectedBranchName = null;
+                      });
+                    },
+                  );
+                },
+              ),
+              if (_selectedOrganizationId != null &&
+                  _selectedOrganizationId!.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final branchesAsync =
+                        ref.watch(branchesStreamFamily(_selectedOrganizationId!));
+                    final branches = branchesAsync.valueOrNull ?? [];
+                    final isBranchValid =
+                        branches.any((b) => b.id == _selectedBranchId);
+                    String? effectiveBranchId =
+                        isBranchValid ? _selectedBranchId : null;
+
+                    if (effectiveBranchId == null &&
+                        _selectedBranchName != null &&
+                        branches.isNotEmpty) {
+                      final match = branches
+                          .where((b) =>
+                              b.name.toLowerCase() ==
+                              _selectedBranchName!.toLowerCase())
+                          .firstOrNull;
+                      if (match != null) {
+                        effectiveBranchId = match.id;
+                      }
+                    }
+
+                    return DropdownButtonFormField<String>(
+                      key: ValueKey('$_selectedOrganizationId-$effectiveBranchId'),
+                      initialValue: effectiveBranchId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Home Branch *',
+                        hintText: branchesAsync.isLoading
+                            ? 'Loading branches...'
+                            : (branches.isEmpty
+                                ? 'No branches in this organisation'
+                                : 'Select your home branch'),
+                        prefixIcon: const Icon(Icons.location_on_outlined),
+                        border: const OutlineInputBorder(),
+                        helperText:
+                            'Your dues, obligations, and meetings will be scoped to this branch',
+                      ),
+                      items: branches.map((b) {
+                        return DropdownMenuItem<String>(
+                          value: b.id,
+                          child: Text(b.name, overflow: TextOverflow.ellipsis),
+                        );
+                      }).toList(),
+                      onChanged: branches.isEmpty
+                          ? null
+                          : (val) {
+                              final chosen =
+                                  branches.firstWhere((b) => b.id == val);
+                              setState(() {
+                                _selectedBranchId = chosen.id;
+                                _selectedBranchName = chosen.name;
+                              });
+                            },
+                    );
+                  },
+                ),
+              ],
               const SizedBox(height: 20),
               Row(
                 children: [

@@ -285,18 +285,18 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
                       width: double.infinity,
                       height: 48,
                       child: OutlinedButton.icon(
-                        icon: const Icon(Icons.stars_rounded, color: AppTheme.brandGreen),
+                        icon: Icon(Icons.stars_rounded, color: AppTheme.primary(context)),
                         label: Text(
                           widget.member.nationalRole != null
                               ? 'Edit National Office (${widget.member.nationalRole!.displayName})'
                               : 'Assign to National Office',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.brandGreen,
+                            color: AppTheme.primary(context),
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppTheme.brandGreen),
+                          side: BorderSide(color: AppTheme.primary(context)),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

@@ -184,7 +184,7 @@ class _NationalRemittanceScreenState
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.brandGreen,
+                backgroundColor: AppTheme.primary(context),
                 foregroundColor: Colors.white,
               ),
               child: _isSaving
@@ -213,7 +213,7 @@ class _NationalRemittanceScreenState
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddRemittanceDialog,
-        backgroundColor: AppTheme.brandGreen,
+        backgroundColor: AppTheme.primary(context),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('Record Remittance',
             style: TextStyle(color: Colors.white)),

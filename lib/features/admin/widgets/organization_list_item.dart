@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cls/features/admin/controllers/admin_provider.dart';
@@ -273,25 +274,25 @@ class OrganizationListItem extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
+                  color: AppTheme.statusBg(context, Colors.amber),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.amber.shade300),
+                  border: Border.all(color: AppTheme.statusColor(context, Colors.amber).withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.hourglass_top_rounded,
-                      color: Colors.amber.shade900,
+                      color: AppTheme.statusColor(context, Colors.amber),
                       size: 18,
                     ),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Annual license renewal payment pending review',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF7F4C00),
+                          color: AppTheme.statusColor(context, Colors.amber),
                         ),
                       ),
                     ),
@@ -302,7 +303,8 @@ class OrganizationListItem extends ConsumerWidget {
                       ),
                       style: FilledButton.styleFrom(
                         visualDensity: VisualDensity.compact,
-                        backgroundColor: Colors.amber.shade200,
+                        backgroundColor: AppTheme.statusBg(context, Colors.amber),
+                        foregroundColor: AppTheme.statusColor(context, Colors.amber),
                       ),
                       child: const Text(
                         'Review',
@@ -699,9 +701,9 @@ class OrganizationListItem extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: AppTheme.statusBg(context, color),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: AppTheme.statusColor(context, color).withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -711,9 +713,7 @@ class OrganizationListItem extends ConsumerWidget {
                 ? Icons.verified
                 : (isRejected ? Icons.cancel : Icons.hourglass_top),
             size: 11,
-            color: isVerified
-                ? Colors.green.shade800
-                : (isRejected ? Colors.red.shade800 : Colors.amber.shade900),
+            color: AppTheme.statusColor(context, color),
           ),
           const SizedBox(width: 3),
           Text(
@@ -721,9 +721,7 @@ class OrganizationListItem extends ConsumerWidget {
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
-              color: isVerified
-                  ? Colors.green.shade800
-                  : (isRejected ? Colors.red.shade800 : Colors.amber.shade900),
+              color: AppTheme.statusColor(context, color),
             ),
           ),
         ],
@@ -751,9 +749,9 @@ class OrganizationListItem extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: AppTheme.statusBg(context, color),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: AppTheme.statusColor(context, color).withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -763,9 +761,7 @@ class OrganizationListItem extends ConsumerWidget {
                 ? Icons.hourglass_top
                 : (isActive ? Icons.verified_user : Icons.warning_amber),
             size: 11,
-            color: isPending
-                ? Colors.amber.shade900
-                : (isActive ? Colors.teal.shade800 : Colors.red.shade800),
+            color: AppTheme.statusColor(context, color),
           ),
           const SizedBox(width: 3),
           Text(
@@ -773,9 +769,7 @@ class OrganizationListItem extends ConsumerWidget {
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
-              color: isPending
-                  ? Colors.amber.shade900
-                  : (isActive ? Colors.teal.shade800 : Colors.red.shade800),
+              color: AppTheme.statusColor(context, color),
             ),
           ),
         ],
@@ -796,9 +790,9 @@ class OrganizationListItem extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: hasBank ? 0.12 : 0.08),
+        color: AppTheme.statusBg(context, color),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: AppTheme.statusColor(context, color).withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -806,7 +800,7 @@ class OrganizationListItem extends ConsumerWidget {
           Icon(
             hasBank ? Icons.account_balance : Icons.account_balance_outlined,
             size: 11,
-            color: hasBank ? Colors.teal.shade800 : Colors.grey.shade700,
+            color: AppTheme.statusColor(context, color),
           ),
           const SizedBox(width: 3),
           Text(
@@ -814,7 +808,7 @@ class OrganizationListItem extends ConsumerWidget {
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
-              color: hasBank ? Colors.teal.shade800 : Colors.grey.shade700,
+              color: AppTheme.statusColor(context, color),
             ),
           ),
         ],

@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -174,11 +175,11 @@ class _WaiverAuditLedgerScreenState
       labelStyle: TextStyle(
         fontSize: 12,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        color: isSelected ? Colors.white : Colors.black87,
+        color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
       ),
       selected: isSelected,
-      selectedColor: Colors.teal.shade800,
-      backgroundColor: Colors.grey.shade200,
+      selectedColor: AppTheme.statusColor(context, Colors.teal),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       onSelected: (_) => setState(() => _filterStatus = status),
     );
   }
@@ -190,7 +191,7 @@ class _WaiverAuditLedgerScreenState
 
     switch (waiver.status) {
       case PenaltyWaiverStatus.pendingApproval:
-        statusColor = Colors.amber.shade800;
+        statusColor = AppTheme.statusColor(context, Colors.amber);
         statusText = 'Pending President Counter-Signature';
         statusIcon = Icons.hourglass_top_outlined;
         break;
@@ -211,7 +212,7 @@ class _WaiverAuditLedgerScreenState
       elevation: 0.8,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: AppTheme.cardBorder(context)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -250,7 +251,7 @@ class _WaiverAuditLedgerScreenState
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade800,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const Spacer(),

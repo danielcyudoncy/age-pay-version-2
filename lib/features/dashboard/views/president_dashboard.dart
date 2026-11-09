@@ -92,17 +92,19 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
             appBar: (_selectedIndex == 1 || _selectedIndex == 4)
                 ? null
                 : AppBar(
-                    title: _selectedIndex == 0
+                    title: (_selectedIndex == 0 || _selectedIndex == 3)
                         ? DashboardScopeTitle(user: user)
-                        : FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(_appBarTitle(_selectedIndex)),
-                          ),
+                        : (_appBarTitle(_selectedIndex).isEmpty
+                            ? null
+                            : FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(_appBarTitle(_selectedIndex)),
+                              )),
                     actions: [
                       DashboardAppBarActions(
                         user: user,
-                        showScopeChip: _selectedIndex != 0,
+                        showScopeChip: (_selectedIndex != 0 && _selectedIndex != 3),
                         onRefresh: () async {
                           ref.invalidate(presidentAllPaymentsStreamProvider);
                           ref.invalidate(allObligationsProvider);
@@ -164,7 +166,7 @@ class _PresidentDashboardState extends ConsumerState<PresidentDashboard> {
       case 2:
         return 'Meetings & Governance';
       case 3:
-        return 'Members Directory';
+        return '';
       case 4:
         return 'My Personal Dues';
       default:
@@ -1786,138 +1788,167 @@ class _PresidentMembersTabState extends ConsumerState<_PresidentMembersTab> {
     final dateFormat = DateFormat('MMM d, yyyy');
     final theme = Theme.of(context);
 
-    return Scaffold(
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search members by name or email...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _query.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _query = '');
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.4,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search members by name or email...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _query.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _query = '');
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.4,
               ),
-              onChanged: (val) {
-                setState(() => _query = val.trim().toLowerCase());
-              },
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
+            onChanged: (val) {
+              setState(() => _query = val.trim().toLowerCase());
+            },
           ),
-          Expanded(
-            child: membersAsync.when(
-              data: (members) {
-                final filtered = _query.isEmpty
-                    ? members
-                    : members.where((m) {
-                        return m.fullName.toLowerCase().contains(_query) ||
-                            m.email.toLowerCase().contains(_query);
-                      }).toList();
+        ),
+        Expanded(
+          child: membersAsync.when(
+            data: (members) {
+              final filtered = _query.isEmpty
+                  ? members
+                  : members.where((m) {
+                      return m.fullName.toLowerCase().contains(_query) ||
+                          m.email.toLowerCase().contains(_query);
+                    }).toList();
 
-                if (filtered.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No members matching your search',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () async =>
-                      ref.invalidate(presidentMembersStreamProvider),
-                  child: ListView.builder(
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      0,
-                      16,
-                      MediaQuery.paddingOf(context).bottom + 24,
-                    ),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final member = filtered[index];
-                      return Card(
-                        elevation: 0,
-                        color: theme.colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.35),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: theme.colorScheme.primaryContainer,
-                            child: Text(
-                              member.fullName.isNotEmpty
-                                  ? member.fullName[0].toUpperCase()
-                                  : '?',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.onPrimaryContainer,
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            member.fullName,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Text(
-                            'Joined ${dateFormat.format(member.joinedDate)} \u2022 ${member.phoneNumber.isNotEmpty ? member.phoneNumber : member.email}',
-                            style: const TextStyle(fontSize: 12),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          trailing: const Icon(
-                            Icons.chevron_right,
-                            color: Colors.grey,
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => TreasurerMemberDetailScreen(
-                                  memberId: member.userId,
-                                  isReadOnly: true,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
+              if (filtered.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'No members matching your search',
+                    style: TextStyle(color: Colors.grey),
                   ),
                 );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(
-                child: Text(
-                  'Error loading members: $error',
-                  style: const TextStyle(color: Colors.red),
-                ),
+              }
+
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _query.isEmpty
+                              ? 'All Registered Members (${members.length})'
+                              : 'Search Results (${filtered.length})',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        if (_query.isNotEmpty)
+                          Text(
+                            'Total: ${members.length}',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.outline,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () async =>
+                          ref.invalidate(presidentMembersStreamProvider),
+                      child: ListView.builder(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          0,
+                          16,
+                          MediaQuery.paddingOf(context).bottom + 24,
+                        ),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final member = filtered[index];
+                          return Card(
+                            elevation: 0,
+                            color: theme.colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.35),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: theme.colorScheme.primaryContainer,
+                                child: Text(
+                                  member.fullName.isNotEmpty
+                                      ? member.fullName[0].toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                member.fullName,
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              subtitle: Text(
+                                'Joined ${dateFormat.format(member.joinedDate)} \u2022 ${member.phoneNumber.isNotEmpty ? member.phoneNumber : member.email}',
+                                style: const TextStyle(fontSize: 12),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: const Icon(
+                                Icons.chevron_right,
+                                color: Colors.grey,
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => TreasurerMemberDetailScreen(
+                                      memberId: member.userId,
+                                      isReadOnly: true,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Center(
+              child: Text(
+                'Error loading members: $error',
+                style: const TextStyle(color: Colors.red),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

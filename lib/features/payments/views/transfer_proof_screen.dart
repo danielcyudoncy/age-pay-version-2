@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 // features/payments/views/transfer_proof_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -52,7 +53,7 @@ class TransferProofScreen extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppTheme.cardBorder(context),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -83,7 +84,7 @@ class TransferProofScreen extends StatelessWidget {
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Container(
                     height: 200,
-                    color: Colors.grey.shade200,
+                    color: AppTheme.cardBorder(context),
                     child: const Center(
                       child: Icon(Icons.broken_image, size: 48),
                     ),

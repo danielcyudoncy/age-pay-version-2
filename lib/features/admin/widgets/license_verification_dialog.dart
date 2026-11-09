@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -260,12 +261,12 @@ class _LicenseVerificationDialogState
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade100,
+                      color: AppTheme.statusBg(context, Colors.amber),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.receipt_long_rounded,
-                      color: Colors.amber.shade900,
+                      color: AppTheme.statusColor(context, Colors.amber),
                       size: 24,
                     ),
                   ),
@@ -460,7 +461,7 @@ class _LicenseVerificationDialogState
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => Container(
                                   height: 160,
-                                  color: Colors.grey.shade200,
+                                  color: theme.colorScheme.surfaceContainerHighest,
                                   child: const Center(
                                     child: Icon(Icons.broken_image, size: 40),
                                   ),
@@ -499,7 +500,7 @@ class _LicenseVerificationDialogState
                       Container(
                         height: 140,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Center(
