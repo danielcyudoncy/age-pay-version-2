@@ -27,6 +27,8 @@ import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
 import 'package:cls/features/payments/widgets/payment_detail_sheet.dart';
 import 'package:cls/features/national/controllers/national_provider.dart';
 import 'package:cls/features/admin/views/admin_profile_screen.dart';
+import 'package:cls/features/admin/controllers/admin_provider.dart';
+import 'package:cls/features/settings/widgets/license_status_banner.dart';
 
 class MemberDashboard extends ConsumerWidget {
   const MemberDashboard({super.key});
@@ -283,7 +285,16 @@ class MemberDashboard extends ConsumerWidget {
               ),
             ),
           ],
-          const SizedBox(height: 14),
+          Builder(
+            builder: (context) {
+              final org = ref.watch(currentOrganizationProvider).valueOrNull;
+              if (org != null) {
+                return LicenseStatusBanner(org: org, isExecutive: false);
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+          const SizedBox(height: 10),
           _BranchNationalScopeToggle(
             activeScope: activeScope,
             branchName: user?.branchName,

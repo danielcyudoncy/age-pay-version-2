@@ -488,6 +488,28 @@ class _AnnualLicenseScreenState extends ConsumerState<AnnualLicenseScreen> {
       title = 'Payment Proof Under Review';
       subtitle =
           'A renewal slip was submitted and is awaiting SuperAdmin verification. Premium features remain available.';
+    } else if (org.isReadOnly) {
+      bannerColor = AppTheme.statusBg(context, Colors.red);
+      iconColor = AppTheme.statusColor(context, Colors.red);
+      icon = Icons.lock_clock_outlined;
+      title = 'Annual License Expired — Read-Only Mode';
+      subtitle =
+          'The 14-day grace period has ended. New transactions and levies are paused. Please transfer the renewal fee to restore full operational service. Past records remain fully secure.';
+    } else if (org.isInGracePeriod) {
+      final graceDays = org.gracePeriodDaysRemaining;
+      bannerColor = AppTheme.statusBg(context, Colors.amber);
+      iconColor = AppTheme.statusColor(context, Colors.amber);
+      icon = Icons.timer_outlined;
+      title = '14-Day Grace Period Active';
+      subtitle =
+          '$graceDays day(s) remaining in grace period. Transfer the renewal fee now to prevent restriction of new community operations.';
+    } else if (org.isTrial) {
+      bannerColor = AppTheme.statusBg(context, Colors.teal);
+      iconColor = AppTheme.statusColor(context, Colors.teal);
+      icon = Icons.card_giftcard_rounded;
+      title = '60-Day Welcome Trial Active';
+      subtitle =
+          '$daysRemaining days remaining of your complimentary 60-day community trial. All features are fully unlocked.';
     } else if (isActive) {
       bannerColor = AppTheme.statusBg(context, Colors.green);
       iconColor = AppTheme.statusColor(context, Colors.green);

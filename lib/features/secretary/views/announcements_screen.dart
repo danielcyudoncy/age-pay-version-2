@@ -10,6 +10,8 @@ import 'package:cls/features/secretary/models/announcement_model.dart';
 import 'package:cls/features/secretary/controllers/secretary_dashboard_provider.dart';
 import 'package:cls/features/notifications/controllers/notification_provider.dart';
 import 'package:cls/features/notifications/models/notification_model.dart';
+import '../../settings/widgets/read_only_license_dialog.dart';
+import '../../settings/widgets/license_status_banner.dart';
 import '../widgets/announcement_detail_dialog.dart';
 
 class AnnouncementsScreen extends ConsumerStatefulWidget {
@@ -32,6 +34,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final user = authState.valueOrNull;
+    final org = ref.watch(currentOrganizationProvider).valueOrNull;
     final orgId = user?.organizationId ?? '';
     final announcementsAsync = ref.watch(announcementsStreamProvider(orgId));
     final dateFormat = DateFormat('MMM dd, yyyy');
@@ -66,6 +69,11 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                 MediaQuery.paddingOf(context).bottom + 24,
               ),
               children: [
+                if (org != null)
+                  LicenseStatusBanner(
+                    org: org,
+                    isExecutive: user?.isExecutive ?? false,
+                  ),
                 _MonthCalendar(
                   selectedDate: _selectedDate,
                   announcementDates: announcementDates,
@@ -158,6 +166,11 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
 
   void _showCreateDialog(BuildContext context, UserModel? user, DateTime date) {
     if (user == null) return;
+    final org = ref.read(currentOrganizationProvider).valueOrNull;
+    if (org != null && org.isReadOnly) {
+      ReadOnlyLicenseDialog.show(context, actionName: 'creating announcements');
+      return;
+    }
     final titleController = TextEditingController();
     final bodyController = TextEditingController();
     final venueController = TextEditingController();
@@ -541,6 +554,11 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
 
   void _showEditDialog(BuildContext context, AnnouncementModel announcement, UserModel? user) {
     if (user == null) return;
+    final org = ref.read(currentOrganizationProvider).valueOrNull;
+    if (org != null && org.isReadOnly) {
+      ReadOnlyLicenseDialog.show(context, actionName: 'editing announcements');
+      return;
+    }
     final titleController = TextEditingController(text: announcement.title);
     final bodyController = TextEditingController(text: announcement.body);
     final venueController = TextEditingController(
@@ -902,6 +920,13 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
   }
 
   Future<void> _deleteAnnouncement(String id, String orgId) async {
+    final org = ref.read(currentOrganizationProvider).valueOrNull;
+    if (org != null && org.isReadOnly) {
+      if (mounted) {
+        ReadOnlyLicenseDialog.show(context, actionName: 'deleting announcements');
+      }
+      return;
+    }
     try {
       final controller = ref.read(announcementControllerProvider);
       await controller.deleteAnnouncement(id);

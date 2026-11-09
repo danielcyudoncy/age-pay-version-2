@@ -18,6 +18,8 @@ import 'package:cls/features/admin/controllers/admin_provider.dart';
 import 'package:cls/features/admin/models/branch_model.dart';
 import 'package:cls/features/admin/models/organization_model.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/settings/widgets/read_only_license_dialog.dart';
+import 'package:cls/features/settings/widgets/license_status_banner.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 enum PaymentOptionMode { specific, allOutstanding, custom, bankTransfer }
@@ -845,6 +847,8 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
     final theme = Theme.of(context);
     final items = obligations ?? [];
     final activeError = paymentState.error ?? offlineState.error;
+    final org = ref.watch(currentOrganizationProvider).valueOrNull;
+    final currentUser = ref.watch(authProvider).valueOrNull;
 
     return Column(
       children: [
@@ -878,6 +882,11 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (org != null)
+                  LicenseStatusBanner(
+                    org: org,
+                    isExecutive: currentUser?.isExecutive ?? false,
+                  ),
                 // 1. Payment Scope Selector
                 Text(
                   'Select Payment Type',
@@ -1571,6 +1580,11 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
   }
 
   Future<void> _initiatePayment(List<ObligationModel> allItems) async {
+    final org = ref.read(currentOrganizationProvider).valueOrNull;
+    if (org != null && org.isReadOnly) {
+      ReadOnlyLicenseDialog.show(context, actionName: 'initiating payments');
+      return;
+    }
     final provider = ref.read(paymentFlowProvider).selectedProvider;
     final providerName =
         provider == PaymentProvider.paystack ? 'Paystack' : 'Flutterwave';
@@ -1643,6 +1657,11 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
   }
 
   Future<void> _submitTransfer() async {
+    final org = ref.read(currentOrganizationProvider).valueOrNull;
+    if (org != null && org.isReadOnly) {
+      ReadOnlyLicenseDialog.show(context, actionName: 'submitting payments');
+      return;
+    }
     final amount = double.tryParse(_customAmountController.text) ?? 0.0;
     final selectedIds = _selectedObligationIds.toList();
     if (amount <= 0 || selectedIds.isEmpty || _uploadedImageUrl == null) {

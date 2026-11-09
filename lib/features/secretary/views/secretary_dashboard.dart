@@ -31,6 +31,8 @@ import 'package:cls/features/notifications/views/notifications_screen.dart';
 import 'package:cls/features/national/controllers/national_provider.dart';
 import 'package:cls/features/expenses/widgets/expense_approval_queue_card.dart';
 import 'package:cls/features/calling/views/branch_directory_screen.dart';
+import 'package:cls/features/admin/controllers/admin_provider.dart';
+import 'package:cls/features/settings/widgets/license_status_banner.dart';
 
 class SecretaryDashboard extends ConsumerStatefulWidget {
   const SecretaryDashboard({super.key});
@@ -256,7 +258,17 @@ class _HomeTab extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          Builder(
+            builder: (context) {
+              final org = ref.watch(currentOrganizationProvider).valueOrNull;
+              if (org != null) {
+                return LicenseStatusBanner(org: org, isExecutive: true);
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(

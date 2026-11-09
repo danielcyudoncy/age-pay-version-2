@@ -83,7 +83,18 @@ class OrganizationRepository {
     String? initialBranchName,
   }) async {
     final docRef = _collection.doc();
-    final newOrg = organization.copyWith(id: docRef.id);
+    final trialExpiry = DateTime.now().add(const Duration(days: 60));
+    final newOrg = organization.copyWith(
+      id: docRef.id,
+      subscriptionTier: organization.subscriptionExpiresAt == null
+          ? 'trial'
+          : organization.subscriptionTier,
+      subscriptionStatus: 'active',
+      isTrial: organization.subscriptionExpiresAt == null
+          ? true
+          : organization.isTrial,
+      subscriptionExpiresAt: organization.subscriptionExpiresAt ?? trialExpiry,
+    );
     await docRef.set(newOrg.toFirestore());
 
     final effectiveBranchName =
@@ -244,6 +255,7 @@ class OrganizationRepository {
     await _collection.doc(organizationId).update({
       'subscriptionTier': tier,
       'subscriptionStatus': 'active',
+      'isTrial': false,
       'subscriptionExpiresAt': Timestamp.fromDate(newExpiry),
       'licenseVerifiedBy': approvedBy,
       'licenseApprovedAt': Timestamp.fromDate(DateTime.now()),

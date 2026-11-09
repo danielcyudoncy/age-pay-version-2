@@ -26,9 +26,10 @@ class OrganizationModel {
   final String? bankVerificationOverrideReason;
   final String? bankVerificationOverriddenBy;
   final DateTime? bankVerificationOverriddenAt;
-  final String subscriptionTier; // 'starter', 'pro', 'national'
+  final String subscriptionTier; // 'starter', 'pro', 'national', 'trial'
   final String subscriptionStatus; // 'active', 'pending_verification', 'expired'
   final DateTime? subscriptionExpiresAt;
+  final bool isTrial;
   final String? licenseProofUrl;
   final String? licensePaymentReference;
   final String? licensePaymentBank;
@@ -67,6 +68,7 @@ class OrganizationModel {
     this.subscriptionTier = 'starter',
     this.subscriptionStatus = 'active',
     this.subscriptionExpiresAt,
+    this.isTrial = false,
     this.licenseProofUrl,
     this.licensePaymentReference,
     this.licensePaymentBank,
@@ -77,23 +79,72 @@ class OrganizationModel {
     required this.updatedAt,
   });
 
+  static const int gracePeriodDays = 14;
+  static const int trialDurationDays = 60;
+
   bool get isVerified => verificationStatus == 'verified';
   bool get isPendingVerification => verificationStatus == 'pending_verification';
   bool get isLicensePendingVerification =>
       subscriptionStatus == 'pending_verification';
+
+  /// True if the current license or trial period is active (before expiry date)
+  /// or pending verification of a submitted renewal slip.
   bool get isLicenseActive {
-    if (subscriptionStatus == 'pending_verification') return false;
+    if (subscriptionStatus == 'pending_verification') return true;
     if (subscriptionExpiresAt == null) return true; // Starter / permanent
     return DateTime.now().isBefore(subscriptionExpiresAt!);
   }
+
+  /// True if past the base expiration date (in grace period or hard expired)
   bool get isLicenseExpired {
     if (subscriptionExpiresAt == null) return false;
     return DateTime.now().isAfter(subscriptionExpiresAt!);
   }
+
+  /// True if the organization is currently within the 14-day grace period
+  bool get isInGracePeriod {
+    if (subscriptionExpiresAt == null) return false;
+    final now = DateTime.now();
+    final graceEnd =
+        subscriptionExpiresAt!.add(const Duration(days: gracePeriodDays));
+    return now.isAfter(subscriptionExpiresAt!) && now.isBefore(graceEnd);
+  }
+
+  /// Number of days remaining in the 14-day grace period
+  int get gracePeriodDaysRemaining {
+    if (subscriptionExpiresAt == null) return 0;
+    final graceEnd =
+        subscriptionExpiresAt!.add(const Duration(days: gracePeriodDays));
+    final diff = graceEnd.difference(DateTime.now());
+    if (diff.isNegative) return 0;
+    final days = (diff.inHours / 24).ceil();
+    return days > 0 ? days : 0;
+  }
+
+  /// True if the organization is beyond BOTH expiration and the 14-day grace period
+  bool get isLicenseHardExpired {
+    if (subscriptionExpiresAt == null) return false;
+    final graceEnd =
+        subscriptionExpiresAt!.add(const Duration(days: gracePeriodDays));
+    return DateTime.now().isAfter(graceEnd);
+  }
+
+  /// True if the organization is in Read-Only mode (hard expired and no renewal pending)
+  bool get isReadOnly => isLicenseHardExpired && !isLicensePendingVerification;
+
+  /// True if renewal is due within 30 days and not yet expired
+  bool get isRenewalDueSoon {
+    if (subscriptionExpiresAt == null) return false;
+    final days = licenseDaysRemaining;
+    return days <= 30 && !isLicenseExpired;
+  }
+
   int get licenseDaysRemaining {
     if (subscriptionExpiresAt == null) return 365;
-    final diff = subscriptionExpiresAt!.difference(DateTime.now()).inDays;
-    return diff > 0 ? diff : 0;
+    final diff = subscriptionExpiresAt!.difference(DateTime.now());
+    if (diff.isNegative) return 0;
+    final days = (diff.inHours / 24).ceil();
+    return days > 0 ? days : 0;
   }
 
   factory OrganizationModel.fromFirestore(DocumentSnapshot doc) {
@@ -136,6 +187,7 @@ class OrganizationModel {
       subscriptionExpiresAt: data['subscriptionExpiresAt'] != null
           ? _parseDate(data['subscriptionExpiresAt'])
           : null,
+      isTrial: data['isTrial'] == true || data['subscriptionTier'] == 'trial',
       licenseProofUrl: data['licenseProofUrl'] as String?,
       licensePaymentReference: data['licensePaymentReference'] as String?,
       licensePaymentBank: data['licensePaymentBank'] as String?,
@@ -183,6 +235,7 @@ class OrganizationModel {
             Timestamp.fromDate(bankVerificationOverriddenAt!),
       'subscriptionTier': subscriptionTier,
       'subscriptionStatus': subscriptionStatus,
+      'isTrial': isTrial,
       if (subscriptionExpiresAt != null)
         'subscriptionExpiresAt': Timestamp.fromDate(subscriptionExpiresAt!),
       if (licenseProofUrl != null) 'licenseProofUrl': licenseProofUrl,
@@ -234,6 +287,7 @@ class OrganizationModel {
     String? subscriptionTier,
     String? subscriptionStatus,
     DateTime? subscriptionExpiresAt,
+    bool? isTrial,
     String? licenseProofUrl,
     String? licensePaymentReference,
     String? licensePaymentBank,
@@ -277,6 +331,7 @@ class OrganizationModel {
       subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
       subscriptionExpiresAt:
           subscriptionExpiresAt ?? this.subscriptionExpiresAt,
+      isTrial: isTrial ?? this.isTrial,
       licenseProofUrl: licenseProofUrl ?? this.licenseProofUrl,
       licensePaymentReference:
           licensePaymentReference ?? this.licensePaymentReference,

@@ -31,6 +31,8 @@ import 'package:cls/features/provost/widgets/penalty_waiver_approval_queue_card.
 import 'package:cls/features/national/controllers/national_provider.dart';
 import 'package:cls/features/national/views/national_hub_screen.dart';
 import 'package:cls/features/calling/views/branch_directory_screen.dart';
+import 'package:cls/features/admin/controllers/admin_provider.dart';
+import 'package:cls/features/settings/widgets/license_status_banner.dart';
 
 class PresidentDashboard extends ConsumerStatefulWidget {
   const PresidentDashboard({super.key});
@@ -302,7 +304,19 @@ class _HomeTab extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
+
+            // Annual License & 60-Day Trial Lifecycle Status
+            Builder(
+              builder: (context) {
+                final org = ref.watch(currentOrganizationProvider).valueOrNull;
+                if (org != null) {
+                  return LicenseStatusBanner(org: org, isExecutive: true);
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+            const SizedBox(height: 10),
 
             // Pending Member Registration Approvals
             ExecutiveApprovalQueueCard(organizationId: user.organizationId),

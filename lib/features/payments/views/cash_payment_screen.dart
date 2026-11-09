@@ -10,6 +10,9 @@ import 'package:cls/features/payments/controllers/offline_payment_provider.dart'
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart'
     show membersStreamProvider;
+import 'package:cls/features/admin/controllers/admin_provider.dart';
+import 'package:cls/features/settings/widgets/read_only_license_dialog.dart';
+import 'package:cls/features/settings/widgets/license_status_banner.dart';
 
 class CashPaymentScreen extends ConsumerStatefulWidget {
   final String recordedBy;
@@ -281,10 +284,15 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
     final obligationsAsync = ref.watch(
       memberActiveObligationsProvider(_selectedMember!.id),
     );
+    final org = ref.watch(currentOrganizationProvider).valueOrNull;
 
     return CustomScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       slivers: [
+        if (org != null)
+          SliverToBoxAdapter(
+            child: LicenseStatusBanner(org: org, isExecutive: true),
+          ),
         if (state.error != null)
           SliverToBoxAdapter(
             child: Container(
@@ -789,6 +797,14 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
   }
 
   Future<void> _recordPayment() async {
+    final org = ref.read(currentOrganizationProvider).valueOrNull;
+    if (org != null && org.isReadOnly) {
+      if (mounted) {
+        ReadOnlyLicenseDialog.show(context, actionName: 'recording cash payments');
+      }
+      return;
+    }
+
     final amount = double.tryParse(_amountController.text.trim()) ?? 0.0;
     if (amount <= 0) return;
 
