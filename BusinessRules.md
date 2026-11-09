@@ -726,6 +726,38 @@ National account holders (National President, National Secretary, National Treas
 
 ---
 
+## Software License Lifecycle, 60-Day Trial, & Read-Only Protection Rules
+
+### 1. 60-Day (2-Month) Complimentary Welcome Trial
+* Every newly registered or provisioned organization automatically receives a complimentary **60-day (2-month) free trial**.
+* Attributes assigned upon organization creation:
+  - `isTrial: true`
+  - `subscriptionTier: 'trial'`
+  - `subscriptionStatus: 'active'`
+  - `subscriptionExpiresAt: DateTime.now().add(const Duration(days: 60))`
+* Community associations meet once monthly. A 60-day window guarantees organizations experience two full monthly meeting cycles, dues collections, and financial report generation free of charge before requiring software license activation.
+
+### 2. 30-Day Renewal Due Notice
+* When `subscriptionExpiresAt` is within 30 days of ending (`isRenewalDueSoon == true`), a proactive amber renewal banner is displayed.
+* **Executive Visibility Only**: Renewal notices are displayed exclusively to organization executives (President, Secretaries, Treasurers, Admins). Regular members are not distracted or alarmed during standard active operational periods.
+
+### 3. 14-Day Operational Grace Period
+* If an organization's trial or annual license expires without prior payment, the organization enters an automatic **14-day grace period** (`isInGracePeriod == true`).
+* **Non-Disruptive Continuity**: All software features remain 100% operational (creating levies, holding meetings, submitting payments) during these 14 days, accommodating executive committee review and community bank transfer scheduling.
+* **Amber Countdown Banner**: Displayed to executives showing the exact countdown (`gracePeriodDaysRemaining`). Hidden from regular members to avoid panic.
+
+### 4. Read-Only Mode & Financial Record Protection
+* If the 14-day grace period lapses without renewal, the organization transitions to **Read-Only Mode** (`isReadOnly == true`).
+* **Absolute Financial Integrity**: In accordance with AgePay Core Financial Principles, an expired license NEVER locks an organization or its members out of historical data. All past member receipts, contribution records, payment ledgers, meeting minutes, and financial statements remain 100% readable and accessible forever.
+* **Write Action Interception**: Actions that generate new obligations or alter balances (creating levies, recording payments, broadcasting announcements) are gracefully intercepted with `ReadOnlyLicenseDialog`, prompting executives to renew their license with direct navigation to the payment screen.
+* Regular members browsing their dashboard see a clear, informative notice that new levies/payments are paused pending executive license renewal.
+
+### 5. Verification Exemption (Unblocking Operations)
+* When an executive submits bank transfer proof for license renewal, the organization's status updates to `subscriptionStatus: 'pending_verification'`.
+* **Zero Operational Disruption**: While pending SuperAdmin review, the organization is immediately unblocked from Read-Only restrictions (`isReadOnly == false`), allowing community activities to continue smoothly.
+
+---
+
 ## Related Documents
 
 * FirestoreSchema.md

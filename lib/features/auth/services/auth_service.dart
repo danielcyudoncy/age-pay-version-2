@@ -177,6 +177,11 @@ class AuthService {
           if (townUnionContact != null && townUnionContact.isNotEmpty) 'townUnionContact': townUnionContact,
           if (founderNinOrBvn != null && founderNinOrBvn.isNotEmpty) 'founderNinOrBvn': founderNinOrBvn,
           'isBankVerified': false,
+          'subscriptionTier': 'trial',
+          'subscriptionStatus': 'active',
+          'isTrial': true,
+          'subscriptionExpiresAt':
+              Timestamp.fromDate(DateTime.now().add(const Duration(days: 60))),
           'createdAt': Timestamp.fromDate(DateTime.now()),
           'updatedAt': Timestamp.fromDate(DateTime.now()),
         }));

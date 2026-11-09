@@ -30,6 +30,8 @@ import 'package:cls/features/calling/views/branch_directory_screen.dart';
 import 'package:cls/features/financial_secretary/models/cash_handover_model.dart';
 import 'package:cls/features/financial_secretary/controllers/cash_handover_provider.dart';
 import 'package:cls/features/dashboard/views/treasurer_cash_handover_screen.dart';
+import 'package:cls/features/admin/controllers/admin_provider.dart';
+import 'package:cls/features/settings/widgets/license_status_banner.dart';
 
 class TreasurerDashboard extends ConsumerStatefulWidget {
   const TreasurerDashboard({super.key});
@@ -308,7 +310,19 @@ class _HomeTab extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+
+            // Annual License & 60-Day Trial Status
+            Builder(
+              builder: (context) {
+                final org = ref.watch(currentOrganizationProvider).valueOrNull;
+                if (org != null) {
+                  return LicenseStatusBanner(org: org, isExecutive: true);
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+            const SizedBox(height: 10),
 
             // Personal Member Status Card (Every member is a member!)
             _PersonalMemberStatusBanner(

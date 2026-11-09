@@ -7,6 +7,9 @@ import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/levies/controllers/levy_provider.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/national/controllers/national_provider.dart';
+import 'package:cls/features/admin/controllers/admin_provider.dart';
+import 'package:cls/features/settings/widgets/read_only_license_dialog.dart';
+import 'package:cls/features/settings/widgets/license_status_banner.dart';
 
 class CreateLevyScreen extends ConsumerStatefulWidget {
   final String creatorId;
@@ -75,6 +78,12 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
   }
 
   void _submit() {
+    final org = ref.read(currentOrganizationProvider).valueOrNull;
+    if (org != null && org.isReadOnly) {
+      ReadOnlyLicenseDialog.show(context, actionName: 'creating a new levy');
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     final amount = double.tryParse(_amountController.text) ?? 0;
@@ -111,6 +120,7 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final creationState = ref.watch(levyCreationProvider);
+    final org = ref.watch(currentOrganizationProvider).valueOrNull;
     UserModel? user;
     try {
       user = ref.watch(authProvider).valueOrNull;
@@ -170,6 +180,7 @@ class _CreateLevyScreenState extends ConsumerState<CreateLevyScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (org != null) LicenseStatusBanner(org: org, isExecutive: true),
               Text('Levy Details', style: theme.textTheme.titleLarge),
               const SizedBox(height: 16),
 
