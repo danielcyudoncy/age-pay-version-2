@@ -123,8 +123,8 @@ class _MeetingDecorumScreenState extends ConsumerState<MeetingDecorumScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: const BoxDecoration(
-              color: AppTheme.brandGreen,
+            decoration: BoxDecoration(
+              color: AppTheme.primary(context),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +141,7 @@ class _MeetingDecorumScreenState extends ConsumerState<MeetingDecorumScreen> {
                       child: const Text(
                         'SESSION IN PROGRESS',
                         style: TextStyle(
-                          color: Colors.black,
+                          color: Color(0xFF261D00),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -245,14 +245,14 @@ class _MeetingDecorumScreenState extends ConsumerState<MeetingDecorumScreen> {
                           CircleAvatar(
                             radius: 18,
                             backgroundColor:
-                                AppTheme.brandGreen.withValues(alpha: 0.12),
+                                AppTheme.primaryContainer(context),
                             child: Text(
                               member.fullName.isNotEmpty
                                   ? member.fullName[0].toUpperCase()
                                   : '?',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: AppTheme.brandGreen,
+                                color: AppTheme.primary(context),
                               ),
                             ),
                           ),
@@ -294,7 +294,7 @@ class _MeetingDecorumScreenState extends ConsumerState<MeetingDecorumScreen> {
                               children: [
                                 _quickButton(
                                   label: 'Late',
-                                  color: Colors.amber.shade800,
+                                  color: AppTheme.statusColor(context, Colors.amber),
                                   onTap: () => _quickSanction(
                                     member: member,
                                     type: PenaltyInfractionType.lateComing,

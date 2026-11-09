@@ -845,6 +845,9 @@ class AuthService {
     required String displayName,
     required String phoneNumber,
     String? ninOrBvn,
+    String? organizationId,
+    String? branchId,
+    String? branchName,
   }) async {
     final Map<String, dynamic> updates = {
       'displayName': displayName.trim(),
@@ -853,6 +856,15 @@ class AuthService {
     };
     if (ninOrBvn != null && ninOrBvn.trim().isNotEmpty) {
       updates['ninOrBvn'] = ninOrBvn.trim();
+    }
+    if (organizationId != null) {
+      updates['organizationId'] = organizationId.trim();
+    }
+    if (branchId != null) {
+      updates['branchId'] = branchId.trim();
+    }
+    if (branchName != null) {
+      updates['branchName'] = branchName.trim();
     }
 
     await _firestore.collection('users').doc(uid).update(updates);
@@ -863,6 +875,51 @@ class AuthService {
         await user.updateDisplayName(displayName.trim());
       }
     } catch (_) {}
+
+    // Synchronize or create MemberModel in members collection
+    if (organizationId != null && organizationId.trim().isNotEmpty) {
+      try {
+        final memberRepo = MemberRepository(firestore: _firestore);
+        final existingMember = await memberRepo.getMemberByUserId(uid);
+        if (existingMember != null) {
+          await memberRepo.updateMember(
+            existingMember.copyWith(
+              fullName: displayName.trim(),
+              phoneNumber: phoneNumber.trim(),
+              organizationId: organizationId.trim(),
+              branchId: branchId?.trim(),
+              branchName: branchName?.trim(),
+              isActive: true,
+              status: 'approved',
+            ),
+          );
+        } else {
+          final userData = await _getUserData(uid);
+          await memberRepo.createMember(
+            MemberModel(
+              id: '',
+              userId: uid,
+              organizationId: organizationId.trim(),
+              fullName: displayName.trim(),
+              email: userData?.email ?? _auth.currentUser?.email ?? '',
+              phoneNumber: phoneNumber.trim(),
+              dateOfBirth: DateTime(1990, 1, 1),
+              joinedDate: DateTime.now(),
+              branchId: branchId?.trim(),
+              branchName: branchName?.trim(),
+              duesStanding: MemberDuesStanding.cleared,
+              role: userData?.role ?? UserRole.member,
+              status: 'approved',
+              isActive: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+        }
+      } catch (e) {
+        log('Warning: Failed to synchronize MemberModel for uid $uid: $e');
+      }
+    }
 
     final updated = await _getUserData(uid);
     return updated!;

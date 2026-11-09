@@ -112,7 +112,7 @@ class MemberProfileScreen extends ConsumerWidget {
                       Row(
                         children: [
                           Icon(Icons.swap_horiz,
-                              size: 18, color: AppTheme.brandGreen),
+                              size: 18, color: AppTheme.primary(context)),
                           const SizedBox(width: 8),
                           Text(
                             'Active Account Context',
@@ -146,7 +146,7 @@ class MemberProfileScreen extends ConsumerWidget {
                                     SnackBar(
                                       duration:
                                           const Duration(milliseconds: 1500),
-                                      backgroundColor: AppTheme.brandGreen,
+                                      backgroundColor: AppTheme.primary(context),
                                       content: Text(
                                         'Switched active view to ${user.branchName ?? 'Local Branch'}',
                                       ),
@@ -164,7 +164,7 @@ class MemberProfileScreen extends ConsumerWidget {
                                     borderRadius: BorderRadius.circular(8),
                                     border: activeScope == ExecutiveScope.branch
                                         ? Border.all(
-                                            color: AppTheme.brandGreen
+                                            color: AppTheme.primary(context)
                                                 .withValues(alpha: 0.4),
                                             width: 1.5,
                                           )
@@ -178,7 +178,7 @@ class MemberProfileScreen extends ConsumerWidget {
                                         size: 15,
                                         color: activeScope ==
                                                 ExecutiveScope.branch
-                                            ? AppTheme.brandGreen
+                                            ? AppTheme.primary(context)
                                             : Theme.of(context)
                                                 .colorScheme
                                                 .onSurfaceVariant,
@@ -195,7 +195,7 @@ class MemberProfileScreen extends ConsumerWidget {
                                                 : FontWeight.w500,
                                             color: activeScope ==
                                                     ExecutiveScope.branch
-                                                ? AppTheme.brandGreen
+                                                ? AppTheme.primary(context)
                                                 : Theme.of(context)
                                                     .colorScheme
                                                     .onSurfaceVariant,
@@ -217,9 +217,9 @@ class MemberProfileScreen extends ConsumerWidget {
                                       .read(activeExecutiveScopeProvider.notifier)
                                       .state = ExecutiveScope.national;
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      duration: Duration(milliseconds: 1500),
-                                      backgroundColor: AppTheme.brandGreen,
+                                    SnackBar(
+                                      duration: const Duration(milliseconds: 1500),
+                                      backgroundColor: AppTheme.primary(context),
                                       content: Text(
                                         'Switched active view to National Body (Central Dues)',
                                       ),

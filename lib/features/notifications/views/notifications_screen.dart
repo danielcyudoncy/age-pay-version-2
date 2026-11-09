@@ -354,7 +354,7 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
             : '';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: Colors.green.shade700,
+            backgroundColor: AppTheme.primary(context),
             content: Text(
               '${applicant.displayName} approved as ${_roleLabel(roleToAssign)}$nationalNotice.',
             ),
@@ -413,9 +413,9 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
             MediaQuery.paddingOf(context).bottom +
             24,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: FutureBuilder<UserModel?>(
         future: authService.getUserById(widget.applicantUid),
@@ -429,9 +429,16 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
 
           final applicant = snapshot.data;
           if (applicant == null) {
-            return const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: Text('Applicant details could not be found.')),
+            return Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Text(
+                  'Applicant details could not be found.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
             );
           }
 
@@ -441,12 +448,16 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.green, size: 48),
+                  Icon(Icons.check_circle, color: AppTheme.statusColor(context, Colors.green), size: 48),
                   const SizedBox(height: 12),
                   Text(
                     '${applicant.displayName} is already approved as ${_roleLabel(applicant.role)}.',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
                 ],
               ),
@@ -464,7 +475,7 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: AppTheme.cardBorder(context),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -493,16 +504,17 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
                       children: [
                         Text(
                           applicant.displayName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                         Text(
                           '${applicant.phoneNumber} • ${applicant.email}',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.grey.shade600,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -514,34 +526,52 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
+                  color: AppTheme.statusBg(context, Colors.amber),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.amber.shade200),
+                  border: Border.all(
+                    color: AppTheme.statusColor(context, Colors.amber).withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Column(
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.location_on_outlined, size: 16, color: Colors.brown),
-                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 16,
+                          color: AppTheme.statusColor(context, Colors.amber),
+                        ),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Branch: ${applicant.branchName ?? "Headquarters"}',
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: AppTheme.statusColor(context, Colors.amber),
+                            ),
                           ),
                         ),
                       ],
                     ),
                     if (applicant.requestedRole != null) ...[
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.badge_outlined, size: 16, color: Colors.brown),
-                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.badge_outlined,
+                            size: 16,
+                            color: AppTheme.statusColor(context, Colors.amber),
+                          ),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Applicant requested role: ${_roleLabel(applicant.requestedRole!)}',
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: AppTheme.statusColor(context, Colors.amber),
+                              ),
                             ),
                           ),
                         ],
@@ -551,33 +581,42 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 '1. Assign Branch Role',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Operational role within ${applicant.branchName ?? "their branch"}.',
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 8),
               Container(
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade400),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<UserRole>(
                     value: _selectedRole,
+                    dropdownColor: theme.colorScheme.surfaceContainerHighest,
                     isExpanded: true,
                     items: UserRole.values
                         .where((role) => role != UserRole.superAdmin)
                         .map((role) {
                       return DropdownMenuItem(
                         value: role,
-                        child: Text(_roleLabel(role)),
+                        child: Text(
+                          _roleLabel(role),
+                          style: TextStyle(color: theme.colorScheme.onSurface),
+                        ),
                       );
                     }).toList(),
                     onChanged: _isProcessing
@@ -594,18 +633,26 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    const Icon(Icons.stars_rounded, size: 16, color: Colors.teal),
+                    Icon(
+                      Icons.stars_rounded,
+                      size: 16,
+                      color: AppTheme.statusColor(context, Colors.teal),
+                    ),
                     const SizedBox(width: 6),
-                    const Text(
+                    Text(
                       '2. Assign National Office (Optional)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Elevate this member into the National Executive / Assembly.',
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -613,18 +660,27 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.teal.shade300),
-                    color: Colors.teal.shade50.withValues(alpha: 0.3),
+                    border: Border.all(
+                      color: AppTheme.statusColor(context, Colors.teal).withValues(alpha: 0.3),
+                    ),
+                    color: AppTheme.statusBg(context, Colors.teal),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<UserRole?>(
                       value: _selectedNationalRole,
+                      dropdownColor: theme.colorScheme.surfaceContainerHighest,
                       isExpanded: true,
-                      hint: const Text('None (Regular Member)'),
+                      hint: Text(
+                        'None (Regular Member)',
+                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                      ),
                       items: [
-                        const DropdownMenuItem<UserRole?>(
+                        DropdownMenuItem<UserRole?>(
                           value: null,
-                          child: Text('None (Regular Member)'),
+                          child: Text(
+                            'None (Regular Member)',
+                            style: TextStyle(color: theme.colorScheme.onSurface),
+                          ),
                         ),
                         ...UserRole.values
                             .where((role) =>
@@ -633,7 +689,10 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
                             .map((role) {
                           return DropdownMenuItem<UserRole?>(
                             value: role,
-                            child: Text('National ${_roleLabel(role)}'),
+                            child: Text(
+                              'National ${_roleLabel(role)}',
+                              style: TextStyle(color: theme.colorScheme.onSurface),
+                            ),
                           );
                         }),
                       ],
@@ -653,8 +712,10 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
                     child: OutlinedButton(
                       onPressed: _isProcessing ? null : () => _reject(applicant),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red.shade700,
-                        side: BorderSide(color: Colors.red.shade300),
+                        foregroundColor: AppTheme.statusColor(context, Colors.red),
+                        side: BorderSide(
+                          color: AppTheme.statusColor(context, Colors.red).withValues(alpha: 0.5),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       child: const Text('Reject'),
@@ -666,7 +727,7 @@ class _ApprovalModalState extends ConsumerState<_ApprovalModal> {
                     child: ElevatedButton.icon(
                       onPressed: _isProcessing ? null : () => _approve(applicant),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
+                        backgroundColor: AppTheme.primary(context),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
@@ -713,7 +774,7 @@ class _NotificationDetailDialog extends ConsumerWidget {
       case 'payment':
         return (Icons.payment, Colors.green, 'PAYMENT CONFIRMATION');
       case 'pending_approval':
-        return (Icons.person_add_alt_1, Colors.amber.shade800, 'APPROVAL REQUEST');
+        return (Icons.person_add_alt_1, AppTheme.statusColor(context, Colors.amber), 'APPROVAL REQUEST');
       case 'approval_success':
         return (Icons.verified_user, Colors.green, 'APPROVAL SUCCESS');
       case 'co_founder_invite':
@@ -738,6 +799,7 @@ class _NotificationDetailDialog extends ConsumerWidget {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: theme.colorScheme.surface,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
@@ -792,6 +854,7 @@ class _NotificationDetailDialog extends ConsumerWidget {
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: 17,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
@@ -826,6 +889,7 @@ class _NotificationDetailDialog extends ConsumerWidget {
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontSize: 14,
                       height: 1.55,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -839,7 +903,7 @@ class _NotificationDetailDialog extends ConsumerWidget {
                     Expanded(
                       child: FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppTheme.brandGreen,
+                          backgroundColor: AppTheme.primary(context),
                         ),
                         icon: const Icon(Icons.event, size: 18),
                         label: const Text('View Meeting & RSVP'),
@@ -880,7 +944,7 @@ class _NotificationDetailDialog extends ConsumerWidget {
                     Expanded(
                       child: FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppTheme.brandGreen,
+                          backgroundColor: AppTheme.primary(context),
                         ),
                         icon: const Icon(Icons.payment, size: 18),
                         label: const Text('Pay Now'),
@@ -902,7 +966,7 @@ class _NotificationDetailDialog extends ConsumerWidget {
                     Expanded(
                       child: FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppTheme.brandGreen,
+                          backgroundColor: AppTheme.primary(context),
                         ),
                         icon: const Icon(Icons.campaign, size: 18),
                         label: const Text('View Announcements'),
@@ -921,7 +985,7 @@ class _NotificationDetailDialog extends ConsumerWidget {
                     Expanded(
                       child: FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          backgroundColor: Colors.amber.shade800,
+                          backgroundColor: AppTheme.statusColor(context, Colors.amber),
                         ),
                         icon: const Icon(Icons.how_to_reg, size: 18),
                         label: const Text('Review Application'),

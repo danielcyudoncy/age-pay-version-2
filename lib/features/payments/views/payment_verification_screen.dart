@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -44,7 +45,7 @@ class _PaymentVerificationScreenState
         children: [
           if (state.error != null)
             Container(
-              color: Colors.red.shade50,
+              color: AppTheme.statusBg(context, Colors.red),
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
@@ -234,7 +235,7 @@ class _PaymentVerificationScreenState
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: AppTheme.cardBorder(context),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -286,7 +287,7 @@ class _PaymentVerificationScreenState
                           errorBuilder: (context, error, stackTrace) =>
                               Container(
                                 height: 200,
-                                color: Colors.grey.shade200,
+                                color: AppTheme.cardBorder(context),
                                 child: const Center(
                                   child: Icon(Icons.broken_image, size: 48),
                                 ),
@@ -423,7 +424,7 @@ class _PaymentCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(
                       height: 120,
-                      color: Colors.grey.shade200,
+                      color: AppTheme.cardBorder(context),
                       child: const Center(child: Icon(Icons.broken_image)),
                     ),
                   ),

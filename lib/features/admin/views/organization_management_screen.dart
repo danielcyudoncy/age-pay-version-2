@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cls/features/admin/controllers/admin_provider.dart';
@@ -150,9 +151,11 @@ class _OrganizationManagementScreenState
     final bankNameController = TextEditingController();
     final accountNumberController = TextEditingController();
     final accountNameController = TextEditingController();
+    final overrideReasonController = TextEditingController();
 
     bool openForJoin = true;
     bool showBankSection = false;
+    bool overrideBankVerification = false;
     bool slugManuallyEdited = false;
     bool isSaving = false;
     String? dialogError;
@@ -168,10 +171,10 @@ class _OrganizationManagementScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: AppTheme.statusBg(context, Colors.blue),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.business, color: Colors.blue.shade700, size: 22),
+                child: Icon(Icons.business, color: AppTheme.statusColor(context, Colors.blue), size: 22),
               ),
               const SizedBox(width: 10),
               const Expanded(
@@ -193,7 +196,7 @@ class _OrganizationManagementScreenState
                   children: [
                     Text(
                       'As Super Admin, creating this organisation pre-verifies it and immediately provisions its primary branch so members can join easily without verification delays.',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade700, height: 1.3),
+                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.3),
                     ),
                     const SizedBox(height: 16),
                     if (dialogError != null)
@@ -201,13 +204,13 @@ class _OrganizationManagementScreenState
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.red.shade50,
+                          color: AppTheme.statusBg(context, Colors.red),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red.shade200),
+                          border: Border.all(color: AppTheme.statusColor(context, Colors.red).withValues(alpha: 0.3)),
                         ),
                         child: Text(
                           dialogError!,
-                          style: TextStyle(fontSize: 12, color: Colors.red.shade900),
+                          style: TextStyle(fontSize: 12, color: AppTheme.statusColor(context, Colors.red)),
                         ),
                       ),
                     TextFormField(
@@ -293,9 +296,9 @@ class _OrganizationManagementScreenState
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300),
+                          border: Border.all(color: AppTheme.cardBorder(context)),
                         ),
                         child: Row(
                           children: [
@@ -304,7 +307,7 @@ class _OrganizationManagementScreenState
                                   ? Icons.keyboard_arrow_up
                                   : Icons.keyboard_arrow_down,
                               size: 20,
-                              color: Colors.blue.shade800,
+                              color: AppTheme.statusColor(context, Colors.blue),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -315,7 +318,7 @@ class _OrganizationManagementScreenState
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.blue.shade900,
+                                  color: AppTheme.statusColor(context, Colors.blue),
                                 ),
                               ),
                             ),
@@ -355,6 +358,58 @@ class _OrganizationManagementScreenState
                           labelText: 'Account Name',
                           hintText: 'e.g. Udoka Association Central',
                           prefixIcon: Icon(Icons.badge),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.statusBg(context, Colors.purple),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppTheme.statusColor(context, Colors.purple).withValues(alpha: 0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.admin_panel_settings,
+                                  color: Colors.purple.shade700,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'Super Admin Name Override',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                Switch(
+                                  value: overrideBankVerification,
+                                  activeThumbColor: Colors.purple.shade700,
+                                  onChanged: (v) => setDialogState(
+                                    () => overrideBankVerification = v,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (overrideBankVerification) ...[
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: overrideReasonController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Override Reason *',
+                                  hintText:
+                                      'e.g. Former corporate name prior to rebrand',
+                                  isDense: true,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ],
@@ -399,9 +454,16 @@ class _OrganizationManagementScreenState
                           organizationName: nameController.text.trim(),
                           accountName: accName,
                         );
-                        if (!verifyRes.isApproved) {
+                        if (!verifyRes.isApproved && !overrideBankVerification) {
                           setDialogState(() => dialogError = verifyRes.message);
                           return;
+                        }
+                        if (!verifyRes.isApproved && overrideBankVerification) {
+                          if (overrideReasonController.text.trim().length < 5) {
+                            setDialogState(() => dialogError =
+                                'Please provide a valid override reason (min. 5 characters).');
+                            return;
+                          }
                         }
                         isBankValid = true;
                       }
@@ -423,7 +485,19 @@ class _OrganizationManagementScreenState
                           openForJoin: openForJoin,
                           verificationStatus: 'verified',
                           isBankVerified: isBankValid,
-                          bankAccountType: isBankValid ? 'association' : null,
+                          bankAccountType: (isBankValid && overrideBankVerification)
+                              ? 'super_admin_override'
+                              : (isBankValid ? 'association' : null),
+                          bankVerificationOverridden: overrideBankVerification,
+                          bankVerificationOverrideReason: overrideBankVerification
+                              ? overrideReasonController.text.trim()
+                              : null,
+                          bankVerificationOverriddenBy: overrideBankVerification
+                              ? 'Super Admin'
+                              : null,
+                          bankVerificationOverriddenAt: overrideBankVerification
+                              ? DateTime.now()
+                              : null,
                           bankName: hasBank ? bankName : null,
                           accountNumber: hasBank ? accNo : null,
                           accountName: hasBank ? accName : null,

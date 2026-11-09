@@ -96,6 +96,7 @@ class PaymentDetailSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
     final dateFormat = DateFormat('MMM dd, yyyy • hh:mm a');
     final allObligations = ref.watch(allObligationsProvider).valueOrNull ?? [];
@@ -158,10 +159,10 @@ class PaymentDetailSheet extends ConsumerWidget {
             // Top Hero Card (Amount, Status, Method, Date)
             Card(
               elevation: 0,
-              color: Colors.grey.shade50,
+              color: theme.colorScheme.surfaceContainerHighest,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.shade200),
+                side: BorderSide(color: AppTheme.cardBorder(context)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(18),
@@ -169,10 +170,10 @@ class PaymentDetailSheet extends ConsumerWidget {
                   children: [
                     Text(
                       currency.format(payment.amount),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.brandGreen,
+                        color: AppTheme.primary(context),
                       ),
                     ),
                     if (effectiveMemberName != null &&
@@ -275,7 +276,7 @@ class PaymentDetailSheet extends ConsumerWidget {
               'What this money is meant for',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade800,
+                    color: theme.colorScheme.onSurface,
                   ),
             ),
             const SizedBox(height: 8),
@@ -285,9 +286,12 @@ class PaymentDetailSheet extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
+                  color: AppTheme.statusBg(context, Colors.amber),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.amber.shade200),
+                  border: Border.all(
+                    color: AppTheme.statusColor(context, Colors.amber)
+                        .withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,7 +299,7 @@ class PaymentDetailSheet extends ConsumerWidget {
                     Icon(
                       Icons.description_outlined,
                       size: 20,
-                      color: Colors.amber.shade900,
+                      color: AppTheme.statusColor(context, Colors.amber),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -307,16 +311,17 @@ class PaymentDetailSheet extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: Colors.amber.shade900,
+                              color:
+                                  AppTheme.statusColor(context, Colors.amber),
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             payment.notes!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                              color: theme.colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -334,7 +339,7 @@ class PaymentDetailSheet extends ConsumerWidget {
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.grey.shade200),
+                  side: BorderSide(color: AppTheme.cardBorder(context)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -413,7 +418,7 @@ class PaymentDetailSheet extends ConsumerWidget {
                     Icon(
                       Icons.account_balance_wallet_outlined,
                       size: 20,
-                      color: Colors.blue.shade800,
+                      color: AppTheme.statusColor(context, Colors.blue),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -422,7 +427,7 @@ class PaymentDetailSheet extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.blue.shade900,
+                          color: AppTheme.statusColor(context, Colors.blue),
                         ),
                       ),
                     ),
@@ -437,7 +442,7 @@ class PaymentDetailSheet extends ConsumerWidget {
               'Transaction Information',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade800,
+                    color: theme.colorScheme.onSurface,
                   ),
             ),
             const SizedBox(height: 8),
@@ -445,7 +450,7 @@ class PaymentDetailSheet extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -548,7 +553,7 @@ class PaymentDetailSheet extends ConsumerWidget {
                   icon: const Icon(Icons.receipt_long, size: 18),
                   label: Text('View Official Receipt (${receipt.receiptNumber})'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.brandGreen,
+                    backgroundColor: AppTheme.primary(context),
                   ),
                 );
               },

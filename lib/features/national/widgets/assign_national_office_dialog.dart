@@ -48,7 +48,7 @@ class _AssignNationalOfficeDialogState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: AppTheme.brandGreen,
+            backgroundColor: AppTheme.primary(context),
             content: Text(
               '${widget.member.displayName} assigned as ${_selectedNationalRole!.displayName} (National Body)',
             ),
@@ -126,7 +126,7 @@ class _AssignNationalOfficeDialogState
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Row(
         children: [
-          const Icon(Icons.stars_rounded, color: AppTheme.brandGreen),
+          Icon(Icons.stars_rounded, color: AppTheme.primary(context)),
           const SizedBox(width: 8),
           const Expanded(
             child: Text(
@@ -156,7 +156,7 @@ class _AssignNationalOfficeDialogState
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.location_city, size: 20, color: AppTheme.brandGreen),
+                  Icon(Icons.location_city, size: 20, color: AppTheme.primary(context)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -172,7 +172,7 @@ class _AssignNationalOfficeDialogState
               initialValue: _selectedNationalRole,
               decoration: InputDecoration(
                 labelText: 'Select National Office',
-                prefixIcon: const Icon(Icons.military_tech, color: AppTheme.brandGreen),
+                prefixIcon: Icon(Icons.military_tech, color: AppTheme.primary(context)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               items: eligibleRoles.map((role) {
@@ -202,7 +202,7 @@ class _AssignNationalOfficeDialogState
         ElevatedButton(
           onPressed: _isLoading ? null : _save,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.brandGreen,
+            backgroundColor: AppTheme.primary(context),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),

@@ -46,14 +46,14 @@ class PaymentHistoryScreen extends ConsumerWidget {
               avatar: Icon(
                 isNational ? Icons.stars_rounded : Icons.location_on_outlined,
                 size: 14,
-                color: isNational ? const Color(0xFFB8860B) : AppTheme.brandGreen,
+                color: isNational ? const Color(0xFFB8860B) : AppTheme.primary(context),
               ),
               label: Text(
                 isNational ? 'National' : 'Branch',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: isNational ? const Color(0xFFB8860B) : AppTheme.brandGreen,
+                  color: isNational ? const Color(0xFFB8860B) : AppTheme.primary(context),
                 ),
               ),
               onPressed: () {

@@ -227,7 +227,7 @@ class _TreasurerCashHandoverScreenState
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.brandGreen,
+                backgroundColor: AppTheme.primary(context),
                 foregroundColor: Colors.white,
               ),
               child: _isProcessing
@@ -623,7 +623,7 @@ class _TreasurerCashHandoverScreenState
                                 child: ElevatedButton.icon(
                                   onPressed: () => _showAcceptDialog(h),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.brandGreen,
+                                    backgroundColor: AppTheme.primary(context),
                                     foregroundColor: Colors.white,
                                   ),
                                   icon: const Icon(Icons.check, size: 16),

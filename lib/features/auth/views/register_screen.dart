@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -419,13 +420,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(Icons.shield_outlined,
-                                color: Colors.blue.shade800, size: 22),
+                                color: AppTheme.statusColor(context, Colors.blue), size: 22),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 '🛡️ Dual-Executive Verification:\nAs pioneer founder, you will be registered as President. Provide your General Secretary\'s details below—they will receive an alert to co-sign and activate the organisation.',
                                 style: TextStyle(
-                                  color: Colors.blue.shade900,
+                                  color: AppTheme.statusColor(context, Colors.blue),
                                   fontSize: 12,
                                   height: 1.4,
                                 ),
@@ -651,7 +652,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             Icon(
                               Icons.verified_user_outlined,
                               size: 20,
-                              color: Colors.blue.shade800,
+                              color: AppTheme.statusColor(context, Colors.blue),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -659,7 +660,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 'Your registration will be submitted to the Branch Executive for review and role assignment.',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.blue.shade900,
+                                  color: AppTheme.statusColor(context, Colors.blue),
                                   height: 1.3,
                                 ),
                               ),
@@ -903,7 +904,7 @@ class _OrganizationPicker extends ConsumerWidget {
                       child: Text(
                         'No organisations registered yet',
                         style: TextStyle(
-                          color: Colors.blue.shade900,
+                          color: AppTheme.statusColor(context, Colors.blue),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -913,7 +914,7 @@ class _OrganizationPicker extends ConsumerWidget {
                 const SizedBox(height: 6),
                 Text(
                   'Be the pioneer to register your organisation and primary branch.',
-                  style: TextStyle(fontSize: 12, color: Colors.blue.shade800),
+                  style: TextStyle(fontSize: 12, color: AppTheme.statusColor(context, Colors.blue)),
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton.icon(

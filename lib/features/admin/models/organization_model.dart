@@ -22,6 +22,10 @@ class OrganizationModel {
   final String? secretaryNinOrBvn;
   final bool isBankVerified;
   final String? bankAccountType;
+  final bool bankVerificationOverridden;
+  final String? bankVerificationOverrideReason;
+  final String? bankVerificationOverriddenBy;
+  final DateTime? bankVerificationOverriddenAt;
   final String subscriptionTier; // 'starter', 'pro', 'national'
   final String subscriptionStatus; // 'active', 'pending_verification', 'expired'
   final DateTime? subscriptionExpiresAt;
@@ -56,6 +60,10 @@ class OrganizationModel {
     this.secretaryNinOrBvn,
     this.isBankVerified = false,
     this.bankAccountType,
+    this.bankVerificationOverridden = false,
+    this.bankVerificationOverrideReason,
+    this.bankVerificationOverriddenBy,
+    this.bankVerificationOverriddenAt,
     this.subscriptionTier = 'starter',
     this.subscriptionStatus = 'active',
     this.subscriptionExpiresAt,
@@ -114,6 +122,15 @@ class OrganizationModel {
       secretaryNinOrBvn: data['secretaryNinOrBvn'] as String?,
       isBankVerified: data['isBankVerified'] ?? false,
       bankAccountType: data['bankAccountType'] as String?,
+      bankVerificationOverridden:
+          data['bankVerificationOverridden'] as bool? ?? false,
+      bankVerificationOverrideReason:
+          data['bankVerificationOverrideReason'] as String?,
+      bankVerificationOverriddenBy:
+          data['bankVerificationOverriddenBy'] as String?,
+      bankVerificationOverriddenAt: data['bankVerificationOverriddenAt'] != null
+          ? _parseDate(data['bankVerificationOverriddenAt'])
+          : null,
       subscriptionTier: data['subscriptionTier'] ?? 'starter',
       subscriptionStatus: data['subscriptionStatus'] ?? 'active',
       subscriptionExpiresAt: data['subscriptionExpiresAt'] != null
@@ -156,6 +173,14 @@ class OrganizationModel {
       if (secretaryNinOrBvn != null) 'secretaryNinOrBvn': secretaryNinOrBvn,
       'isBankVerified': isBankVerified,
       if (bankAccountType != null) 'bankAccountType': bankAccountType,
+      'bankVerificationOverridden': bankVerificationOverridden,
+      if (bankVerificationOverrideReason != null)
+        'bankVerificationOverrideReason': bankVerificationOverrideReason,
+      if (bankVerificationOverriddenBy != null)
+        'bankVerificationOverriddenBy': bankVerificationOverriddenBy,
+      if (bankVerificationOverriddenAt != null)
+        'bankVerificationOverriddenAt':
+            Timestamp.fromDate(bankVerificationOverriddenAt!),
       'subscriptionTier': subscriptionTier,
       'subscriptionStatus': subscriptionStatus,
       if (subscriptionExpiresAt != null)
@@ -202,6 +227,10 @@ class OrganizationModel {
     String? secretaryNinOrBvn,
     bool? isBankVerified,
     String? bankAccountType,
+    bool? bankVerificationOverridden,
+    String? bankVerificationOverrideReason,
+    String? bankVerificationOverriddenBy,
+    DateTime? bankVerificationOverriddenAt,
     String? subscriptionTier,
     String? subscriptionStatus,
     DateTime? subscriptionExpiresAt,
@@ -236,6 +265,14 @@ class OrganizationModel {
       secretaryNinOrBvn: secretaryNinOrBvn ?? this.secretaryNinOrBvn,
       isBankVerified: isBankVerified ?? this.isBankVerified,
       bankAccountType: bankAccountType ?? this.bankAccountType,
+      bankVerificationOverridden:
+          bankVerificationOverridden ?? this.bankVerificationOverridden,
+      bankVerificationOverrideReason:
+          bankVerificationOverrideReason ?? this.bankVerificationOverrideReason,
+      bankVerificationOverriddenBy:
+          bankVerificationOverriddenBy ?? this.bankVerificationOverriddenBy,
+      bankVerificationOverriddenAt:
+          bankVerificationOverriddenAt ?? this.bankVerificationOverriddenAt,
       subscriptionTier: subscriptionTier ?? this.subscriptionTier,
       subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
       subscriptionExpiresAt:

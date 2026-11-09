@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 // features/dashboard/views/home_router.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -106,7 +107,7 @@ class HomeRouter extends ConsumerWidget {
                       Text(
                         '${org.name} was reviewed by the AgePay Platform Compliance Team and declined due to unverified community credentials or policy non-compliance.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.black54),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                       const SizedBox(height: 24),
                       OutlinedButton.icon(
@@ -171,12 +172,12 @@ class HomeRouter extends ConsumerWidget {
             content = Column(
               children: [
                 Material(
-                  color: Colors.amber.shade100,
+                  color: AppTheme.statusBg(context, Colors.amber),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
                       children: [
-                        Icon(Icons.shield_outlined, size: 18, color: Colors.amber.shade900),
+                        Icon(Icons.shield_outlined, size: 18, color: AppTheme.statusColor(context, Colors.amber)),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -184,7 +185,7 @@ class HomeRouter extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: Colors.amber.shade900,
+                              color: AppTheme.statusColor(context, Colors.amber),
                             ),
                           ),
                         ),

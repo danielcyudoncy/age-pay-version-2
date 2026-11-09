@@ -134,7 +134,7 @@ class _CashHandoverScreenState extends ConsumerState<CashHandoverScreen> {
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.brandGreen,
+                backgroundColor: AppTheme.primary(context),
                 foregroundColor: Colors.white,
               ),
               child: _isSubmitting
@@ -166,7 +166,7 @@ class _CashHandoverScreenState extends ConsumerState<CashHandoverScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showInitiateDialog(cashCollected),
-        backgroundColor: AppTheme.brandGreen,
+        backgroundColor: AppTheme.primary(context),
         icon: const Icon(Icons.sync_alt, color: Colors.white),
         label: const Text('Handover to Treasurer', style: TextStyle(color: Colors.white)),
       ),

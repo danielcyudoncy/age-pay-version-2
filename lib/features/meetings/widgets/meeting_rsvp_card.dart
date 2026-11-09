@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -83,7 +84,7 @@ class _MeetingRsvpCardState extends ConsumerState<MeetingRsvpCard> {
           SnackBar(
             content: Text(message),
             backgroundColor: status == MeetingRsvpStatus.excused
-                ? Colors.orange.shade800
+                ? AppTheme.statusColor(context, Colors.orange)
                 : Colors.green,
           ),
         );
@@ -193,7 +194,7 @@ class _MeetingRsvpCardState extends ConsumerState<MeetingRsvpCard> {
                     child: _buildChoiceChip(
                       label: 'Late',
                       icon: Icons.schedule,
-                      color: Colors.amber.shade800,
+                      color: AppTheme.statusColor(context, Colors.amber),
                       isSelected: _selectedStatus == MeetingRsvpStatus.late,
                       onTap: () {
                         setState(() => _selectedStatus = MeetingRsvpStatus.late);
@@ -439,7 +440,7 @@ class _MeetingRsvpCardState extends ConsumerState<MeetingRsvpCard> {
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,7 +453,7 @@ class _MeetingRsvpCardState extends ConsumerState<MeetingRsvpCard> {
                         style: TextStyle(
                           fontStyle: FontStyle.italic,
                           fontSize: 13,
-                          color: Colors.grey.shade800,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),

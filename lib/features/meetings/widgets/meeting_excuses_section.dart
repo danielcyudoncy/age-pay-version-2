@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -112,7 +113,7 @@ class _MeetingExcusesSectionState extends ConsumerState<MeetingExcusesSection> {
                       _buildFilterChip(
                         label: 'Coming Late',
                         count: lateList.length,
-                        color: Colors.amber.shade800,
+                        color: AppTheme.statusColor(context, Colors.amber),
                         icon: Icons.schedule,
                         isSelected: _selectedFilterIndex == 2,
                         onTap: () => setState(() => _selectedFilterIndex = 2),
@@ -271,13 +272,13 @@ class _MeetingExcusesSectionState extends ConsumerState<MeetingExcusesSection> {
                     children: [
                       CircleAvatar(
                         radius: 14,
-                        backgroundColor: Colors.redAccent.shade100,
+                        backgroundColor: AppTheme.statusBg(context, Colors.red),
                         child: Text(
                           initial,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.red.shade900,
+                            color: AppTheme.statusColor(context, Colors.red),
                           ),
                         ),
                       ),
@@ -339,7 +340,7 @@ class _MeetingExcusesSectionState extends ConsumerState<MeetingExcusesSection> {
                                 : 'Absence apology tendered.',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey.shade800,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontStyle: FontStyle.italic,
                             ),
                           ),

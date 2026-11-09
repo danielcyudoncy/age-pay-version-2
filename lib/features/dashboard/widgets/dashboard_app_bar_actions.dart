@@ -55,7 +55,7 @@ class DashboardAppBarActions extends ConsumerWidget {
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               padding: const EdgeInsets.symmetric(horizontal: 4),
               backgroundColor: activeScope == ExecutiveScope.national
-                  ? AppTheme.brandGreen.withValues(alpha: 0.15)
+                  ? AppTheme.primaryContainer(context)
                   : Theme.of(context).colorScheme.surfaceContainerHighest,
               avatar: Icon(
                 activeScope == ExecutiveScope.national
@@ -63,7 +63,7 @@ class DashboardAppBarActions extends ConsumerWidget {
                     : Icons.location_on_outlined,
                 size: 16,
                 color: activeScope == ExecutiveScope.national
-                    ? AppTheme.brandGreen
+                    ? AppTheme.primary(context)
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               label: Text(
@@ -72,7 +72,7 @@ class DashboardAppBarActions extends ConsumerWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: activeScope == ExecutiveScope.national
-                      ? AppTheme.brandGreen
+                      ? AppTheme.primary(context)
                       : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -91,7 +91,7 @@ class DashboardAppBarActions extends ConsumerWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     duration: const Duration(milliseconds: 1500),
-                    backgroundColor: AppTheme.brandGreen,
+                    backgroundColor: AppTheme.primary(context),
                     content: Text(
                       newScope == ExecutiveScope.national
                           ? 'Switched to $nationalLabel'
@@ -105,9 +105,9 @@ class DashboardAppBarActions extends ConsumerWidget {
         if (extraActions != null) ...extraActions!,
         IconButton(
           visualDensity: VisualDensity.compact,
-          icon: const Icon(
+          icon: Icon(
             Icons.phone_in_talk_outlined,
-            color: AppTheme.brandGreen,
+            color: AppTheme.primary(context),
           ),
           tooltip: 'Branch Calls',
           onPressed: () {
@@ -125,9 +125,9 @@ class DashboardAppBarActions extends ConsumerWidget {
             icon: Badge(
               isLabelVisible: ref.watch(unreadCountProvider) > 0,
               label: Text('${ref.watch(unreadCountProvider)}'),
-              child: const Icon(
+              child: Icon(
                 Icons.notifications_outlined,
-                color: AppTheme.brandGreen,
+                color: AppTheme.primary(context),
               ),
             ),
             tooltip: 'Notifications',
@@ -143,7 +143,7 @@ class DashboardAppBarActions extends ConsumerWidget {
             },
           ),
         PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: AppTheme.brandGreen),
+          icon: Icon(Icons.more_vert, color: AppTheme.primary(context)),
           tooltip: 'Menu',
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -193,7 +193,7 @@ class DashboardAppBarActions extends ConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       duration: const Duration(milliseconds: 1500),
-                      backgroundColor: AppTheme.brandGreen,
+                      backgroundColor: AppTheme.primary(context),
                       content: Text(
                         newScope == ExecutiveScope.national
                             ? 'Switched to National View (${targetUser?.nationalRole?.displayName})'
@@ -276,7 +276,7 @@ class DashboardAppBarActions extends ConsumerWidget {
                           ? Icons.location_on_outlined
                           : Icons.stars_rounded,
                       size: 20,
-                      color: AppTheme.brandGreen,
+                      color: AppTheme.primary(context),
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -287,11 +287,11 @@ class DashboardAppBarActions extends ConsumerWidget {
                   ],
                 ),
               ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'national_hub',
               child: Row(
                 children: [
-                  Icon(Icons.public, size: 20, color: AppTheme.brandGreen),
+                  Icon(Icons.public, size: 20, color: AppTheme.primary(context)),
                   SizedBox(width: 12),
                   Text('National Assembly & Ledger'),
                 ],
@@ -301,78 +301,78 @@ class DashboardAppBarActions extends ConsumerWidget {
                 targetUser?.role == UserRole.superAdmin ||
                 targetUser?.role == UserRole.president ||
                 targetUser?.role == UserRole.financialSecretary)
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'leaderboard',
                 child: Row(
                   children: [
                     Icon(Icons.leaderboard_outlined,
-                        size: 20, color: AppTheme.brandGreen),
+                        size: 20, color: AppTheme.primary(context)),
                     SizedBox(width: 12),
                     Text('Branch Leaderboard'),
                   ],
                 ),
               ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'branch_calls',
               child: Row(
                 children: [
                   Icon(Icons.phone_in_talk_outlined,
-                      size: 20, color: AppTheme.brandGreen),
+                      size: 20, color: AppTheme.primary(context)),
                   SizedBox(width: 12),
                   Text('Branch Calls'),
                 ],
               ),
             ),
             if (onRefresh != null)
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'refresh',
                 child: Row(
                   children: [
-                    Icon(Icons.refresh, size: 20, color: AppTheme.brandGreen),
+                    Icon(Icons.refresh, size: 20, color: AppTheme.primary(context)),
                     SizedBox(width: 12),
                     Text('Refresh'),
                   ],
                 ),
               ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'profile',
               child: Row(
                 children: [
                   Icon(Icons.person_outline,
-                      size: 20, color: AppTheme.brandGreen),
+                      size: 20, color: AppTheme.primary(context)),
                   SizedBox(width: 12),
                   Text('My Profile'),
                 ],
               ),
             ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'settings',
               child: Row(
                 children: [
                   Icon(Icons.settings_outlined,
-                      size: 20, color: AppTheme.brandGreen),
+                      size: 20, color: AppTheme.primary(context)),
                   SizedBox(width: 12),
                   Text('Settings'),
                 ],
               ),
             ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'help',
               child: Row(
                 children: [
                   Icon(Icons.help_outline,
-                      size: 20, color: AppTheme.brandGreen),
+                      size: 20, color: AppTheme.primary(context)),
                   SizedBox(width: 12),
                   Text('Help & Support'),
                 ],
               ),
             ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'about',
               child: Row(
                 children: [
                   Icon(Icons.info_outline,
-                      size: 20, color: AppTheme.brandGreen),
+                      size: 20, color: AppTheme.primary(context)),
                   SizedBox(width: 12),
                   Text('About AgePay'),
                 ],
@@ -436,7 +436,7 @@ class DashboardScopeTitle extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           duration: const Duration(milliseconds: 1500),
-          backgroundColor: AppTheme.brandGreen,
+          backgroundColor: AppTheme.primary(context),
           content: Text(
             newScope == ExecutiveScope.national
                 ? 'Switched to National View (${targetUser?.nationalRole?.displayName})'
@@ -467,12 +467,12 @@ class DashboardScopeTitle extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: isNational
-                ? AppTheme.brandGreen.withValues(alpha: 0.15)
+                ? AppTheme.primaryContainer(context)
                 : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isNational
-                  ? AppTheme.brandGreen.withValues(alpha: 0.3)
+                  ? AppTheme.primary(context).withValues(alpha: 0.3)
                   : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
             ),
           ),
@@ -483,7 +483,7 @@ class DashboardScopeTitle extends ConsumerWidget {
                 isNational ? Icons.stars_rounded : Icons.location_on_outlined,
                 size: 18,
                 color: isNational
-                    ? AppTheme.brandGreen
+                    ? AppTheme.primary(context)
                     : theme.colorScheme.primary,
               ),
               const SizedBox(width: 8),
@@ -494,7 +494,7 @@ class DashboardScopeTitle extends ConsumerWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: isNational
-                        ? AppTheme.brandGreen
+                        ? AppTheme.primary(context)
                         : theme.colorScheme.onSurface,
                   ),
                   maxLines: 1,

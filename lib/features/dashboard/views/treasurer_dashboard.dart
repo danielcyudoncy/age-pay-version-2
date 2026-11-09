@@ -110,9 +110,9 @@ class _TreasurerDashboardState extends ConsumerState<TreasurerDashboard> {
                         extraActions: [
                           IconButton(
                             visualDensity: VisualDensity.compact,
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.assessment_outlined,
-                              color: AppTheme.brandGreen,
+                              color: AppTheme.primary(context),
                             ),
                             tooltip: 'Financial Reports',
                             onPressed: () {
@@ -469,12 +469,12 @@ class _PersonalMemberStatusBanner extends ConsumerWidget {
       data: (outstanding) {
         final owes = outstanding > 0;
         final cardColor = owes
-            ? Colors.amber.shade50.withValues(alpha: 0.8)
-            : Colors.green.shade50.withValues(alpha: 0.7);
+            ? AppTheme.statusBg(context, Colors.amber)
+            : AppTheme.statusBg(context, Colors.green);
         final borderColor = owes
-            ? Colors.amber.shade300
-            : Colors.green.shade200;
-        final iconColor = owes ? Colors.amber.shade900 : Colors.green.shade800;
+            ? AppTheme.statusColor(context, Colors.amber).withValues(alpha: 0.3)
+            : AppTheme.statusColor(context, Colors.green).withValues(alpha: 0.3);
+        final iconColor = owes ? AppTheme.statusColor(context, Colors.amber) : AppTheme.statusColor(context, Colors.green);
 
         return Card(
           elevation: 0,
@@ -520,8 +520,8 @@ class _PersonalMemberStatusBanner extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 11,
                               color: owes
-                                  ? Colors.amber.shade900
-                                  : Colors.green.shade900,
+                                  ? AppTheme.statusColor(context, Colors.amber)
+                                  : AppTheme.statusColor(context, Colors.green),
                             ),
                           ),
                         ],
@@ -534,8 +534,8 @@ class _PersonalMemberStatusBanner extends ConsumerWidget {
                       ),
                       decoration: BoxDecoration(
                         color: owes
-                            ? Colors.amber.shade800
-                            : Colors.green.shade700,
+                            ? AppTheme.statusColor(context, Colors.amber)
+                            : AppTheme.statusColor(context, Colors.green),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -606,7 +606,7 @@ class _PersonalMemberStatusBanner extends ConsumerWidget {
                             ),
                             style: OutlinedButton.styleFrom(
                               visualDensity: VisualDensity.compact,
-                              foregroundColor: Colors.green.shade800,
+                              foregroundColor: AppTheme.statusColor(context, Colors.green),
                               side: BorderSide(color: Colors.green.shade600),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
@@ -761,9 +761,9 @@ class _PendingCashHandoversBanner extends StatelessWidget {
     final totalAmount = handovers.fold<double>(0.0, (s, h) => s + h.amount);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.teal.shade50,
+        color: AppTheme.statusBg(context, Colors.teal),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.teal.shade300, width: 1.2),
+        border: Border.all(color: AppTheme.statusColor(context, Colors.teal).withValues(alpha: 0.3), width: 1.2),
       ),
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -790,12 +790,12 @@ class _PendingCashHandoversBanner extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: Colors.teal.shade900,
+                    color: AppTheme.statusColor(context, Colors.teal),
                   ),
                 ),
                 Text(
                   '${currency.format(totalAmount)} from Fin Sec to deposit',
-                  style: TextStyle(fontSize: 12, color: Colors.teal.shade800),
+                  style: TextStyle(fontSize: 12, color: AppTheme.statusColor(context, Colors.teal)),
                 ),
               ],
             ),
@@ -803,7 +803,7 @@ class _PendingCashHandoversBanner extends StatelessWidget {
           ElevatedButton(
             onPressed: onView,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal.shade800,
+              backgroundColor: AppTheme.statusColor(context, Colors.teal),
               foregroundColor: Colors.white,
               visualDensity: VisualDensity.compact,
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1040,9 +1040,9 @@ class _PendingVerificationsBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
+        color: AppTheme.statusBg(context, Colors.orange),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.shade300, width: 1.2),
+        border: Border.all(color: AppTheme.statusColor(context, Colors.orange).withValues(alpha: 0.3), width: 1.2),
       ),
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -1055,7 +1055,7 @@ class _PendingVerificationsBanner extends StatelessWidget {
             ),
             child: Icon(
               Icons.hourglass_top,
-              color: Colors.orange.shade900,
+              color: AppTheme.statusColor(context, Colors.orange),
               size: 20,
             ),
           ),
@@ -1069,12 +1069,12 @@ class _PendingVerificationsBanner extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: Colors.orange.shade900,
+                    color: AppTheme.statusColor(context, Colors.orange),
                   ),
                 ),
                 Text(
                   '${currency.format(totalPending)} awaiting your confirmation',
-                  style: TextStyle(fontSize: 12, color: Colors.orange.shade800),
+                  style: TextStyle(fontSize: 12, color: AppTheme.statusColor(context, Colors.orange)),
                 ),
               ],
             ),
@@ -1082,7 +1082,7 @@ class _PendingVerificationsBanner extends StatelessWidget {
           ElevatedButton(
             onPressed: onVerify,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange.shade800,
+              backgroundColor: AppTheme.statusColor(context, Colors.orange),
               foregroundColor: Colors.white,
               visualDensity: VisualDensity.compact,
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1303,7 +1303,7 @@ class _MemberArrearsSection extends StatelessWidget {
         const SizedBox(height: 8),
         if (arrears.isEmpty)
           Card(
-            color: Colors.grey.shade50,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -1412,7 +1412,7 @@ class _LevyCollectionSection extends StatelessWidget {
         const SizedBox(height: 8),
         if (levies.isEmpty)
           Card(
-            color: Colors.grey.shade50,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -1571,7 +1571,7 @@ class _RecentActivitySection extends StatelessWidget {
         const SizedBox(height: 8),
         if (items.isEmpty)
           Card(
-            color: Colors.grey.shade50,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(

@@ -67,7 +67,7 @@ class _ProDashboardState extends ConsumerState<ProDashboard> {
                     extraActions: [
                       IconButton(
                         visualDensity: VisualDensity.compact,
-                        icon: const Icon(Icons.search, color: AppTheme.brandGreen),
+                        icon: Icon(Icons.search, color: AppTheme.primary(context)),
                         tooltip: 'Search directory',
                         onPressed: () {
                           Navigator.push(

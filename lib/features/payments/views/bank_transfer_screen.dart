@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -116,7 +117,7 @@ class _BankTransferScreenState extends ConsumerState<BankTransferScreen> {
         children: [
           if (state.error != null)
             Container(
-              color: Colors.red.shade50,
+              color: AppTheme.statusBg(context, Colors.red),
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
@@ -249,7 +250,7 @@ class _BankTransferScreenState extends ConsumerState<BankTransferScreen> {
             ),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              border: Border(top: BorderSide(color: Colors.grey.shade300)),
+              border: Border(top: BorderSide(color: AppTheme.cardBorder(context))),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

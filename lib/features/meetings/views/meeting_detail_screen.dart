@@ -569,7 +569,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                             : 'All Members',
                         style: TextStyle(
                           color: _targetAudience == 'executives'
-                              ? Colors.deepOrange.shade800
+                              ? AppTheme.statusColor(context, Colors.deepOrange)
                               : theme.colorScheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -607,7 +607,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                             : Icons.pending_actions,
                         color: (widget.meeting?.hasMinutes == true)
                             ? Colors.green.shade700
-                            : Colors.amber.shade800,
+                            : AppTheme.statusColor(context, Colors.amber),
                         size: 20,
                       ),
                       const SizedBox(width: 10),
@@ -618,8 +618,8 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                               : 'Meeting Minutes Pending Documentation by the Secretariat',
                           style: TextStyle(
                             color: (widget.meeting?.hasMinutes == true)
-                                ? Colors.green.shade800
-                                : Colors.amber.shade900,
+                                ? AppTheme.statusColor(context, Colors.green)
+                                : AppTheme.statusColor(context, Colors.amber),
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
                           ),
@@ -684,7 +684,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.brandGreen,
+                        backgroundColor: AppTheme.primary(context),
                         foregroundColor: Colors.white,
                       ),
                       onPressed: _isSaving ? null : () => _save(),
@@ -712,7 +712,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.brandGreen,
+                        backgroundColor: AppTheme.primary(context),
                         foregroundColor: Colors.white,
                       ),
                       onPressed: _isSaving ? null : () => _save(publishAndNotify: true),

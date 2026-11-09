@@ -42,7 +42,7 @@ class _SplashScreenState extends State<SplashScreen> {
         statusBarColor: Colors.transparent,
       ),
       child: Scaffold(
-        backgroundColor: AppTheme.brandGreen,
+        backgroundColor: AppTheme.primary(context),
         body: Stack(
           children: [
             Center(

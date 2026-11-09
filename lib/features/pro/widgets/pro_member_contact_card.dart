@@ -78,7 +78,7 @@ class ProMemberContactCard extends ConsumerWidget {
               // WhatsApp button
               IconButton(
                 visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.chat, color: AppTheme.brandGreen, size: 20),
+                icon: Icon(Icons.chat, color: AppTheme.primary(context), size: 20),
                 tooltip: 'WhatsApp ${member.fullName}',
                 onPressed: () {
                   ref.read(proCommunicationServiceProvider).shareToWhatsApp(

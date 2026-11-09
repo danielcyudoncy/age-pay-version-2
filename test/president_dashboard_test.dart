@@ -18,6 +18,7 @@ import 'package:cls/features/auth/services/auth_service.dart';
 import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/dashboard/views/president_dashboard.dart';
+import 'package:cls/features/dashboard/widgets/dashboard_app_bar_actions.dart';
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
 import 'package:cls/features/levies/controllers/levy_provider.dart'
     hide obligationRepositoryProvider;
@@ -739,6 +740,56 @@ void main() {
 
       expect(find.textContaining('Auth error'), findsOneWidget);
       expect(find.widgetWithText(ElevatedButton, 'Retry'), findsOneWidget);
+    });
+
+    testWidgets('switches to Members tab with properly aligned scope title and members list', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildDashboard(
+          payments: testPayments,
+          obligations: testObligations,
+          levies: testLevies,
+          expenses: testExpenses,
+          members: testMembers,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap Members on BottomNavigationBar
+      await tester.tap(find.text('Members'));
+      await tester.pumpAndSettle();
+
+      // Verify that DashboardScopeTitle is shown in the AppBar (clean executive title)
+      expect(find.byType(DashboardScopeTitle), findsOneWidget);
+
+      // Verify redundant/small text 'Members Directory' is NOT present
+      expect(find.text('Members Directory'), findsNothing);
+
+      // Verify the search field is present and aligned
+      expect(
+        find.widgetWithText(TextField, 'Search members by name or email...'),
+        findsOneWidget,
+      );
+
+      // Verify member count label is displayed
+      expect(find.text('All Registered Members (2)'), findsOneWidget);
+
+      // Verify both members are rendered in list
+      expect(find.text('John Doe'), findsOneWidget);
+      expect(find.text('Jane Smith'), findsOneWidget);
+
+      // Test searching
+      await tester.enterText(
+        find.byType(TextField),
+        'jane',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Search Results (1)'), findsOneWidget);
+      expect(find.text('Total: 2'), findsOneWidget);
+      expect(find.text('Jane Smith'), findsOneWidget);
+      expect(find.text('John Doe'), findsNothing);
     });
   });
 }

@@ -36,9 +36,18 @@ class _EditOrganizationBankDialogState
   late final TextEditingController _bankNameController;
   late final TextEditingController _accountNumberController;
   late final TextEditingController _accountNameController;
+  late final TextEditingController _overrideReasonController;
 
   bool _isLoading = false;
+  bool _overrideVerification = false;
   String? _errorMessage;
+
+  bool get _isSuperAdmin {
+    final authUser = ref.read(authProvider).valueOrNull;
+    return authUser != null &&
+        (authUser.role == UserRole.superAdmin ||
+            authUser.email.toLowerCase().contains('superadmin'));
+  }
 
   static const List<String> _popularBanks = [
     'Access Bank',
@@ -74,6 +83,10 @@ class _EditOrganizationBankDialogState
           ? widget.organization.accountName!
           : widget.organization.name,
     );
+    _overrideVerification = widget.organization.bankVerificationOverridden;
+    _overrideReasonController = TextEditingController(
+      text: widget.organization.bankVerificationOverrideReason ?? '',
+    );
   }
 
   @override
@@ -81,6 +94,7 @@ class _EditOrganizationBankDialogState
     _bankNameController.dispose();
     _accountNumberController.dispose();
     _accountNameController.dispose();
+    _overrideReasonController.dispose();
     super.dispose();
   }
 
@@ -94,12 +108,28 @@ class _EditOrganizationBankDialogState
       accountName: _accountNameController.text.trim(),
     );
 
-    if (!matchResult.isApproved) {
+    final isSuperAdmin = _isSuperAdmin;
+    final isOverriding =
+        isSuperAdmin && _overrideVerification && !matchResult.isApproved;
+
+    if (!matchResult.isApproved && !isOverriding) {
       setState(() {
         _errorMessage = matchResult.message;
         _isLoading = false;
       });
       return;
+    }
+
+    if (isOverriding) {
+      final reason = _overrideReasonController.text.trim();
+      if (reason.length < 5) {
+        setState(() {
+          _errorMessage =
+              'Please provide a valid justification for the Super Admin override (min. 5 characters).';
+          _isLoading = false;
+        });
+        return;
+      }
     }
 
     setState(() {
@@ -108,6 +138,13 @@ class _EditOrganizationBankDialogState
     });
 
     try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      final authUser = ref.read(authProvider).valueOrNull;
+      final overriddenBy = authUser?.email ??
+          currentUser?.email ??
+          currentUser?.uid ??
+          'Super Admin';
+
       await ref
           .read(organizationRepositoryProvider)
           .updateBankDetails(
@@ -116,14 +153,13 @@ class _EditOrganizationBankDialogState
             accountNumber: _accountNumberController.text.trim(),
             accountName: _accountNameController.text.trim(),
             isBankVerified: true,
-            bankAccountType: 'association',
+            bankAccountType:
+                isOverriding ? 'super_admin_override' : 'association',
+            isOverridden: isOverriding,
+            overrideReason:
+                isOverriding ? _overrideReasonController.text.trim() : null,
+            overriddenBy: isOverriding ? overriddenBy : null,
           );
-
-      final currentUser = FirebaseAuth.instance.currentUser;
-      final authUser = ref.read(authProvider).valueOrNull;
-      final isSuperAdmin = authUser != null &&
-          (authUser.role == UserRole.superAdmin ||
-              authUser.email.toLowerCase().contains('superadmin'));
 
       if (currentUser != null && !isSuperAdmin) {
         FirebaseFirestore.instance
@@ -409,6 +445,7 @@ class _EditOrganizationBankDialogState
                     _accountNameController,
                     _accountNumberController,
                     _bankNameController,
+                    _overrideReasonController,
                   ]),
                   builder: (context, _) {
                     final accNo = _accountNumberController.text.trim();
@@ -423,41 +460,167 @@ class _EditOrganizationBankDialogState
                       accountName: accName,
                     );
                     final isOk = res.isApproved;
-                    return Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: isOk ? Colors.green.shade50 : Colors.amber.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isOk
-                              ? Colors.green.shade200
-                              : Colors.amber.shade300,
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            isOk ? Icons.verified : Icons.warning_amber_rounded,
+                    final isSuperAdmin = _isSuperAdmin;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
                             color: isOk
-                                ? Colors.green.shade700
-                                : Colors.amber.shade900,
-                            size: 18,
+                                ? Colors.green.shade50
+                                : (_overrideVerification
+                                    ? Colors.purple.shade50
+                                    : Colors.amber.shade50),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isOk
+                                  ? Colors.green.shade200
+                                  : (_overrideVerification
+                                      ? Colors.purple.shade200
+                                      : Colors.amber.shade300),
+                            ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              res.message,
-                              style: TextStyle(
-                                fontSize: 12,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                isOk
+                                    ? Icons.verified
+                                    : (_overrideVerification
+                                        ? Icons.gavel
+                                        : Icons.warning_amber_rounded),
                                 color: isOk
-                                    ? Colors.green.shade900
-                                    : Colors.amber.shade900,
+                                    ? Colors.green.shade700
+                                    : (_overrideVerification
+                                        ? Colors.purple.shade700
+                                        : Colors.amber.shade900),
+                                size: 18,
                               ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  isOk
+                                      ? res.message
+                                      : (_overrideVerification
+                                          ? 'Super Admin Authority Override Active: Alternate account name authorized with recorded justification.'
+                                          : res.message),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isOk
+                                        ? Colors.green.shade900
+                                        : (_overrideVerification
+                                            ? Colors.purple.shade900
+                                            : Colors.amber.shade900),
+                                    fontWeight: _overrideVerification
+                                        ? FontWeight.w500
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!isOk && isSuperAdmin) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.shade50,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: Colors.purple.shade200,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.admin_panel_settings,
+                                      color: Colors.purple.shade700,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Super Admin Authority Override',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.purple.shade900,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Authorize alternate/former entity name for receiving funds',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.purple.shade700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Switch(
+                                      value: _overrideVerification,
+                                      activeThumbColor: Colors.purple.shade700,
+                                      onChanged: (val) {
+                                        setState(() {
+                                          _overrideVerification = val;
+                                          if (val) _errorMessage = null;
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                if (_overrideVerification) ...[
+                                  const SizedBox(height: 10),
+                                  TextFormField(
+                                    controller: _overrideReasonController,
+                                    decoration: InputDecoration(
+                                      labelText:
+                                          'Override Justification / Reason *',
+                                      hintText:
+                                          'e.g. Former corporate name prior to rebrand; CAC documents verified',
+                                      labelStyle: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.purple.shade900,
+                                      ),
+                                      hintStyle: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.purple.shade300,
+                                      ),
+                                      isDense: true,
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(
+                                          color: Colors.purple.shade300,
+                                        ),
+                                      ),
+                                    ),
+                                    validator: (val) {
+                                      if (_overrideVerification &&
+                                          (val == null ||
+                                              val.trim().length < 5)) {
+                                        return 'Please provide an override reason (min 5 chars).';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ],
-                      ),
+                      ],
                     );
                   },
                 ),

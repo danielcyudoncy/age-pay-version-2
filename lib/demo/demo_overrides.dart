@@ -110,6 +110,9 @@ class DemoAuthService implements AuthService {
     required String displayName,
     required String phoneNumber,
     String? ninOrBvn,
+    String? organizationId,
+    String? branchId,
+    String? branchName,
   }) async {
     final current = _currentUser;
     if (current == null) {
@@ -119,6 +122,9 @@ class DemoAuthService implements AuthService {
       displayName: displayName,
       phoneNumber: phoneNumber,
       ninOrBvn: ninOrBvn,
+      organizationId: organizationId ?? current.organizationId,
+      branchId: branchId ?? current.branchId,
+      branchName: branchName ?? current.branchName,
     );
     _currentUser = updated;
     _users[updated.email] = updated;

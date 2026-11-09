@@ -110,9 +110,9 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
       children: [
         TabBar(
           controller: _tabController,
-          labelColor: AppTheme.brandGreen,
+          labelColor: AppTheme.primary(context),
           unselectedLabelColor: Colors.grey,
-          indicatorColor: AppTheme.brandGreen,
+          indicatorColor: AppTheme.primary(context),
           tabs: const [
             Tab(icon: Icon(Icons.table_chart), text: 'Page 1: Statement'),
             Tab(icon: Icon(Icons.notes), text: 'Pages 2–4: Notes to Account'),
@@ -217,10 +217,10 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
               Text(
                 'Financial Report as at ${_dateFormat.format(endDate)}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 14,
-                  color: AppTheme.brandGreen,
+                  color: AppTheme.primary(context),
                 ),
               ),
               const SizedBox(height: 2),
@@ -312,7 +312,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: AppTheme.cardBorder(context)),
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(
@@ -452,8 +452,8 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 amount: _currency.format(balAtHandAndBank),
                 isBold: true,
                 fontSize: 15,
-                textColor: AppTheme.brandGreen,
-                backgroundColor: AppTheme.brandGreen.withValues(alpha: 0.12),
+                textColor: AppTheme.primary(context),
+                backgroundColor: AppTheme.primaryContainer(context),
                 isClosingDoubleBorder: true,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
@@ -467,7 +467,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: AppTheme.cardBorder(context)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -554,12 +554,22 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
         color: backgroundColor,
         border: Border(
           top: showTopBorder
-              ? BorderSide(color: Colors.grey.shade300, width: 0.8)
+              ? BorderSide(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white24
+                      : Colors.grey.shade300,
+                  width: 0.8,
+                )
               : BorderSide.none,
           bottom: isClosingDoubleBorder
-              ? const BorderSide(color: AppTheme.brandGreen, width: 2.5)
+              ? BorderSide(color: AppTheme.primary(context), width: 2.5)
               : (showBottomBorder
-                  ? BorderSide(color: Colors.grey.shade300, width: 0.8)
+                  ? BorderSide(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white24
+                          : Colors.grey.shade300,
+                      width: 0.8,
+                    )
                   : BorderSide.none),
         ),
       ),
@@ -578,7 +588,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                           ? FontWeight.bold
                           : (isSubtotal ? FontWeight.w600 : FontWeight.normal),
                       fontStyle: isItalic ? FontStyle.italic : FontStyle.normal,
-                      color: textColor ?? Colors.black87,
+                      color: textColor ?? Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -587,19 +597,19 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppTheme.brandGreen.withValues(alpha: 0.12),
+                      color: AppTheme.primaryContainer(context),
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(
-                        color: AppTheme.brandGreen.withValues(alpha: 0.3),
+                        color: AppTheme.primary(context).withValues(alpha: 0.3),
                         width: 0.6,
                       ),
                     ),
                     child: Text(
                       noteRef,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.brandGreen,
+                        color: AppTheme.primary(context),
                       ),
                     ),
                   ),
@@ -620,7 +630,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 style: TextStyle(
                   fontSize: fontSize,
                   fontWeight: isBold || isSubtotal ? FontWeight.bold : FontWeight.w600,
-                  color: textColor ?? Colors.black87,
+                  color: textColor ?? Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
@@ -653,7 +663,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
           'NOTES TO THE ACCOUNT',
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppTheme.brandGreen,
+            color: AppTheme.primary(context),
           ),
         ),
         const SizedBox(height: 4),
@@ -729,7 +739,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade300),
+        side: BorderSide(color: AppTheme.cardBorder(context)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -741,19 +751,19 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.brandGreen.withValues(alpha: 0.12),
+                    color: AppTheme.primaryContainer(context),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: AppTheme.brandGreen.withValues(alpha: 0.3),
+                      color: AppTheme.primary(context).withValues(alpha: 0.3),
                       width: 0.6,
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Note 1',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: AppTheme.brandGreen,
+                      color: AppTheme.primary(context),
                     ),
                   ),
                 ),
@@ -835,10 +845,10 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                         color: isEven ? Colors.white : Colors.grey.shade50,
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.calendar_month_outlined,
                               size: 16,
-                              color: AppTheme.brandGreen,
+                              color: AppTheme.primary(context),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -882,16 +892,16 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                     const Divider(height: 1),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      color: AppTheme.brandGreen.withValues(alpha: 0.08),
+                      color: AppTheme.primaryContainer(context),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'TOTAL DUES COLLECTED',
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 12,
-                                color: AppTheme.brandGreen,
+                                color: AppTheme.primary(context),
                               ),
                             ),
                           ),
@@ -903,10 +913,10 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                               child: Text(
                                 _currency.format(duesTotal),
                                 textAlign: TextAlign.right,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 14,
-                                  color: AppTheme.brandGreen,
+                                  color: AppTheme.primary(context),
                                 ),
                               ),
                             ),
@@ -933,7 +943,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade300),
+        side: BorderSide(color: AppTheme.cardBorder(context)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -945,19 +955,19 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.brandGreen.withValues(alpha: 0.12),
+                    color: AppTheme.primaryContainer(context),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: AppTheme.brandGreen.withValues(alpha: 0.3),
+                      color: AppTheme.primary(context).withValues(alpha: 0.3),
                       width: 0.6,
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Note 2',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: AppTheme.brandGreen,
+                      color: AppTheme.primary(context),
                     ),
                   ),
                 ),
@@ -1087,16 +1097,16 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                     const Divider(height: 1),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      color: AppTheme.brandGreen.withValues(alpha: 0.08),
+                      color: AppTheme.primaryContainer(context),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'TOTAL REGISTRATION FEES',
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 12,
-                                color: AppTheme.brandGreen,
+                                color: AppTheme.primary(context),
                               ),
                             ),
                           ),
@@ -1108,10 +1118,10 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                               child: Text(
                                 _currency.format(regTotal),
                                 textAlign: TextAlign.right,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 14,
-                                  color: AppTheme.brandGreen,
+                                  color: AppTheme.primary(context),
                                 ),
                               ),
                             ),
@@ -1135,7 +1145,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade300),
+        side: BorderSide(color: AppTheme.cardBorder(context)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1147,15 +1157,15 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.brandGreen.withValues(alpha: 0.12),
+                    color: AppTheme.primaryContainer(context),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Note 3',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: AppTheme.brandGreen,
+                      color: AppTheme.primary(context),
                     ),
                   ),
                 ),
@@ -1207,7 +1217,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade300),
+        side: BorderSide(color: AppTheme.cardBorder(context)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1219,19 +1229,19 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.brandGreen.withValues(alpha: 0.12),
+                    color: AppTheme.primaryContainer(context),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: AppTheme.brandGreen.withValues(alpha: 0.3),
+                      color: AppTheme.primary(context).withValues(alpha: 0.3),
                       width: 0.6,
                     ),
                   ),
                   child: Text(
                     noteNumber,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: AppTheme.brandGreen,
+                      color: AppTheme.primary(context),
                     ),
                   ),
                 ),
@@ -1289,8 +1299,8 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                     label: 'Unremitted Balance (Held in Trust)',
                     value: _currency.format(r.unremittedBalance),
                     isBold: true,
-                    valueColor: AppTheme.brandGreen,
-                    backgroundColor: AppTheme.brandGreen.withValues(alpha: 0.06),
+                    valueColor: AppTheme.primary(context),
+                    backgroundColor: AppTheme.primaryContainer(context),
                   ),
                 ],
               ),
@@ -1301,9 +1311,9 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1313,7 +1323,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                     Expanded(
                       child: Text(
                         r.notes!,
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface),
                       ),
                     ),
                   ],
@@ -1332,7 +1342,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade300),
+        side: BorderSide(color: AppTheme.cardBorder(context)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1344,15 +1354,15 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.brandGreen.withValues(alpha: 0.12),
+                    color: AppTheme.primaryContainer(context),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Expenses',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: AppTheme.brandGreen,
+                      color: AppTheme.primary(context),
                     ),
                   ),
                 ),
@@ -1400,7 +1410,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade300),
+        side: BorderSide(color: AppTheme.cardBorder(context)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1412,19 +1422,19 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.brandGreen.withValues(alpha: 0.12),
+                    color: AppTheme.primaryContainer(context),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: AppTheme.brandGreen.withValues(alpha: 0.3),
+                      color: AppTheme.primary(context).withValues(alpha: 0.3),
                       width: 0.6,
                     ),
                   ),
                   child: Text(
                     noteLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: AppTheme.brandGreen,
+                      color: AppTheme.primary(context),
                     ),
                   ),
                 ),
@@ -1513,13 +1523,13 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
                 child: Text(
                   'Details: ${e.description}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface),
                 ),
               ),
             ],
@@ -1543,7 +1553,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade300),
+        side: BorderSide(color: AppTheme.cardBorder(context)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1555,19 +1565,19 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.brandGreen.withValues(alpha: 0.12),
+                    color: AppTheme.primaryContainer(context),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: AppTheme.brandGreen.withValues(alpha: 0.3),
+                      color: AppTheme.primary(context).withValues(alpha: 0.3),
                       width: 0.6,
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Reconciliation',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: AppTheme.brandGreen,
+                      color: AppTheme.primary(context),
                     ),
                   ),
                 ),
@@ -1629,8 +1639,8 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                     label: 'Bal at hand / Bank (Closing Balance)',
                     value: _currency.format(balAtHandAndBank),
                     isBold: true,
-                    valueColor: AppTheme.brandGreen,
-                    backgroundColor: AppTheme.brandGreen.withValues(alpha: 0.12),
+                    valueColor: AppTheme.primary(context),
+                    backgroundColor: AppTheme.primaryContainer(context),
                     isDoubleBorderBottom: true,
                     fontSize: 14,
                   ),
@@ -1655,9 +1665,14 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
+        color: backgroundColor ?? Theme.of(context).colorScheme.surface,
         border: isDoubleBorderBottom
-            ? const Border(bottom: BorderSide(color: AppTheme.brandGreen, width: 2.5))
+            ? Border(
+                bottom: BorderSide(
+                  color: AppTheme.primary(context),
+                  width: 2.5,
+                ),
+              )
             : null,
       ),
       child: Row(
@@ -1668,7 +1683,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
               style: TextStyle(
                 fontSize: fontSize,
                 fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -1684,7 +1699,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 style: TextStyle(
                   fontSize: fontSize,
                   fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-                  color: valueColor ?? Colors.black87,
+                  color: valueColor ?? Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),

@@ -172,8 +172,8 @@ class _ProvostHomeTab extends ConsumerWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: const BoxDecoration(
-                color: AppTheme.brandGreen,
+              decoration: BoxDecoration(
+                color: AppTheme.primary(context),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
@@ -187,8 +187,8 @@ class _ProvostHomeTab extends ConsumerWidget {
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: Colors.amberAccent,
-                        child: const Icon(Icons.gavel_rounded,
-                            color: AppTheme.brandGreen, size: 22),
+                        child: Icon(Icons.gavel_rounded,
+                            color: AppTheme.primary(context), size: 22),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -256,8 +256,8 @@ class _ProvostHomeTab extends ConsumerWidget {
                           title: 'Total Fines',
                           value: currency.format(totalFines),
                           icon: Icons.money_off,
-                          color: Colors.red.shade700,
-                          bgColor: Colors.red.shade50,
+                          color: AppTheme.statusColor(context, Colors.red),
+                          bgColor: AppTheme.statusBg(context, Colors.red),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -394,9 +394,9 @@ class _ProvostHomeTab extends ConsumerWidget {
                     margin: const EdgeInsets.all(16),
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: AppTheme.cardBorder(context)),
                     ),
                     child: Center(
                       child: Column(
@@ -514,7 +514,7 @@ class _ProvostHomeTab extends ConsumerWidget {
       statusColor = Colors.teal.shade700;
       statusLabel = 'Pardoned / Waived';
     } else if (penalty.waiverStatus == PenaltyWaiverStatus.pendingApproval) {
-      statusColor = Colors.amber.shade800;
+      statusColor = AppTheme.statusColor(context, Colors.amber);
       statusLabel = 'Waiver Pending President';
     } else if (penalty.isPaid) {
       statusColor = Colors.green.shade700;
@@ -538,7 +538,7 @@ class _ProvostHomeTab extends ConsumerWidget {
       elevation: 0.5,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: AppTheme.cardBorder(context)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -588,7 +588,7 @@ class _ProvostHomeTab extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade800,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const Spacer(),
@@ -678,13 +678,13 @@ class _NoActiveMeetingTab extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.brandGreen.withValues(alpha: 0.1),
+                color: AppTheme.primaryContainer(context),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.event_busy_outlined,
                 size: 48,
-                color: AppTheme.brandGreen,
+                color: AppTheme.primary(context),
               ),
             ),
             const SizedBox(height: 16),
@@ -704,7 +704,7 @@ class _NoActiveMeetingTab extends StatelessWidget {
               icon: const Icon(Icons.arrow_back),
               label: const Text('Back to Provost Dashboard'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.brandGreen,
+                backgroundColor: AppTheme.primary(context),
                 foregroundColor: Colors.white,
               ),
             ),

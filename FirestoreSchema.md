@@ -127,7 +127,11 @@ Example
   "accountNumber": "",
   "accountName": "",
   "isBankVerified": true,
-  "bankAccountType": "association",
+  "bankAccountType": "association | super_admin_override",
+  "bankVerificationOverridden": false,
+  "bankVerificationOverrideReason": "Former corporate registered name prior to rebrand",
+  "bankVerificationOverriddenBy": "SuperAdmin email",
+  "bankVerificationOverriddenAt": "Timestamp",
   "subscriptionTier": "starter | pro | national",
   "subscriptionStatus": "active | pending_verification | expired",
   "subscriptionExpiresAt": "Timestamp",
@@ -162,6 +166,7 @@ Example
 ```json
 {
   "id": "",
+  "organizationId": "",
   "userId": "",
   "membershipNumber": "",
   "fullName": "",
@@ -178,6 +183,8 @@ Example
   "enrolledInNationalBy": null
 }
 ```
+
+> **Super Admin Membership Provisioning:** When a Super Admin affiliates with their Home Organisation & Branch in their Admin Profile, a corresponding `MemberModel` record is synchronized or created in `members/` (`status: "approved"`, `isActive: true`, `duesStanding: "cleared"`, `role: "superAdmin"`). This links their personal identity to their chosen community tenant without compromising their global platform authority.
 
 ---
 

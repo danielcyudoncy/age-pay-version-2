@@ -71,9 +71,9 @@ class _NationalHubScreenState extends ConsumerState<NationalHubScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppTheme.brandGreen,
+          labelColor: AppTheme.primary(context),
           unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-          indicatorColor: AppTheme.brandGreen,
+          indicatorColor: AppTheme.primary(context),
           indicatorWeight: 3,
           tabs: const [
             Tab(
@@ -137,7 +137,7 @@ class _ContributionsTab extends ConsumerWidget {
                 decoration: InputDecoration(
                   labelText: 'Filter by National Cause / Dues',
                   prefixIcon:
-                      const Icon(Icons.filter_list, color: AppTheme.brandGreen),
+                      Icon(Icons.filter_list, color: AppTheme.primary(context)),
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   border: OutlineInputBorder(
@@ -217,8 +217,8 @@ class _ContributionsTab extends ConsumerWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppTheme.brandGreen,
-                          AppTheme.brandGreen.withValues(alpha: 0.85),
+                          AppTheme.primary(context),
+                          AppTheme.primary(context).withValues(alpha: 0.85),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -226,7 +226,7 @@ class _ContributionsTab extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.brandGreen.withValues(alpha: 0.25),
+                          color: AppTheme.primary(context).withValues(alpha: 0.25),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -340,11 +340,11 @@ class _ContributionsTab extends ConsumerWidget {
           children: [
             CircleAvatar(
               radius: 22,
-              backgroundColor: AppTheme.brandGreen.withValues(alpha: 0.12),
+              backgroundColor: AppTheme.primaryContainer(context),
               child: Text(
                 initials.toUpperCase(),
-                style: const TextStyle(
-                  color: AppTheme.brandGreen,
+                style: TextStyle(
+                  color: AppTheme.primary(context),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -368,8 +368,8 @@ class _ContributionsTab extends ConsumerWidget {
                       ),
                       Text(
                         currencyFmt.format(record.amount),
-                        style: const TextStyle(
-                          color: AppTheme.brandGreen,
+                        style: TextStyle(
+                          color: AppTheme.primary(context),
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                         ),
@@ -427,7 +427,7 @@ class _ContributionsTab extends ConsumerWidget {
                             : 'Online / Card',
                         style: TextStyle(
                           fontSize: 11,
-                          color: AppTheme.brandGreen.withValues(alpha: 0.9),
+                          color: AppTheme.primary(context).withValues(alpha: 0.9),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -632,7 +632,7 @@ class _AssemblyDirectoryTab extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: hasNationalRole
-              ? AppTheme.brandGreen.withValues(alpha: 0.4)
+              ? AppTheme.primary(context).withValues(alpha: 0.4)
               : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
@@ -640,7 +640,7 @@ class _AssemblyDirectoryTab extends ConsumerWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         leading: CircleAvatar(
           backgroundColor: hasNationalRole
-              ? AppTheme.brandGreen
+              ? AppTheme.primary(context)
               : theme.colorScheme.surfaceContainerHighest,
           child: Text(
             initials.toUpperCase(),
@@ -665,15 +665,15 @@ class _AssemblyDirectoryTab extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.brandGreen.withValues(alpha: 0.12),
+                  color: AppTheme.primaryContainer(context),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppTheme.brandGreen.withValues(alpha: 0.3)),
+                  border: Border.all(color: AppTheme.primary(context).withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   _formatRole(member.nationalRole!),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: AppTheme.brandGreen,
+                    color: AppTheme.primary(context),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -823,9 +823,9 @@ class _LeaderboardTab extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _buildStatColumn('Expected',
-                            currencyFmt.format(totalExpected), Colors.grey[700]!),
+                            currencyFmt.format(totalExpected), theme.colorScheme.onSurfaceVariant),
                         _buildStatColumn('Remitted',
-                            currencyFmt.format(totalRemitted), AppTheme.brandGreen),
+                            currencyFmt.format(totalRemitted), AppTheme.primary(context)),
                         _buildStatColumn('Arrears',
                             currencyFmt.format(totalArrears), Colors.red[700]!),
                       ],
@@ -911,7 +911,7 @@ class _LeaderboardTab extends ConsumerWidget {
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(
           color: isTop
-              ? AppTheme.brandGreen.withValues(alpha: 0.4)
+              ? AppTheme.primary(context).withValues(alpha: 0.4)
               : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
@@ -922,7 +922,7 @@ class _LeaderboardTab extends ConsumerWidget {
           children: [
             Row(
               children: [
-                _buildRankBadge(rank),
+                _buildRankBadge(context, rank),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -945,15 +945,15 @@ class _LeaderboardTab extends ConsumerWidget {
                                   horizontal: 6, vertical: 2),
                               margin: const EdgeInsets.only(left: 6),
                               decoration: BoxDecoration(
-                                color: AppTheme.brandGreen.withValues(alpha: 0.15),
+                                color: AppTheme.primaryContainer(context),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'HQ',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.brandGreen,
+                                  color: AppTheme.primary(context),
                                 ),
                               ),
                             ),
@@ -1030,7 +1030,7 @@ class _LeaderboardTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildRankBadge(int rank) {
+  Widget _buildRankBadge(BuildContext context, int rank) {
     Color bg;
     Color fg = Colors.white;
 
@@ -1047,8 +1047,8 @@ class _LeaderboardTab extends ConsumerWidget {
         bg = const Color(0xFFCD7F32);
         break;
       default:
-        bg = Colors.grey[200]!;
-        fg = Colors.black87;
+        bg = Theme.of(context).colorScheme.surfaceContainerHighest;
+        fg = Theme.of(context).colorScheme.onSurface;
     }
 
     return Container(

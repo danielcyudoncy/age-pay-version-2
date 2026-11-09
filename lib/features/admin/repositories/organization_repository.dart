@@ -155,6 +155,9 @@ class OrganizationRepository {
     required String accountName,
     bool isBankVerified = false,
     String? bankAccountType,
+    bool isOverridden = false,
+    String? overrideReason,
+    String? overriddenBy,
   }) async {
     await _collection.doc(organizationId).update({
       'bankName': bankName,
@@ -162,6 +165,11 @@ class OrganizationRepository {
       'accountName': accountName,
       'isBankVerified': isBankVerified,
       'bankAccountType': ?bankAccountType,
+      'bankVerificationOverridden': isOverridden,
+      'bankVerificationOverrideReason': ?overrideReason,
+      'bankVerificationOverriddenBy': ?overriddenBy,
+      if (isOverridden)
+        'bankVerificationOverriddenAt': Timestamp.fromDate(DateTime.now()),
       'updatedAt': Timestamp.fromDate(DateTime.now()),
     });
   }

@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -481,23 +482,23 @@ class _AnnualLicenseScreenState extends ConsumerState<AnnualLicenseScreen> {
     String subtitle;
 
     if (isPending) {
-      bannerColor = Colors.amber.shade50;
-      iconColor = Colors.amber.shade800;
+      bannerColor = AppTheme.statusBg(context, Colors.amber);
+      iconColor = AppTheme.statusColor(context, Colors.amber);
       icon = Icons.hourglass_top_rounded;
       title = 'Payment Proof Under Review';
       subtitle =
           'A renewal slip was submitted and is awaiting SuperAdmin verification. Premium features remain available.';
     } else if (isActive) {
-      bannerColor = Colors.green.shade50;
-      iconColor = Colors.green.shade700;
+      bannerColor = AppTheme.statusBg(context, Colors.green);
+      iconColor = AppTheme.statusColor(context, Colors.green);
       icon = Icons.verified_user_rounded;
       title = 'Software License Active';
       subtitle = org.subscriptionExpiresAt != null
           ? '$daysRemaining days remaining (Renews on ${DateFormat('MMM dd, yyyy').format(org.subscriptionExpiresAt!)})'
           : 'Permanent / Starter Active License';
     } else {
-      bannerColor = Colors.red.shade50;
-      iconColor = Colors.red.shade700;
+      bannerColor = AppTheme.statusBg(context, Colors.red);
+      iconColor = AppTheme.statusColor(context, Colors.red);
       icon = Icons.warning_amber_rounded;
       title = 'Software License Expired';
       subtitle =
@@ -590,7 +591,7 @@ class _AnnualLicenseScreenState extends ConsumerState<AnnualLicenseScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.purple.shade50,
+                    color: AppTheme.statusBg(context, Colors.purple),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -627,7 +628,7 @@ class _AnnualLicenseScreenState extends ConsumerState<AnnualLicenseScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade100,
+                    color: AppTheme.statusBg(context, Colors.amber),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -635,7 +636,7 @@ class _AnnualLicenseScreenState extends ConsumerState<AnnualLicenseScreen> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: Colors.amber.shade900,
+                      color: AppTheme.statusColor(context, Colors.amber),
                     ),
                   ),
                 ),
@@ -815,7 +816,7 @@ class _AnnualLicenseScreenState extends ConsumerState<AnnualLicenseScreen> {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
                         height: 160,
-                        color: Colors.grey.shade200,
+                        color: AppTheme.cardBorder(context),
                         child: const Center(
                           child: Icon(Icons.broken_image, size: 40),
                         ),
@@ -1337,7 +1338,7 @@ class _AnnualLicenseScreenState extends ConsumerState<AnnualLicenseScreen> {
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => Container(
                             height: 140,
-                            color: Colors.grey.shade200,
+                            color: AppTheme.cardBorder(context),
                             child: const Center(
                               child: Icon(Icons.broken_image, size: 36),
                             ),

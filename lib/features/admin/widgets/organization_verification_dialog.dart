@@ -232,12 +232,12 @@ class _OrganizationVerificationDialogState
           Container(
             padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
-              color: AppTheme.brandGreen.withValues(alpha: 0.12),
+              color: AppTheme.primaryContainer(context),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.shield_outlined,
-              color: AppTheme.brandGreen,
+              color: AppTheme.primary(context),
               size: 20,
             ),
           ),
@@ -270,20 +270,20 @@ class _OrganizationVerificationDialogState
   Widget _buildOrganizationHeroCard(ThemeData theme, OrganizationModel org) {
     final (statusColor, statusBg, statusIcon, statusText) = switch (org.verificationStatus) {
       'verified' => (
-          Colors.green.shade800,
-          Colors.green.shade50,
+          AppTheme.statusColor(context, Colors.green),
+          AppTheme.statusBg(context, Colors.green),
           Icons.verified_rounded,
           'VERIFIED & ACTIVE'
         ),
       'rejected' => (
-          Colors.red.shade800,
-          Colors.red.shade50,
+          AppTheme.statusColor(context, Colors.red),
+          AppTheme.statusBg(context, Colors.red),
           Icons.cancel_rounded,
           'REJECTED'
         ),
       _ => (
-          Colors.amber.shade900,
-          Colors.amber.shade50,
+          AppTheme.statusColor(context, Colors.amber),
+          AppTheme.statusBg(context, Colors.amber),
           Icons.hourglass_top_rounded,
           'PENDING REVIEW'
         ),
@@ -306,12 +306,12 @@ class _OrganizationVerificationDialogState
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppTheme.brandGreen.withValues(alpha: 0.1),
+                  color: AppTheme.primaryContainer(context),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.account_balance,
-                  color: AppTheme.brandGreen,
+                  color: AppTheme.primary(context),
                   size: 24,
                 ),
               ),
@@ -514,13 +514,13 @@ class _OrganizationVerificationDialogState
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: org.isBankVerified
-                ? Colors.green.shade50
-                : Colors.amber.shade50,
+                ? AppTheme.statusBg(context, Colors.green)
+                : AppTheme.statusBg(context, Colors.amber),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: org.isBankVerified
-                  ? Colors.green.shade300
-                  : Colors.amber.shade300,
+                  ? AppTheme.statusColor(context, Colors.green).withValues(alpha: 0.3)
+                  : AppTheme.statusColor(context, Colors.amber).withValues(alpha: 0.3),
             ),
           ),
           child: Row(
@@ -532,8 +532,8 @@ class _OrganizationVerificationDialogState
                     : Icons.info_outline,
                 size: 18,
                 color: org.isBankVerified
-                    ? Colors.green.shade800
-                    : Colors.amber.shade900,
+                    ? AppTheme.statusColor(context, Colors.green)
+                    : AppTheme.statusColor(context, Colors.amber),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -545,8 +545,8 @@ class _OrganizationVerificationDialogState
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: org.isBankVerified
-                        ? Colors.green.shade900
-                        : Colors.amber.shade900,
+                        ? AppTheme.statusColor(context, Colors.green)
+                        : AppTheme.statusColor(context, Colors.amber),
                     height: 1.3,
                   ),
                 ),
@@ -583,8 +583,8 @@ class _OrganizationVerificationDialogState
                   : 'Set Up Receiving Bank Account',
             ),
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.teal.shade800,
-              side: BorderSide(color: Colors.teal.shade300),
+              foregroundColor: AppTheme.statusColor(context, Colors.teal),
+              side: BorderSide(color: AppTheme.statusColor(context, Colors.teal).withValues(alpha: 0.4)),
               padding: const EdgeInsets.symmetric(vertical: 10),
             ),
           ),
@@ -653,12 +653,12 @@ class _OrganizationVerificationDialogState
     VoidCallback? onCopy,
   }) {
     final statusColor = isPendingNotice
-        ? Colors.amber.shade800
-        : (isVerified ? Colors.green.shade800 : Colors.red.shade700);
+        ? AppTheme.statusColor(context, Colors.amber)
+        : (isVerified ? AppTheme.statusColor(context, Colors.green) : AppTheme.statusColor(context, Colors.red));
 
     final statusBg = isPendingNotice
-        ? Colors.amber.shade50
-        : (isVerified ? Colors.green.shade50 : Colors.red.shade50);
+        ? AppTheme.statusBg(context, Colors.amber)
+        : (isVerified ? AppTheme.statusBg(context, Colors.green) : AppTheme.statusBg(context, Colors.red));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -787,7 +787,7 @@ class _OrganizationVerificationDialogState
           final verifyButton = !org.isVerified
               ? FilledButton.icon(
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.brandGreen,
+                    backgroundColor: AppTheme.primary(context),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

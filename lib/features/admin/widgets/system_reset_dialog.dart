@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/controllers/auth_provider.dart';
@@ -155,7 +156,7 @@ class _SystemResetDialogState extends ConsumerState<SystemResetDialog> {
                 ),
                 child: Text(
                   _errorMessage!,
-                  style: TextStyle(color: Colors.red.shade900, fontSize: 13),
+                  style: TextStyle(color: AppTheme.statusColor(context, Colors.red), fontSize: 13),
                 ),
               ),
               const SizedBox(height: 16),

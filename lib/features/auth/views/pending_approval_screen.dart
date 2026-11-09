@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -177,7 +178,7 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
                                     : 'In Review by President/VP',
                             valueColor: isRejected
                                 ? theme.colorScheme.error
-                                : Colors.amber.shade800,
+                                : AppTheme.statusColor(context, Colors.amber),
                           ),
                         ],
                       ),
@@ -209,7 +210,7 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
                                 child: Text(
                                   'Tell ${widget.user.coFounderName ?? 'your Secretary'} to open AgePay and sign in or register with phone number ${widget.user.coFounderPhone}. They will see an instant prompt to co-sign and activate your organisation.',
                                   style: TextStyle(
-                                    color: Colors.blue.shade900,
+                                    color: AppTheme.statusColor(context, Colors.blue),
                                     fontSize: 13,
                                     height: 1.4,
                                   ),
