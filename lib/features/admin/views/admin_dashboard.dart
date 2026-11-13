@@ -60,33 +60,32 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
       child: Scaffold(
         appBar: _selectedIndex == 0
             ? AppBar(
-                title: const Text('Admin Dashboard'),
-                actions: [
-                  IconButton(
-                    icon: CircleAvatar(
-                      radius: 15,
-                      backgroundColor: theme.colorScheme.primaryContainer,
-                      child: Text(
-                        user?.displayName.isNotEmpty == true
-                            ? user!.displayName[0].toUpperCase()
-                            : 'A',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
+                leading: IconButton(
+                  icon: CircleAvatar(
+                    radius: 15,
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    child: Text(
+                      user?.displayName.isNotEmpty == true
+                          ? user!.displayName[0].toUpperCase()
+                          : 'A',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onPrimaryContainer,
                       ),
                     ),
-                    tooltip: 'Super Admin Profile',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AdminProfileScreen(),
-                        ),
-                      );
-                    },
                   ),
+                  tooltip: 'Super Admin Profile',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AdminProfileScreen(),
+                      ),
+                    );
+                  },
+                ),
+                actions: [
                   DashboardAppBarActions(
                     user: user,
                     onRefresh: () async {
@@ -98,10 +97,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                 ],
               )
             : null,
-        body: IndexedStack(
-          index: _selectedIndex,
-          children: pages,
-        ),
+        body: IndexedStack(index: _selectedIndex, children: pages),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: _onSelectTab,
@@ -363,8 +359,7 @@ class _AdminConsoleTab extends ConsumerWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) =>
-                                      const AdminProfileScreen(),
+                                  builder: (_) => const AdminProfileScreen(),
                                 ),
                               );
                             },
@@ -386,10 +381,7 @@ class _AdminConsoleTab extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
               const SizedBox(height: 16),
-              Text(
-                'Error: $error',
-                style: const TextStyle(color: Colors.red),
-              ),
+              Text('Error: $error', style: const TextStyle(color: Colors.red)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
@@ -413,7 +405,9 @@ class _AdminConsoleTab extends ConsumerWidget {
   ) {
     final branchName = user?.branchName?.isNotEmpty == true
         ? user!.branchName!
-        : (org?.name != null ? '${org!.name} (Primary)' : 'Local Branch Member');
+        : (org?.name != null
+              ? '${org!.name} (Primary)'
+              : 'Local Branch Member');
 
     final nationalTitle = user?.nationalRole != null
         ? 'National Executive (${user!.nationalRole!.displayName})'
@@ -473,7 +467,9 @@ class _AdminConsoleTab extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -510,7 +506,10 @@ class _AdminConsoleTab extends ConsumerWidget {
                   OutlinedButton.icon(
                     onPressed: () => onSelectTab(1),
                     icon: const Icon(Icons.arrow_forward, size: 14),
-                    label: const Text('Member View', style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      'Member View',
+                      style: TextStyle(fontSize: 12),
+                    ),
                     style: OutlinedButton.styleFrom(
                       visualDensity: VisualDensity.compact,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -524,7 +523,9 @@ class _AdminConsoleTab extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -561,7 +562,10 @@ class _AdminConsoleTab extends ConsumerWidget {
                   OutlinedButton.icon(
                     onPressed: () => onSelectTab(2),
                     icon: const Icon(Icons.arrow_forward, size: 14),
-                    label: const Text('National Hub', style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      'National Hub',
+                      style: TextStyle(fontSize: 12),
+                    ),
                     style: OutlinedButton.styleFrom(
                       visualDensity: VisualDensity.compact,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
