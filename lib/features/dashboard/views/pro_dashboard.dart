@@ -1,5 +1,6 @@
 // features/dashboard/views/pro_dashboard.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/theme/app_theme.dart';
@@ -30,9 +31,13 @@ class ProDashboard extends ConsumerStatefulWidget {
 
 class _ProDashboardState extends ConsumerState<ProDashboard> {
   int _selectedIndex = 0;
+  bool _isFabVisible = true;
 
   void _onNavigate(int index) {
-    setState(() => _selectedIndex = index);
+    setState(() {
+      _selectedIndex = index;
+      _isFabVisible = true;
+    });
   }
 
   @override
@@ -54,7 +59,10 @@ class _ProDashboardState extends ConsumerState<ProDashboard> {
 
     return DashboardTabPopScope(
       selectedIndex: _selectedIndex,
-      onSelectTab: (index) => setState(() => _selectedIndex = index),
+      onSelectTab: (index) => setState(() {
+        _selectedIndex = index;
+        _isFabVisible = true;
+      }),
       child: Scaffold(
         appBar: (_selectedIndex == 1 || _selectedIndex == 2 || _selectedIndex == 3 || _selectedIndex == 4)
             ? null
@@ -90,20 +98,46 @@ class _ProDashboardState extends ConsumerState<ProDashboard> {
                   ),
                 ],
               ),
-        body: IndexedStack(index: _selectedIndex, children: pages),
+        body: NotificationListener<UserScrollNotification>(
+          onNotification: (notification) {
+            if (notification.direction == ScrollDirection.reverse) {
+              if (_isFabVisible) {
+                setState(() => _isFabVisible = false);
+              }
+            } else if (notification.direction == ScrollDirection.forward) {
+              if (!_isFabVisible) {
+                setState(() => _isFabVisible = true);
+              }
+            }
+            return false;
+          },
+          child: IndexedStack(index: _selectedIndex, children: pages),
+        ),
         floatingActionButton: (_selectedIndex == 0 || _selectedIndex == 1)
-            ? FloatingActionButton.extended(
-                heroTag: 'pro_dispatch_fab',
-                icon: const Icon(Icons.podcasts),
-                label: const Text('Dispatch Broadcast'),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ProCommunicationHubScreen(),
+            ? AnimatedSlide(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                offset: _isFabVisible ? Offset.zero : const Offset(0, 2),
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: _isFabVisible ? 1.0 : 0.0,
+                  child: IgnorePointer(
+                    ignoring: !_isFabVisible,
+                    child: FloatingActionButton.extended(
+                      heroTag: 'pro_dispatch_fab',
+                      icon: const Icon(Icons.podcasts),
+                      label: const Text('Dispatch Broadcast'),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ProCommunicationHubScreen(),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
+                  ),
+                ),
               )
             : null,
         bottomNavigationBar: NavigationBar(
@@ -185,7 +219,7 @@ class _ProHomeTab extends ConsumerWidget {
           16,
           16,
           16,
-          MediaQuery.paddingOf(context).bottom + 24,
+          MediaQuery.paddingOf(context).bottom + 80,
         ),
         children: [
           // Header Card

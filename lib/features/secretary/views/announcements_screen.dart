@@ -66,7 +66,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
                 16,
                 16,
                 16,
-                MediaQuery.paddingOf(context).bottom + 24,
+                MediaQuery.paddingOf(context).bottom + 80,
               ),
               children: [
                 if (org != null)

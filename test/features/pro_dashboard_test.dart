@@ -565,6 +565,47 @@ void main() {
       expect(find.text('Member One'), findsOneWidget);
       expect(find.text('Member Two'), findsOneWidget);
     });
+
+    testWidgets('Dispatch Broadcast FAB auto-hides on scroll down and reappears on scroll up', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        buildProDashboard(
+          user: proUser,
+          announcements: testAnnouncements,
+          events: testEvents,
+          docs: testDocs,
+          members: testMembers,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Initially, FAB is visible with Offset.zero
+      final fabFinder = find.byType(FloatingActionButton);
+      expect(fabFinder, findsOneWidget);
+
+      final slideFinder = find.byWidgetPredicate(
+        (widget) => widget is AnimatedSlide && widget.child is AnimatedOpacity,
+      );
+      expect(slideFinder, findsOneWidget);
+      expect((tester.widget(slideFinder) as AnimatedSlide).offset, equals(Offset.zero));
+
+      // Scroll down (drag up) to trigger reverse scroll
+      await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+      await tester.pumpAndSettle();
+
+      // FAB slides off-screen
+      expect((tester.widget(slideFinder) as AnimatedSlide).offset, equals(const Offset(0, 2)));
+
+      // Scroll up (drag down) to trigger forward scroll
+      await tester.drag(find.byType(ListView).first, const Offset(0, 300));
+      await tester.pumpAndSettle();
+
+      // FAB slides back on-screen
+      expect((tester.widget(slideFinder) as AnimatedSlide).offset, equals(Offset.zero));
+    });
   });
 }
 
