@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'meeting_resolution_model.dart';
 
 class MeetingModel {
   final String id;
@@ -16,6 +17,16 @@ class MeetingModel {
   final String scope; // 'national' | 'branch'
   final String? branchId;
 
+  // Minutes Adoption Protocol
+  final bool isAdopted;
+  final DateTime? adoptedAt;
+  final String? movedBy;
+  final String? secondedBy;
+  final String? adoptionNotes;
+
+  // Resolutions & Matters Arising
+  final List<MeetingResolutionModel> resolutions;
+
   const MeetingModel({
     required this.id,
     this.organizationId = '',
@@ -31,6 +42,12 @@ class MeetingModel {
     this.targetAudience = 'all',
     this.scope = 'branch',
     this.branchId,
+    this.isAdopted = false,
+    this.adoptedAt,
+    this.movedBy,
+    this.secondedBy,
+    this.adoptionNotes,
+    this.resolutions = const [],
   });
 
   factory MeetingModel.fromFirestore(DocumentSnapshot doc) {
@@ -51,6 +68,16 @@ class MeetingModel {
       targetAudience: data['targetAudience'] ?? 'all',
       scope: data['scope'] ?? 'branch',
       branchId: data['branchId'] as String?,
+      isAdopted: data['isAdopted'] as bool? ?? false,
+      adoptedAt: (data['adoptedAt'] as Timestamp?)?.toDate(),
+      movedBy: data['movedBy'] as String?,
+      secondedBy: data['secondedBy'] as String?,
+      adoptionNotes: data['adoptionNotes'] as String?,
+      resolutions: (data['resolutions'] as List<dynamic>?)
+              ?.map((e) =>
+                  MeetingResolutionModel.fromMap(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 
@@ -69,6 +96,14 @@ class MeetingModel {
       'targetAudience': targetAudience,
       'scope': scope,
       if (branchId != null) 'branchId': branchId,
+      'isAdopted': isAdopted,
+      if (adoptedAt != null) 'adoptedAt': Timestamp.fromDate(adoptedAt!),
+      if (movedBy != null && movedBy!.isNotEmpty) 'movedBy': movedBy,
+      if (secondedBy != null && secondedBy!.isNotEmpty)
+        'secondedBy': secondedBy,
+      if (adoptionNotes != null && adoptionNotes!.isNotEmpty)
+        'adoptionNotes': adoptionNotes,
+      'resolutions': resolutions.map((r) => r.toMap()).toList(),
     };
   }
 
@@ -87,6 +122,12 @@ class MeetingModel {
     String? targetAudience,
     String? scope,
     String? branchId,
+    bool? isAdopted,
+    DateTime? adoptedAt,
+    String? movedBy,
+    String? secondedBy,
+    String? adoptionNotes,
+    List<MeetingResolutionModel>? resolutions,
   }) {
     return MeetingModel(
       id: id ?? this.id,
@@ -103,6 +144,12 @@ class MeetingModel {
       targetAudience: targetAudience ?? this.targetAudience,
       scope: scope ?? this.scope,
       branchId: branchId ?? this.branchId,
+      isAdopted: isAdopted ?? this.isAdopted,
+      adoptedAt: adoptedAt ?? this.adoptedAt,
+      movedBy: movedBy ?? this.movedBy,
+      secondedBy: secondedBy ?? this.secondedBy,
+      adoptionNotes: adoptionNotes ?? this.adoptionNotes,
+      resolutions: resolutions ?? this.resolutions,
     );
   }
 

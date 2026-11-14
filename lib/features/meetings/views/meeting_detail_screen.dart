@@ -10,6 +10,7 @@ import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/meetings/controllers/meeting_provider.dart';
 import 'package:cls/features/meetings/models/meeting_model.dart';
+import 'package:cls/features/meetings/models/meeting_resolution_model.dart';
 import 'package:cls/features/national/controllers/national_provider.dart';
 import 'package:cls/features/notifications/controllers/notification_provider.dart';
 import 'package:cls/features/notifications/models/notification_model.dart';
@@ -43,12 +44,14 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
   bool _isSaving = false;
   String? _error;
   String _targetAudience = 'all';
+  MeetingModel? _currentMeeting;
 
   bool get _isNew => widget.meeting == null;
 
   @override
   void initState() {
     super.initState();
+    _currentMeeting = widget.meeting;
     final meeting = widget.meeting;
     if (meeting != null) {
       _titleController.text = meeting.title;
@@ -108,6 +111,271 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
         _removeFile = false;
       });
     }
+  }
+
+  Future<void> _showAdoptionDialog() async {
+    final movedByController = TextEditingController();
+    final secondedByController = TextEditingController();
+    final notesController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.verified, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Adopt Meeting Minutes'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Record the formal motion and seconding to adopt these minutes as true proceedings of the assembly.',
+                  style: TextStyle(fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: movedByController,
+                  decoration: const InputDecoration(
+                    labelText: 'Motion Moved By (Proposer) *',
+                    hintText: 'e.g. Chief Okoro, Bro Emeka',
+                    prefixIcon: Icon(Icons.person),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Proposer is required' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: secondedByController,
+                  decoration: const InputDecoration(
+                    labelText: 'Seconded By *',
+                    hintText: 'e.g. Elder Nnamdi',
+                    prefixIcon: Icon(Icons.person_outline),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Seconder is required' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Corrections / Amendments (Optional)',
+                    hintText: 'e.g. Adopted with amendment to paragraph 3',
+                    prefixIcon: Icon(Icons.edit_note),
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: Colors.green),
+            icon: const Icon(Icons.check, size: 18),
+            label: const Text('Adopt & Ratify'),
+            onPressed: () {
+              if (formKey.currentState?.validate() == true) {
+                Navigator.pop(ctx, true);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && _currentMeeting != null) {
+      final repo = ref.read(meetingRepositoryProvider);
+      final moved = movedByController.text.trim();
+      final seconded = secondedByController.text.trim();
+      final notes = notesController.text.trim();
+
+      await repo.adoptMinutes(
+        meetingId: _currentMeeting!.id,
+        movedBy: moved,
+        secondedBy: seconded,
+        notes: notes.isNotEmpty ? notes : null,
+      );
+
+      ref.invalidate(meetingsStreamProvider);
+
+      setState(() {
+        _currentMeeting = _currentMeeting!.copyWith(
+          isAdopted: true,
+          adoptedAt: DateTime.now(),
+          movedBy: moved,
+          secondedBy: seconded,
+          adoptionNotes: notes.isNotEmpty ? notes : null,
+        );
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.green,
+            content: Text('Meeting minutes formally adopted and ratified!'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showAddResolutionDialog() async {
+    final titleController = TextEditingController();
+    final assigneeController = TextEditingController();
+    DateTime? dueDate;
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Add Action Item / Resolution'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    controller: titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Resolution / Action Required *',
+                      hintText: 'e.g. Audit Committee to inspect town hall roof',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Title is required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: assigneeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Assigned To (Person/Committee)',
+                      hintText: 'e.g. Provost, Works Committee',
+                      prefixIcon: Icon(Icons.assignment_ind_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.event_outlined),
+                    title: Text(
+                      dueDate == null
+                          ? 'Select Due Date (Optional)'
+                          : 'Due: ${DateFormat('MMM dd, yyyy').format(dueDate!)}',
+                    ),
+                    trailing: dueDate != null
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () => setDialogState(() => dueDate = null),
+                          )
+                        : null,
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: ctx,
+                        initialDate: DateTime.now().add(const Duration(days: 7)),
+                        firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) {
+                        setDialogState(() => dueDate = picked);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (formKey.currentState?.validate() == true) {
+                  Navigator.pop(ctx, true);
+                }
+              },
+              child: const Text('Add Resolution'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && _currentMeeting != null) {
+      final resolution = MeetingResolutionModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: titleController.text.trim(),
+        assigneeName: assigneeController.text.trim().isNotEmpty
+            ? assigneeController.text.trim()
+            : null,
+        dueDate: dueDate,
+      );
+
+      final repo = ref.read(meetingRepositoryProvider);
+      await repo.addResolution(
+        meetingId: _currentMeeting!.id,
+        resolution: resolution,
+      );
+
+      ref.invalidate(meetingsStreamProvider);
+
+      setState(() {
+        _currentMeeting = _currentMeeting!.copyWith(
+          resolutions: [..._currentMeeting!.resolutions, resolution],
+        );
+      });
+    }
+  }
+
+  Future<void> _toggleResolution(MeetingResolutionModel r) async {
+    if (_currentMeeting == null) return;
+    final repo = ref.read(meetingRepositoryProvider);
+    final nextStatus = !r.isCompleted;
+    final user = ref.read(authProvider).valueOrNull;
+
+    await repo.toggleResolution(
+      meetingId: _currentMeeting!.id,
+      resolutionId: r.id,
+      isCompleted: nextStatus,
+      completedBy: user?.displayName,
+    );
+
+    ref.invalidate(meetingsStreamProvider);
+
+    setState(() {
+      final updated = _currentMeeting!.resolutions.map((item) {
+        if (item.id == r.id) {
+          return item.copyWith(
+            isCompleted: nextStatus,
+            completedAt: nextStatus ? DateTime.now() : null,
+            completedBy: nextStatus ? user?.displayName : null,
+          );
+        }
+        return item;
+      }).toList();
+      _currentMeeting = _currentMeeting!.copyWith(resolutions: updated);
+    });
   }
 
   Future<void> _save({bool publishAndNotify = false}) async {
@@ -676,6 +944,215 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                 }),
                 onUndoRemove: () => setState(() => _removeFile = false),
               ),
+
+              // ── Minutes Adoption Section (Proposer & Seconder) ──
+              if (_currentMeeting != null && !_isNew) ...[
+                const SizedBox(height: 16),
+                if (_currentMeeting!.isAdopted) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.green.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.verified, color: Colors.green, size: 22),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Minutes Formally Adopted & Ratified',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        if (_currentMeeting!.movedBy != null &&
+                            _currentMeeting!.movedBy!.isNotEmpty)
+                          Text(
+                            '• Motion Moved By: ${_currentMeeting!.movedBy!}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        if (_currentMeeting!.secondedBy != null &&
+                            _currentMeeting!.secondedBy!.isNotEmpty)
+                          Text(
+                            '• Seconded By: ${_currentMeeting!.secondedBy!}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        if (_currentMeeting!.adoptedAt != null)
+                          Text(
+                            '• Date Ratified: ${DateFormat('MMMM dd, yyyy').format(_currentMeeting!.adoptedAt!)}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        if (_currentMeeting!.adoptionNotes != null &&
+                            _currentMeeting!.adoptionNotes!.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            'Amendments: ${_currentMeeting!.adoptionNotes!}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontStyle: FontStyle.italic,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ] else if (!widget.readOnly && (_currentMeeting!.hasMinutes)) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.green.shade800,
+                        side: BorderSide(color: Colors.green.shade700),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.how_to_reg, color: Colors.green),
+                      label: const Text(
+                        'Record Minutes Adoption (Proposer & Seconder)',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: _showAdoptionDialog,
+                    ),
+                  ),
+                ],
+              ],
+
+              // ── Resolutions & Matters Arising Section ──
+              if (_currentMeeting != null && !_isNew) ...[
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Resolutions & Action Items (${_currentMeeting!.resolutions.length})',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (!widget.readOnly)
+                      TextButton.icon(
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Add Action Item'),
+                        onPressed: _showAddResolutionDialog,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                if (_currentMeeting!.resolutions.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'No resolutions or action items logged for this meeting yet.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  ..._currentMeeting!.resolutions.map((r) {
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      elevation: 0,
+                      color: r.isCompleted
+                          ? Colors.green.withValues(alpha: 0.05)
+                          : theme.colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.35),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: r.isCompleted
+                              ? Colors.green.withValues(alpha: 0.3)
+                              : theme.colorScheme.outlineVariant
+                                  .withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: ListTile(
+                        leading: Checkbox(
+                          value: r.isCompleted,
+                          onChanged: widget.readOnly
+                              ? null
+                              : (_) => _toggleResolution(r),
+                        ),
+                        title: Text(
+                          r.title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            decoration:
+                                r.isCompleted ? TextDecoration.lineThrough : null,
+                            color: r.isCompleted ? Colors.grey : null,
+                          ),
+                        ),
+                        subtitle: Row(
+                          children: [
+                            if (r.assigneeName != null &&
+                                r.assigneeName!.isNotEmpty) ...[
+                              Icon(
+                                Icons.person_outline,
+                                size: 14,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                r.assigneeName!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                            ],
+                            if (r.dueDate != null) ...[
+                              Icon(
+                                Icons.alarm,
+                                size: 14,
+                                color: Colors.orange.shade800,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Due: ${DateFormat('MMM dd').format(r.dueDate!)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.orange.shade800,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+              ],
               if (!widget.readOnly) ...[
                 const SizedBox(height: 20),
                 if (_isNew)

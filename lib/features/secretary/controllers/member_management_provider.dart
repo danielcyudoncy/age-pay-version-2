@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/enums.dart';
 import '../../members/models/member_model.dart';
 import '../../members/repositories/member_repository.dart';
 
@@ -33,15 +34,35 @@ class MemberManagementController {
   Future<void> suspendMember(String id) async {
     final member = await _repository.getMemberById(id);
     if (member != null) {
-      await _repository.updateMember(member.copyWith(isActive: false));
+      await _repository.updateLifecycleStatus(
+        memberId: id,
+        status: MembershipLifecycleStatus.suspended,
+        userId: member.userId,
+      );
     }
   }
 
   Future<void> activateMember(String id) async {
     final member = await _repository.getMemberById(id);
     if (member != null) {
-      await _repository.updateMember(member.copyWith(isActive: true));
+      await _repository.updateLifecycleStatus(
+        memberId: id,
+        status: MembershipLifecycleStatus.active,
+        userId: member.userId,
+      );
     }
+  }
+
+  Future<void> updateLifecycleStatus(
+    String id,
+    MembershipLifecycleStatus lifecycleStatus, {
+    String? userId,
+  }) {
+    return _repository.updateLifecycleStatus(
+      memberId: id,
+      status: lifecycleStatus,
+      userId: userId,
+    );
   }
 
   Future<void> setNationalEnrollment({

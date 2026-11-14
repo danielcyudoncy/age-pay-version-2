@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/meeting_model.dart';
+import '../models/meeting_resolution_model.dart';
 
 class MeetingRepository {
   final FirebaseFirestore _firestore;
@@ -94,5 +95,60 @@ class MeetingRepository {
     await ref.putFile(file);
     final url = await ref.getDownloadURL();
     return {'url': url, 'name': fileName};
+  }
+
+  Future<void> adoptMinutes({
+    required String meetingId,
+    required String movedBy,
+    required String secondedBy,
+    String? notes,
+  }) async {
+    await _collection.doc(meetingId).update({
+      'isAdopted': true,
+      'adoptedAt': Timestamp.now(),
+      'movedBy': movedBy,
+      'secondedBy': secondedBy,
+      if (notes != null && notes.isNotEmpty) 'adoptionNotes': notes,
+      'updatedAt': Timestamp.now(),
+    });
+  }
+
+  Future<void> addResolution({
+    required String meetingId,
+    required MeetingResolutionModel resolution,
+  }) async {
+    final doc = await _collection.doc(meetingId).get();
+    if (!doc.exists) return;
+    final meeting = MeetingModel.fromFirestore(doc);
+    final updatedResolutions = [...meeting.resolutions, resolution];
+    await _collection.doc(meetingId).update({
+      'resolutions': updatedResolutions.map((r) => r.toMap()).toList(),
+      'updatedAt': Timestamp.now(),
+    });
+  }
+
+  Future<void> toggleResolution({
+    required String meetingId,
+    required String resolutionId,
+    required bool isCompleted,
+    String? completedBy,
+  }) async {
+    final doc = await _collection.doc(meetingId).get();
+    if (!doc.exists) return;
+    final meeting = MeetingModel.fromFirestore(doc);
+    final updatedResolutions = meeting.resolutions.map((r) {
+      if (r.id == resolutionId) {
+        return r.copyWith(
+          isCompleted: isCompleted,
+          completedAt: isCompleted ? DateTime.now() : null,
+          completedBy: isCompleted ? completedBy : null,
+        );
+      }
+      return r;
+    }).toList();
+    await _collection.doc(meetingId).update({
+      'resolutions': updatedResolutions.map((r) => r.toMap()).toList(),
+      'updatedAt': Timestamp.now(),
+    });
   }
 }

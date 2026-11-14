@@ -47,6 +47,8 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
         return 'Financial Summary';
       case ReportType.agmFinancialReport:
         return 'AGM Annual Financial Report';
+      case ReportType.secretariatAnnualReport:
+        return 'Secretariat Annual Activity Report';
     }
   }
 
@@ -64,6 +66,8 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
         return 'Generate a comprehensive financial summary.';
       case ReportType.agmFinancialReport:
         return 'Generate the official Receipts & Disbursements statement with Opening Balance (Bal b/f), National Escrow, and Notes 1 to 14.';
+      case ReportType.secretariatAnnualReport:
+        return 'Generate the official Secretarial Annual Activity Report dossier for the selected year including meeting records, attendance analytics, and resolutions.';
     }
   }
 
@@ -337,6 +341,22 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
           organizationName: orgName ?? 'Central Organisation',
           branchName: user?.branchId ?? 'Elu Ohafia, Lagos Branch',
         );
+      case ReportType.secretariatAnnualReport:
+        final year = _selectedYear;
+        final members = await ref.read(reportsMembersStreamProvider.future);
+        final meetings = await ref.read(reportsAllMeetingsStreamProvider.future);
+        final user = ref.read(authProvider).valueOrNull;
+
+        final yearMeetings = meetings.where((m) => m.meetingDate.year == year).toList();
+
+        return ReportRequest(
+          type: ReportType.secretariatAnnualReport,
+          year: year,
+          members: members,
+          meetings: yearMeetings,
+          organizationName: orgName ?? 'Central Organisation',
+          branchName: user?.branchName ?? 'Branch',
+        );
     }
   }
 
@@ -492,9 +512,10 @@ class _ReportPreviewScreenState extends ConsumerState<ReportPreviewScreen> {
           ],
         );
       case ReportType.yearlySummary:
+      case ReportType.secretariatAnnualReport:
         return DropdownButtonFormField<int>(
           initialValue: _selectedYear,
-          decoration: const InputDecoration(labelText: 'Select Year'),
+          decoration: const InputDecoration(labelText: 'Select Reporting Year'),
           items: List.generate(5, (i) {
             final year = DateTime.now().year - 2 + i;
             return DropdownMenuItem(value: year, child: Text('$year'));

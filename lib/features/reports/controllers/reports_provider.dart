@@ -14,6 +14,8 @@ import '../../fiscal_period/models/fiscal_period_model.dart';
 import '../../fiscal_period/repositories/fiscal_period_repository.dart';
 import '../../national/models/national_remittance_model.dart';
 import '../../national/repositories/national_remittance_repository.dart';
+import '../../meetings/models/meeting_model.dart';
+import '../../meetings/repositories/meeting_repository.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../national/controllers/national_provider.dart';
 import '../../../core/constants/enums.dart';
@@ -26,6 +28,7 @@ enum ReportType {
   expenseBreakdown,
   financialSummary,
   agmFinancialReport,
+  secretariatAnnualReport,
 }
 
 final pdfServiceProvider = Provider<PdfService>((ref) => PdfService());
@@ -110,6 +113,15 @@ final reportsAllExpensesStreamProvider =
       return ref.watch(reportsExpenseRepositoryProvider).getExpenses();
     });
 
+final reportsMeetingRepositoryProvider = Provider<MeetingRepository>((ref) {
+  return MeetingRepository();
+});
+
+final reportsAllMeetingsStreamProvider =
+    StreamProvider.autoDispose<List<MeetingModel>>((ref) {
+      return ref.watch(reportsMeetingRepositoryProvider).getMeetings();
+    });
+
 final pdfGenerationProvider = FutureProvider.family<Uint8List, ReportRequest>((
   ref,
   request,
@@ -171,6 +183,14 @@ final pdfGenerationProvider = FutureProvider.family<Uint8List, ReportRequest>((
         organizationName: request.organizationName,
         branchName: request.branchName,
       );
+    case ReportType.secretariatAnnualReport:
+      return pdfService.generateSecretariatAnnualReport(
+        year: request.year ?? DateTime.now().year,
+        meetings: request.meetings,
+        members: request.members,
+        organizationName: request.organizationName,
+        branchName: request.branchName,
+      );
   }
 });
 
@@ -182,6 +202,7 @@ class ReportRequest {
   final List<PaymentModel> payments;
   final List<ExpenseModel> expenses;
   final List<MemberModel> members;
+  final List<MeetingModel> meetings;
   final List<NationalRemittanceModel> remittances;
   final FiscalPeriodModel? fiscalPeriod;
   final DateTime? reportDate;
@@ -200,6 +221,7 @@ class ReportRequest {
     this.payments = const [],
     this.expenses = const [],
     this.members = const [],
+    this.meetings = const [],
     this.remittances = const [],
     this.fiscalPeriod,
     this.reportDate,

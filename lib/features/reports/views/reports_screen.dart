@@ -49,6 +49,13 @@ class ReportsScreen extends ConsumerWidget {
           'Overall financial health: collections, expenses, net position, and outstanding obligations.',
       icon: Icons.account_balance_wallet_outlined,
     ),
+    _ReportItem(
+      type: ReportType.secretariatAnnualReport,
+      title: 'Secretariat Annual Activity Report',
+      description:
+          'Official Secretarial AGM dossier: meeting register, attendance statistics, resolutions, and membership roster.',
+      icon: Icons.history_edu_outlined,
+    ),
   ];
 
   @override

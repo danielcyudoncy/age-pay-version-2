@@ -133,6 +133,31 @@ enum AccountStatus {
   suspended,
 }
 
+enum MembershipLifecycleStatus {
+  active,
+  probationary,
+  suspended,
+  diaspora,
+  deceased,
+}
+
+extension MembershipLifecycleStatusExtension on MembershipLifecycleStatus {
+  String get displayName {
+    switch (this) {
+      case MembershipLifecycleStatus.active:
+        return 'Active';
+      case MembershipLifecycleStatus.probationary:
+        return 'Probationary';
+      case MembershipLifecycleStatus.suspended:
+        return 'Suspended';
+      case MembershipLifecycleStatus.diaspora:
+        return 'Diaspora';
+      case MembershipLifecycleStatus.deceased:
+        return 'Deceased';
+    }
+  }
+}
+
 enum ObligationStatus { unpaid, partial, paid }
 
 enum PaymentMethod { cash, bankTransfer, online }
