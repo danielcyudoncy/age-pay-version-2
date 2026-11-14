@@ -45,6 +45,11 @@ final meetingsStreamProvider =
       });
     });
 
+final singleMeetingStreamProvider =
+    StreamProvider.autoDispose.family<MeetingModel?, String>((ref, meetingId) {
+      return ref.watch(meetingRepositoryProvider).getMeetingStream(meetingId);
+    });
+
 final meetingControllerProvider = Provider<MeetingController>((ref) {
   return MeetingController(ref.watch(meetingRepositoryProvider));
 });

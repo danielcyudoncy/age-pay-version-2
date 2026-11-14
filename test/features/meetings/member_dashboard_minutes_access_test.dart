@@ -179,4 +179,66 @@ void main() {
       expect(find.byType(MeetingListScreen), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'Meeting with published minutes renders MINUTES PUBLISHED badge and minutes banner',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final meetingWithMinutes = MeetingModel(
+        id: 'meet-min-1',
+        organizationId: 'org-demo',
+        title: 'Enugu Branch Emergency Meeting',
+        venue: 'Town Hall',
+        meetingDate: DateTime.now().subtract(const Duration(minutes: 30)),
+        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+        updatedAt: DateTime.now().subtract(const Duration(minutes: 10)),
+        createdBy: 'sec-1',
+        scope: 'branch',
+        branchId: 'branch-enugu',
+        targetAudience: 'all',
+        minutesText: 'Deliberated on road maintenance and security levy.',
+      );
+
+      await tester.pumpWidget(createTestWidget(meetings: [meetingWithMinutes]));
+      await tester.pumpAndSettle();
+
+      expect(find.text('MINUTES PUBLISHED'), findsOneWidget);
+      expect(
+        find.text('Official Minutes Documented • Tap to Read'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'Meeting past scheduled time without minutes renders IN SESSION / CONCLUDED badge',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final meetingInSession = MeetingModel(
+        id: 'meet-session-1',
+        organizationId: 'org-demo',
+        title: 'Enugu Monthly Sitting',
+        venue: 'Town Hall',
+        meetingDate: DateTime.now().subtract(const Duration(minutes: 25)),
+        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+        updatedAt: DateTime.now().subtract(const Duration(hours: 2)),
+        createdBy: 'sec-1',
+        scope: 'branch',
+        branchId: 'branch-enugu',
+        targetAudience: 'all',
+      );
+
+      await tester.pumpWidget(createTestWidget(meetings: [meetingInSession]));
+      await tester.pumpAndSettle();
+
+      expect(find.text('IN SESSION / CONCLUDED'), findsOneWidget);
+      expect(find.text('UPCOMING MEETING'), findsNothing);
+    },
+  );
 }

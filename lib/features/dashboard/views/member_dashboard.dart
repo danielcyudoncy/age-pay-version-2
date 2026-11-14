@@ -202,6 +202,7 @@ class MemberDashboard extends ConsumerWidget {
         ref.invalidate(memberPaymentsStreamProvider(memberId));
         ref.invalidate(memberObligationsProvider(memberId));
         ref.invalidate(memberActiveObligationsProvider(memberId));
+        ref.invalidate(meetingsStreamProvider);
       },
       child: ListView(
         padding: EdgeInsets.fromLTRB(
@@ -1210,27 +1211,61 @@ class _UpcomingMeetingCard extends ConsumerWidget {
               )
             : null;
 
+        final isPast = now.isAfter(meeting.meetingDate);
+        final hasMinutes = meeting.hasMinutes;
+
+        final (badgeLabel, badgeColor, badgeIcon) = hasMinutes
+            ? ('MINUTES PUBLISHED', Colors.green, Icons.verified)
+            : (isPast
+                ? (
+                    'IN SESSION / CONCLUDED',
+                    Colors.amber.shade900,
+                    Icons.access_time
+                  )
+                : (meeting.isExecutivesOnly
+                    ? (
+                        'EXECUTIVE MEETING',
+                        Colors.deepOrange,
+                        Icons.shield_outlined
+                      )
+                    : (
+                        'UPCOMING MEETING',
+                        theme.colorScheme.primary,
+                        Icons.event_available
+                      )));
+
         return Card(
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 20),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(
-              color: meeting.isExecutivesOnly
-                  ? Colors.deepOrange.withValues(alpha: 0.35)
-                  : theme.colorScheme.primary.withValues(alpha: 0.25),
+              color: hasMinutes
+                  ? Colors.green.withValues(alpha: 0.35)
+                  : (meeting.isExecutivesOnly
+                      ? Colors.deepOrange.withValues(alpha: 0.35)
+                      : theme.colorScheme.primary.withValues(alpha: 0.25)),
             ),
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: () {
+              final effectiveRole = (user?.nationalRole != null)
+                  ? user!.nationalRole!
+                  : user?.role;
+              final canManage = user != null &&
+                  (effectiveRole == UserRole.secretary ||
+                      effectiveRole == UserRole.viceSecretary ||
+                      effectiveRole == UserRole.president ||
+                      effectiveRole == UserRole.vicePresident ||
+                      user.role == UserRole.superAdmin);
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder:
                       (_) => MeetingDetailScreen(
                         meeting: meeting,
-                        readOnly: true,
+                        readOnly: !canManage,
                       ),
                 ),
               );
@@ -1242,9 +1277,11 @@ class _UpcomingMeetingCard extends ConsumerWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    (meeting.isExecutivesOnly
-                            ? Colors.deepOrange
-                            : theme.colorScheme.primary)
+                    (hasMinutes
+                            ? Colors.green
+                            : (meeting.isExecutivesOnly
+                                ? Colors.deepOrange
+                                : theme.colorScheme.primary))
                         .withValues(alpha: 0.08),
                     theme.colorScheme.surface,
                   ],
@@ -1263,26 +1300,20 @@ class _UpcomingMeetingCard extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: meeting.isExecutivesOnly
-                              ? Colors.deepOrange
-                              : theme.colorScheme.primary,
+                          color: badgeColor,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              meeting.isExecutivesOnly
-                                  ? Icons.shield_outlined
-                                  : Icons.event_available,
+                              badgeIcon,
                               color: Colors.white,
                               size: 14,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              meeting.isExecutivesOnly
-                                  ? 'EXECUTIVE MEETING'
-                                  : 'UPCOMING MEETING',
+                              badgeLabel,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
@@ -1359,6 +1390,47 @@ class _UpcomingMeetingCard extends ConsumerWidget {
                           ),
                         ),
                       ],
+                    ),
+                  ],
+                  if (hasMinutes) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.green.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(
+                            Icons.description_outlined,
+                            size: 15,
+                            color: Colors.green,
+                          ),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Official Minutes Documented • Tap to Read',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 11,
+                            color: Colors.green,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                   const SizedBox(height: 12),

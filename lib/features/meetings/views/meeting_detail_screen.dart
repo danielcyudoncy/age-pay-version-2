@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -122,13 +123,8 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.verified, color: Colors.green),
-            SizedBox(width: 8),
-            Text('Adopt Meeting Minutes'),
-          ],
-        ),
+        icon: const Icon(Icons.verified, color: Colors.green, size: 28),
+        title: const Text('Adopt Meeting Minutes', textAlign: TextAlign.center),
         content: SingleChildScrollView(
           child: Form(
             key: formKey,
@@ -484,6 +480,12 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
         targetAudience: _targetAudience,
         scope: meetingScope,
         branchId: meetingBranchId,
+        isAdopted: _currentMeeting?.isAdopted ?? false,
+        adoptedAt: _currentMeeting?.adoptedAt,
+        movedBy: _currentMeeting?.movedBy,
+        secondedBy: _currentMeeting?.secondedBy,
+        adoptionNotes: _currentMeeting?.adoptionNotes,
+        resolutions: _currentMeeting?.resolutions ?? const [],
       );
 
       await controller.updateMeeting(meeting);
@@ -665,6 +667,30 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
     final theme = Theme.of(context);
     final dateTimeFormat = DateFormat('EEE, MMM dd, yyyy \u2022 hh:mm a');
 
+    final meetingId = widget.meeting?.id;
+    final liveMeetingAsync = meetingId != null
+        ? ref.watch(singleMeetingStreamProvider(meetingId))
+        : null;
+
+    final currentMeeting =
+        liveMeetingAsync?.valueOrNull ?? _currentMeeting ?? widget.meeting;
+    if (currentMeeting != null) {
+      _currentMeeting = currentMeeting;
+      if (widget.readOnly) {
+        if (_titleController.text != currentMeeting.title) {
+          _titleController.text = currentMeeting.title;
+        }
+        if (_venueController.text != currentMeeting.venue) {
+          _venueController.text = currentMeeting.venue;
+        }
+        if (_minutesController.text != (currentMeeting.minutesText ?? '')) {
+          _minutesController.text = currentMeeting.minutesText ?? '';
+        }
+        _selectedDate = currentMeeting.meetingDate;
+        _targetAudience = currentMeeting.targetAudience;
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -672,6 +698,23 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
               ? 'Meeting Details'
               : (_isNew ? 'New Meeting' : 'Meeting Minutes'),
         ),
+        actions: [
+          if (meetingId != null)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh Meeting Details',
+              onPressed: () {
+                ref.invalidate(singleMeetingStreamProvider(meetingId));
+                ref.invalidate(meetingsStreamProvider);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Refreshed meeting details'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -846,314 +889,272 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                   ),
                 ),
               ],
-              if (!_isNew && widget.meeting != null) ...[
-                const SizedBox(height: 20),
-                MeetingRsvpCard(meetingId: widget.meeting!.id),
-                const SizedBox(height: 20),
-                MeetingExcusesSection(meetingId: widget.meeting!.id),
-              ],
-              const SizedBox(height: 24),
               if (widget.readOnly) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: (widget.meeting?.hasMinutes == true)
-                        ? Colors.green.withValues(alpha: 0.1)
-                        : Colors.amber.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: (widget.meeting?.hasMinutes == true)
-                          ? Colors.green.withValues(alpha: 0.3)
-                          : Colors.amber.withValues(alpha: 0.3),
+                if (currentMeeting?.hasMinutes == true &&
+                    (currentMeeting?.minutesText?.trim().isNotEmpty ?? false)) ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        (widget.meeting?.hasMinutes == true)
-                            ? Icons.check_circle_outline
-                            : Icons.pending_actions,
-                        color: (widget.meeting?.hasMinutes == true)
-                            ? Colors.green.shade700
-                            : AppTheme.statusColor(context, Colors.amber),
-                        size: 20,
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.green.withValues(alpha: 0.3),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          (widget.meeting?.hasMinutes == true)
-                              ? 'Official Meeting Minutes Documented & Verified'
-                              : 'Meeting Minutes Pending Documentation by the Secretariat',
-                          style: TextStyle(
-                            color: (widget.meeting?.hasMinutes == true)
-                                ? AppTheme.statusColor(context, Colors.green)
-                                : AppTheme.statusColor(context, Colors.amber),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.verified,
+                          color: Colors.green.shade700,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            currentMeeting!.isAdopted
+                                ? 'Official Minutes Formally Adopted & Ratified'
+                                : 'Official Meeting Minutes Documented & Verified',
+                            style: TextStyle(
+                              color: AppTheme.statusColor(context, Colors.green),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: Colors.green.withValues(alpha: 0.35),
+                        width: 1.5,
                       ),
-                    ],
+                    ),
+                    color: Colors.green.withValues(alpha: 0.03),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.description_outlined,
+                                  color: Colors.green,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Official Deliberations & Proceedings',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green.shade900,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.copy, size: 18),
+                                tooltip: 'Copy Minutes',
+                                onPressed: () {
+                                  Clipboard.setData(
+                                    ClipboardData(
+                                      text: currentMeeting.minutesText!,
+                                    ),
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Minutes copied to clipboard'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Divider(height: 1),
+                          const SizedBox(height: 14),
+                          SelectableText(
+                            currentMeeting.minutesText!,
+                            key: const Key('meeting_minutes_field'),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontSize: 15,
+                              height: 1.6,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (currentMeeting.minutesFileUrl != null) ...[
+                    const SizedBox(height: 10),
+                    _MinutesFilePreview(
+                      existingUrl: _removeFile ? null : currentMeeting.minutesFileUrl,
+                      existingName: currentMeeting.minutesFileName,
+                      pickedFile: _pickedFile,
+                      pickedFileName: _pickedFileName,
+                      onOpen: _openFile,
+                      readOnly: true,
+                      onRemove: () {},
+                      onUndoRemove: () {},
+                    ),
+                  ],
+                  _buildAdoptionSection(theme, currentMeeting),
+                  _buildResolutionsSection(theme, currentMeeting),
+                  const SizedBox(height: 24),
+                  MeetingRsvpCard(meetingId: currentMeeting.id),
+                  const SizedBox(height: 20),
+                  MeetingExcusesSection(meetingId: currentMeeting.id),
+                ] else ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.amber.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.pending_actions,
+                              color: Colors.orange,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Meeting Minutes Pending Documentation',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange.shade900,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            if (meetingId != null)
+                              IconButton(
+                                icon: const Icon(Icons.refresh, size: 20),
+                                tooltip: 'Check for updates',
+                                onPressed: () {
+                                  ref.invalidate(
+                                    singleMeetingStreamProvider(meetingId),
+                                  );
+                                  ref.invalidate(meetingsStreamProvider);
+                                },
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'The Secretariat has not recorded official deliberations for this sitting yet. Once published, members will be notified and proceedings will appear here.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (currentMeeting != null) ...[
+                    const SizedBox(height: 20),
+                    MeetingRsvpCard(meetingId: currentMeeting.id),
+                    const SizedBox(height: 20),
+                    MeetingExcusesSection(meetingId: currentMeeting.id),
+                  ],
+                  const SizedBox(height: 20),
+                  Text(
+                    'Meeting Agenda / Notes',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    key: const Key('meeting_minutes_field'),
+                    controller: _minutesController,
+                    readOnly: true,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      hintText: 'No agenda or minutes recorded yet.',
+                      alignLabelWithHint: true,
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ] else ...[
+                if (!_isNew && currentMeeting != null) ...[
+                  const SizedBox(height: 20),
+                  MeetingRsvpCard(meetingId: currentMeeting.id),
+                  const SizedBox(height: 20),
+                  MeetingExcusesSection(meetingId: currentMeeting.id),
+                ],
+                const SizedBox(height: 24),
+                Text(
+                  'Meeting Minutes / Agenda',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 16),
-              ],
-              Text(
-                'Meeting Minutes / Agenda',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 8),
+                TextFormField(
+                  key: const Key('meeting_minutes_field'),
+                  controller: _minutesController,
+                  readOnly: false,
+                  maxLines: 8,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    hintText:
+                        'Type the agenda or minutes of the meeting here...',
+                    alignLabelWithHint: true,
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                key: const Key('meeting_minutes_field'),
-                controller: _minutesController,
-                readOnly: widget.readOnly,
-                maxLines: 8,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  hintText: widget.readOnly
-                      ? 'No agenda or minutes recorded yet.'
-                      : 'Type the agenda or minutes of the meeting here...',
-                  alignLabelWithHint: true,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              if (!widget.readOnly) ...[
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: _pickMinutesFile,
                   icon: const Icon(Icons.upload_file),
                   label: const Text('Upload Minutes (image/scan)'),
                 ),
-              ],
-              const SizedBox(height: 8),
-              _MinutesFilePreview(
-                existingUrl: _removeFile
-                    ? null
-                    : widget.meeting?.minutesFileUrl,
-                existingName: widget.meeting?.minutesFileName,
-                pickedFile: _pickedFile,
-                pickedFileName: _pickedFileName,
-                onOpen: _openFile,
-                readOnly: widget.readOnly,
-                onRemove: () => setState(() {
-                  _removeFile = true;
-                  _pickedFile = null;
-                  _pickedFileName = null;
-                }),
-                onUndoRemove: () => setState(() => _removeFile = false),
-              ),
-
-              // ── Minutes Adoption Section (Proposer & Seconder) ──
-              if (_currentMeeting != null && !_isNew) ...[
-                const SizedBox(height: 16),
-                if (_currentMeeting!.isAdopted) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.green.withValues(alpha: 0.35),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: const [
-                            Icon(Icons.verified, color: Colors.green, size: 22),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Minutes Formally Adopted & Ratified',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        if (_currentMeeting!.movedBy != null &&
-                            _currentMeeting!.movedBy!.isNotEmpty)
-                          Text(
-                            '• Motion Moved By: ${_currentMeeting!.movedBy!}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        if (_currentMeeting!.secondedBy != null &&
-                            _currentMeeting!.secondedBy!.isNotEmpty)
-                          Text(
-                            '• Seconded By: ${_currentMeeting!.secondedBy!}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        if (_currentMeeting!.adoptedAt != null)
-                          Text(
-                            '• Date Ratified: ${DateFormat('MMMM dd, yyyy').format(_currentMeeting!.adoptedAt!)}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        if (_currentMeeting!.adoptionNotes != null &&
-                            _currentMeeting!.adoptionNotes!.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            'Amendments: ${_currentMeeting!.adoptionNotes!}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontStyle: FontStyle.italic,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ] else if (!widget.readOnly && (_currentMeeting!.hasMinutes)) ...[
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.green.shade800,
-                        side: BorderSide(color: Colors.green.shade700),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      icon: const Icon(Icons.how_to_reg, color: Colors.green),
-                      label: const Text(
-                        'Record Minutes Adoption (Proposer & Seconder)',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      onPressed: _showAdoptionDialog,
-                    ),
-                  ),
-                ],
-              ],
-
-              // ── Resolutions & Matters Arising Section ──
-              if (_currentMeeting != null && !_isNew) ...[
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Resolutions & Action Items (${_currentMeeting!.resolutions.length})',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    if (!widget.readOnly)
-                      TextButton.icon(
-                        icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Add Action Item'),
-                        onPressed: _showAddResolutionDialog,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                if (_currentMeeting!.resolutions.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'No resolutions or action items logged for this meeting yet.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  ..._currentMeeting!.resolutions.map((r) {
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      elevation: 0,
-                      color: r.isCompleted
-                          ? Colors.green.withValues(alpha: 0.05)
-                          : theme.colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.35),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: r.isCompleted
-                              ? Colors.green.withValues(alpha: 0.3)
-                              : theme.colorScheme.outlineVariant
-                                  .withValues(alpha: 0.4),
-                        ),
-                      ),
-                      child: ListTile(
-                        leading: Checkbox(
-                          value: r.isCompleted,
-                          onChanged: widget.readOnly
-                              ? null
-                              : (_) => _toggleResolution(r),
-                        ),
-                        title: Text(
-                          r.title,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            decoration:
-                                r.isCompleted ? TextDecoration.lineThrough : null,
-                            color: r.isCompleted ? Colors.grey : null,
-                          ),
-                        ),
-                        subtitle: Row(
-                          children: [
-                            if (r.assigneeName != null &&
-                                r.assigneeName!.isNotEmpty) ...[
-                              Icon(
-                                Icons.person_outline,
-                                size: 14,
-                                color: theme.colorScheme.primary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                r.assigneeName!,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                            ],
-                            if (r.dueDate != null) ...[
-                              Icon(
-                                Icons.alarm,
-                                size: 14,
-                                color: Colors.orange.shade800,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Due: ${DateFormat('MMM dd').format(r.dueDate!)}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.orange.shade800,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    );
+                const SizedBox(height: 8),
+                _MinutesFilePreview(
+                  existingUrl: _removeFile
+                      ? null
+                      : currentMeeting?.minutesFileUrl,
+                  existingName: currentMeeting?.minutesFileName,
+                  pickedFile: _pickedFile,
+                  pickedFileName: _pickedFileName,
+                  onOpen: _openFile,
+                  readOnly: false,
+                  onRemove: () => setState(() {
+                    _removeFile = true;
+                    _pickedFile = null;
+                    _pickedFileName = null;
                   }),
-              ],
-              if (!widget.readOnly) ...[
+                  onUndoRemove: () => setState(() => _removeFile = false),
+                ),
+                _buildAdoptionSection(theme, currentMeeting),
+                _buildResolutionsSection(theme, currentMeeting),
                 const SizedBox(height: 20),
                 if (_isNew)
                   SizedBox(
@@ -1228,6 +1229,222 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
       ),
     ),
   );
+  }
+
+  Widget _buildAdoptionSection(ThemeData theme, MeetingModel? meeting) {
+    if (meeting == null || _isNew) return const SizedBox.shrink();
+    if (meeting.isAdopted) {
+      return Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(top: 16),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.green.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: const [
+                Icon(Icons.verified, color: Colors.green, size: 22),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Minutes Formally Adopted & Ratified',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (meeting.movedBy != null && meeting.movedBy!.isNotEmpty)
+              Text(
+                '• Motion Moved By: ${meeting.movedBy!}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            if (meeting.secondedBy != null && meeting.secondedBy!.isNotEmpty)
+              Text(
+                '• Seconded By: ${meeting.secondedBy!}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            if (meeting.adoptedAt != null)
+              Text(
+                '• Date Ratified: ${DateFormat('MMMM dd, yyyy').format(meeting.adoptedAt!)}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            if (meeting.adoptionNotes != null &&
+                meeting.adoptionNotes!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Amendments: ${meeting.adoptionNotes!}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    } else if (!widget.readOnly && meeting.hasMinutes) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 16),
+        child: SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.green.shade800,
+              side: BorderSide(color: Colors.green.shade700),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            icon: const Icon(Icons.how_to_reg, color: Colors.green),
+            label: const Text(
+              'Record Minutes Adoption (Proposer & Seconder)',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            onPressed: _showAdoptionDialog,
+          ),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildResolutionsSection(ThemeData theme, MeetingModel? meeting) {
+    if (meeting == null || _isNew) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                'Resolutions & Action Items (${meeting.resolutions.length})',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            if (!widget.readOnly)
+              TextButton.icon(
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Add Action Item'),
+                onPressed: _showAddResolutionDialog,
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        if (meeting.resolutions.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest
+                  .withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(
+                'No resolutions or action items logged for this meeting yet.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          )
+        else
+          ...meeting.resolutions.map((r) {
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              elevation: 0,
+              color: r.isCompleted
+                  ? Colors.green.withValues(alpha: 0.05)
+                  : theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.35),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: r.isCompleted
+                      ? Colors.green.withValues(alpha: 0.3)
+                      : theme.colorScheme.outlineVariant
+                          .withValues(alpha: 0.4),
+                ),
+              ),
+              child: ListTile(
+                leading: Checkbox(
+                  value: r.isCompleted,
+                  onChanged: widget.readOnly
+                      ? null
+                      : (_) => _toggleResolution(r),
+                ),
+                title: Text(
+                  r.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    decoration:
+                        r.isCompleted ? TextDecoration.lineThrough : null,
+                    color: r.isCompleted ? Colors.grey : null,
+                  ),
+                ),
+                subtitle: Row(
+                  children: [
+                    if (r.assigneeName != null &&
+                        r.assigneeName!.isNotEmpty) ...[
+                      Icon(
+                        Icons.person_outline,
+                        size: 14,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        r.assigneeName!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    if (r.dueDate != null) ...[
+                      Icon(
+                        Icons.alarm,
+                        size: 14,
+                        color: Colors.orange.shade800,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Due: ${DateFormat('MMM dd').format(r.dueDate!)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange.shade800,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }),
+      ],
+    );
   }
 }
 

@@ -43,6 +43,16 @@ class MeetingRepository {
     }
   }
 
+  Stream<MeetingModel?> getMeetingStream(String id) {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Stream.empty();
+    }
+    return _collection.doc(id).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return MeetingModel.fromFirestore(doc);
+    }).handleError((_) => null);
+  }
+
   Future<String> createMeeting({
     required String title,
     String? venue,
