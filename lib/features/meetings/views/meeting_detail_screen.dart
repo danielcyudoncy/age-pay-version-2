@@ -17,6 +17,7 @@ import 'package:cls/features/notifications/controllers/notification_provider.dar
 import 'package:cls/features/notifications/models/notification_model.dart';
 import 'package:cls/features/secretary/controllers/secretary_dashboard_provider.dart';
 import 'package:cls/features/secretary/models/announcement_model.dart';
+import 'meeting_minutes_reader_screen.dart';
 import '../widgets/meeting_rsvp_card.dart';
 import '../widgets/meeting_excuses_section.dart';
 
@@ -665,7 +666,19 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final dateTimeFormat = DateFormat('EEE, MMM dd, yyyy \u2022 hh:mm a');
+
+    final user = ref.watch(authProvider).valueOrNull;
+    final effectiveRole = (user?.nationalRole != null)
+        ? user!.nationalRole!
+        : user?.role;
+    final canManage = user != null &&
+        (effectiveRole == UserRole.secretary ||
+            effectiveRole == UserRole.viceSecretary ||
+            effectiveRole == UserRole.president ||
+            effectiveRole == UserRole.vicePresident ||
+            user.role == UserRole.superAdmin);
 
     final meetingId = widget.meeting?.id;
     final liveMeetingAsync = meetingId != null
@@ -699,6 +712,21 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
               : (_isNew ? 'New Meeting' : 'Meeting Minutes'),
         ),
         actions: [
+          if (canManage && widget.readOnly && currentMeeting != null)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit / Document Minutes',
+              onPressed: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => MeetingDetailScreen(
+                      meeting: currentMeeting,
+                      readOnly: false,
+                    ),
+                  ),
+                );
+              },
+            ),
           if (meetingId != null)
             IconButton(
               icon: const Icon(Icons.refresh),
@@ -740,59 +768,57 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                     style: TextStyle(color: theme.colorScheme.onErrorContainer),
                   ),
                 ),
-              TextFormField(
-                controller: _titleController,
-                readOnly: widget.readOnly,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Meeting Title',
-                  hintText: 'e.g. General Monthly Meeting',
-                  prefixIcon: Icon(Icons.title),
-                  border: OutlineInputBorder(),
+              if (widget.readOnly && currentMeeting != null) ...[
+                _buildReadOnlyMeetingHeader(theme, currentMeeting, dateTimeFormat),
+              ] else ...[
+                TextFormField(
+                  controller: _titleController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Meeting Title',
+                    hintText: 'e.g. General Monthly Meeting',
+                    prefixIcon: Icon(Icons.title),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Meeting title is required';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Meeting title is required';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _venueController,
-                readOnly: widget.readOnly,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Meeting Venue / Location',
-                  hintText: 'e.g. Civic Centre, Town Hall, or Virtual (Zoom)',
-                  prefixIcon: Icon(Icons.location_on_outlined),
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _venueController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Meeting Venue / Location',
+                    hintText: 'e.g. Civic Centre, Town Hall, or Virtual (Zoom)',
+                    prefixIcon: Icon(Icons.location_on_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Meeting venue is required';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Meeting venue is required';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                readOnly: true,
-                onTap: widget.readOnly ? null : _pickDateTime,
-                decoration: InputDecoration(
-                  labelText: 'Meeting Date & Time',
-                  prefixIcon: const Icon(Icons.calendar_today),
-                  suffixIcon: widget.readOnly
-                      ? null
-                      : const Icon(Icons.access_time),
-                  border: const OutlineInputBorder(),
-                  hintText: _selectedDate == null
-                      ? 'Select date and time'
-                      : dateTimeFormat.format(_selectedDate!),
+                const SizedBox(height: 16),
+                TextFormField(
+                  readOnly: true,
+                  onTap: _pickDateTime,
+                  decoration: InputDecoration(
+                    labelText: 'Meeting Date & Time',
+                    prefixIcon: const Icon(Icons.calendar_today),
+                    suffixIcon: const Icon(Icons.access_time),
+                    border: const OutlineInputBorder(),
+                    hintText: _selectedDate == null
+                        ? 'Select date and time'
+                        : dateTimeFormat.format(_selectedDate!),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              if (!widget.readOnly) ...[
+                const SizedBox(height: 16),
                 Text(
                   'Target Audience',
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -842,56 +868,9 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                     fontStyle: FontStyle.italic,
                   ),
                 ),
-              ] else ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: _targetAudience == 'executives'
-                        ? Colors.deepOrange.withValues(alpha: 0.08)
-                        : theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: _targetAudience == 'executives'
-                          ? Colors.deepOrange.withValues(alpha: 0.3)
-                          : theme.colorScheme.primary.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _targetAudience == 'executives'
-                            ? Icons.shield_outlined
-                            : Icons.groups_outlined,
-                        size: 20,
-                        color: _targetAudience == 'executives'
-                            ? Colors.deepOrange
-                            : theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Target Audience: ',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        _targetAudience == 'executives'
-                            ? 'Executives Only'
-                            : 'All Members',
-                        style: TextStyle(
-                          color: _targetAudience == 'executives'
-                              ? AppTheme.statusColor(context, Colors.deepOrange)
-                              : theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
               if (widget.readOnly) ...[
-                if (currentMeeting?.hasMinutes == true &&
-                    (currentMeeting?.minutesText?.trim().isNotEmpty ?? false)) ...[
+                if (currentMeeting?.hasMinutes == true) ...[
                   const SizedBox(height: 20),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -930,80 +909,147 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   Card(
-                    elevation: 0,
+                    elevation: 2,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       side: BorderSide(
-                        color: Colors.green.withValues(alpha: 0.35),
+                        color: Colors.green.withValues(alpha: 0.45),
                         width: 1.5,
                       ),
                     ),
-                    color: Colors.green.withValues(alpha: 0.03),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.description_outlined,
-                                  color: Colors.green,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Official Deliberations & Proceedings',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.green.shade900,
+                    color: isDark ? theme.colorScheme.surface : Colors.white,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () => _openMinutesReader(context, currentMeeting),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.menu_book,
+                                    color: Colors.green,
+                                    size: 22,
                                   ),
                                 ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy, size: 18),
-                                tooltip: 'Copy Minutes',
-                                onPressed: () {
-                                  Clipboard.setData(
-                                    ClipboardData(
-                                      text: currentMeeting.minutesText!,
-                                    ),
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Minutes copied to clipboard'),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          const Divider(height: 1),
-                          const SizedBox(height: 14),
-                          SelectableText(
-                            currentMeeting.minutesText!,
-                            key: const Key('meeting_minutes_field'),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontSize: 15,
-                              height: 1.6,
-                              color: theme.colorScheme.onSurface,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Official Deliberations & Proceedings',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Tap to read full document',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: theme.colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.copy, size: 18),
+                                  tooltip: 'Copy Minutes',
+                                  onPressed: () {
+                                    final text = currentMeeting.minutesText ?? '';
+                                    if (text.isNotEmpty) {
+                                      Clipboard.setData(
+                                        ClipboardData(text: text),
+                                      );
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Minutes copied to clipboard'),
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.open_in_new,
+                                    size: 20,
+                                    color: Colors.green,
+                                  ),
+                                  tooltip: 'Open Full Reader',
+                                  onPressed: () => _openMinutesReader(
+                                    context,
+                                    currentMeeting,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 12),
+                            const Divider(height: 1),
+                            const SizedBox(height: 14),
+                            SelectableText(
+                              (currentMeeting.minutesText != null &&
+                                      currentMeeting.minutesText!.trim().isNotEmpty)
+                                  ? currentMeeting.minutesText!
+                                  : 'Proceedings documented. Tap below to read full proceedings or open attachments.',
+                              key: const Key('meeting_minutes_field'),
+                              style: TextStyle(
+                                fontSize: 15,
+                                height: 1.65,
+                                color: isDark
+                                    ? const Color(0xFFE8ECE9)
+                                    : const Color(0xFF1F2937),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.chrome_reader_mode_outlined,
+                                  size: 20,
+                                ),
+                                label: const Text(
+                                  'Read Full Official Minutes',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                onPressed: () => _openMinutesReader(
+                                  context,
+                                  currentMeeting,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                  if (currentMeeting.minutesFileUrl != null) ...[
+                  if (currentMeeting.minutesFileUrl != null &&
+                      currentMeeting.minutesFileUrl!.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     _MinutesFilePreview(
                       existingUrl: _removeFile ? null : currentMeeting.minutesFileUrl,
@@ -1231,6 +1277,157 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
   );
   }
 
+  void _openMinutesReader(BuildContext context, MeetingModel meeting) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MeetingMinutesReaderScreen(meeting: meeting),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyMeetingHeader(
+    ThemeData theme,
+    MeetingModel meeting,
+    DateFormat dateTimeFormat,
+  ) {
+    return Card(
+      elevation: 1,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (meeting.isExecutivesOnly
+                            ? Colors.deepOrange
+                            : theme.colorScheme.primary)
+                        .withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        meeting.isExecutivesOnly
+                            ? Icons.shield_outlined
+                            : Icons.groups_outlined,
+                        size: 14,
+                        color: meeting.isExecutivesOnly
+                            ? Colors.deepOrange
+                            : theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        meeting.isExecutivesOnly
+                            ? 'EXECUTIVES ONLY'
+                            : 'ALL MEMBERS',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: meeting.isExecutivesOnly
+                              ? Colors.deepOrange
+                              : theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                if (meeting.hasMinutes)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.verified,
+                          size: 14,
+                          color: Colors.green,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'MINUTES READY',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              meeting.title,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                height: 1.25,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  size: 16,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    dateTimeFormat.format(meeting.meetingDate),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.location_on_outlined,
+                  size: 16,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    meeting.venue.isNotEmpty
+                        ? meeting.venue
+                        : 'General Assembly',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAdoptionSection(ThemeData theme, MeetingModel? meeting) {
     if (meeting == null || _isNew) return const SizedBox.shrink();
     if (meeting.isAdopted) {
@@ -1403,41 +1600,51 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                     color: r.isCompleted ? Colors.grey : null,
                   ),
                 ),
-                subtitle: Row(
+                subtitle: Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     if (r.assigneeName != null &&
-                        r.assigneeName!.isNotEmpty) ...[
-                      Icon(
-                        Icons.person_outline,
-                        size: 14,
-                        color: theme.colorScheme.primary,
+                        r.assigneeName!.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                            size: 14,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            r.assigneeName!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        r.assigneeName!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    if (r.dueDate != null)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.alarm,
+                            size: 14,
+                            color: Colors.orange.shade800,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Due: ${DateFormat('MMM dd').format(r.dueDate!)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange.shade800,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                    ],
-                    if (r.dueDate != null) ...[
-                      Icon(
-                        Icons.alarm,
-                        size: 14,
-                        color: Colors.orange.shade800,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Due: ${DateFormat('MMM dd').format(r.dueDate!)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.orange.shade800,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
