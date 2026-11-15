@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../core/constants/enums.dart';
 import '../models/member_model.dart';
 
 class MemberRepository {
@@ -117,6 +118,37 @@ class MemberRepository {
         'accountStatus': 'suspended',
         'updatedAt': Timestamp.fromDate(now),
       });
+    }
+  }
+
+  /// Updates member lifecycle status (active, probationary, suspended, diaspora, deceased).
+  Future<void> updateLifecycleStatus({
+    required String memberId,
+    required MembershipLifecycleStatus status,
+    String? userId,
+  }) async {
+    final now = DateTime.now();
+    final isActive = status == MembershipLifecycleStatus.active ||
+        status == MembershipLifecycleStatus.probationary;
+
+    await _collection.doc(memberId).update({
+      'status': status.name,
+      'isActive': isActive,
+      'updatedAt': Timestamp.fromDate(now),
+    });
+
+    if (userId != null && userId.isNotEmpty) {
+      final accountStatus = (status == MembershipLifecycleStatus.suspended ||
+              status == MembershipLifecycleStatus.deceased)
+          ? 'suspended'
+          : 'active';
+      try {
+        await _firestore.collection('users').doc(userId).update({
+          'isActive': isActive,
+          'accountStatus': accountStatus,
+          'updatedAt': Timestamp.fromDate(now),
+        });
+      } catch (_) {}
     }
   }
 

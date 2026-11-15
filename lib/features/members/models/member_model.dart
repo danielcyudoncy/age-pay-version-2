@@ -188,6 +188,26 @@ class MemberModel {
     );
   }
 
+  MembershipLifecycleStatus get lifecycleStatus {
+    final s = status.trim().toLowerCase();
+    if (s == 'deceased') {
+      return MembershipLifecycleStatus.deceased;
+    }
+    if (s == 'diaspora' || s == 'transferred') {
+      return MembershipLifecycleStatus.diaspora;
+    }
+    if (s == 'probationary' ||
+        s == 'pending_approval' ||
+        s == 'pendingapproval' ||
+        s == 'new') {
+      return MembershipLifecycleStatus.probationary;
+    }
+    if (s == 'suspended' || !isActive) {
+      return MembershipLifecycleStatus.suspended;
+    }
+    return MembershipLifecycleStatus.active;
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

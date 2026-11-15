@@ -1544,7 +1544,10 @@ class _PresidentMeetingsTab extends ConsumerWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
-                                    MeetingDetailScreen(meeting: meeting),
+                                    MeetingDetailScreen(
+                                      meeting: meeting,
+                                      readOnly: true,
+                                    ),
                               ),
                             );
                           },

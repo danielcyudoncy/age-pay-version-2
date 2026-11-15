@@ -17,6 +17,7 @@ class PdfViewerScreen extends ConsumerWidget {
       ReportType.expenseBreakdown => 'Expense Breakdown',
       ReportType.financialSummary => 'Financial Summary',
       ReportType.agmFinancialReport => 'AGM Annual Financial Report',
+      ReportType.secretariatAnnualReport => 'Secretariat Annual Activity Report',
     };
 
     return Scaffold(

@@ -28,7 +28,7 @@ class _MembersManagementScreenState
   List<MemberModel> _filtered = [];
   bool _isLoading = true;
   String? _error;
-  int _selectedFilterIndex = 0; // 0: All, 1: Active, 2: Suspended
+  int _selectedFilterIndex = 0; // 0: All, 1: Active, 2: Probationary, 3: Suspended, 4: Diaspora, 5: Deceased
 
   @override
   void initState() {
@@ -89,9 +89,27 @@ class _MembersManagementScreenState
     final query = _searchController.text.trim().toLowerCase();
     setState(() {
       _filtered = _allMembers.where((m) {
-        // Status filter
-        if (_selectedFilterIndex == 1 && !m.isActive) return false;
-        if (_selectedFilterIndex == 2 && m.isActive) return false;
+        // Lifecycle status filter
+        if (_selectedFilterIndex == 1 &&
+            m.lifecycleStatus != MembershipLifecycleStatus.active) {
+          return false;
+        }
+        if (_selectedFilterIndex == 2 &&
+            m.lifecycleStatus != MembershipLifecycleStatus.probationary) {
+          return false;
+        }
+        if (_selectedFilterIndex == 3 &&
+            m.lifecycleStatus != MembershipLifecycleStatus.suspended) {
+          return false;
+        }
+        if (_selectedFilterIndex == 4 &&
+            m.lifecycleStatus != MembershipLifecycleStatus.diaspora) {
+          return false;
+        }
+        if (_selectedFilterIndex == 5 &&
+            m.lifecycleStatus != MembershipLifecycleStatus.deceased) {
+          return false;
+        }
 
         // Search query
         if (query.isEmpty) return true;
@@ -101,6 +119,176 @@ class _MembersManagementScreenState
             (m.branchName?.toLowerCase().contains(query) ?? false);
       }).toList();
     });
+  }
+
+  Future<void> _showStatusDialog(MemberModel member) async {
+    MembershipLifecycleStatus selected = member.lifecycleStatus;
+    final confirmed = await showDialog<MembershipLifecycleStatus>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'Membership Standing',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Set the official secretarial status for ${member.fullName}.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...MembershipLifecycleStatus.values.map((status) {
+                  final isCurrent = member.lifecycleStatus == status;
+                  final isSelected = selected == status;
+                  return InkWell(
+                    onTap: () => setDialogState(() => selected = status),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 4,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            isSelected
+                                ? Icons.radio_button_checked
+                                : Icons.radio_button_off,
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.outline,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      status.displayName,
+                                      style: TextStyle(
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.w500,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    if (isCurrent) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primaryContainer,
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          'Current',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimaryContainer,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _statusDescription(status),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(null),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(selected),
+              child: const Text('Update Standing'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != null && confirmed != member.lifecycleStatus) {
+      try {
+        final controller = ref.read(memberManagementControllerProvider);
+        await controller.updateLifecycleStatus(
+          member.id,
+          confirmed,
+          userId: member.userId,
+        );
+        if (mounted) _loadMembers();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Updated ${member.fullName}\'s status to ${confirmed.displayName}',
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error updating status: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  String _statusDescription(MembershipLifecycleStatus status) {
+    switch (status) {
+      case MembershipLifecycleStatus.active:
+        return 'Full member with active voting rights and obligations.';
+      case MembershipLifecycleStatus.probationary:
+        return 'Newly enrolled member currently in induction probation.';
+      case MembershipLifecycleStatus.suspended:
+        return 'Temporarily sanctioned / barred from meeting rights.';
+      case MembershipLifecycleStatus.diaspora:
+        return 'Out-of-station / diaspora member maintaining branch ties.';
+      case MembershipLifecycleStatus.deceased:
+        return 'In Memoriam. Financial ledger archived permanently.';
+    }
   }
 
   Future<void> _toggleStatus(MemberModel member) async {
@@ -169,8 +357,23 @@ class _MembersManagementScreenState
     final user = ref.watch(authProvider).valueOrNull;
     final dateFormat = DateFormat('MMM dd, yyyy');
 
-    final activeCount = _allMembers.where((m) => m.isActive).length;
-    final suspendedCount = _allMembers.where((m) => !m.isActive).length;
+    final activeCount = _allMembers
+        .where((m) => m.lifecycleStatus == MembershipLifecycleStatus.active)
+        .length;
+    final probCount = _allMembers
+        .where(
+            (m) => m.lifecycleStatus == MembershipLifecycleStatus.probationary)
+        .length;
+    final suspendedCount = _allMembers
+        .where(
+            (m) => m.lifecycleStatus == MembershipLifecycleStatus.suspended)
+        .length;
+    final diasporaCount = _allMembers
+        .where((m) => m.lifecycleStatus == MembershipLifecycleStatus.diaspora)
+        .length;
+    final deceasedCount = _allMembers
+        .where((m) => m.lifecycleStatus == MembershipLifecycleStatus.deceased)
+        .length;
 
     return Scaffold(
       appBar: AppBar(
@@ -290,11 +493,41 @@ class _MembersManagementScreenState
                     ),
                     const SizedBox(width: 8),
                     _buildFilterChip(
-                      label: 'Suspended ($suspendedCount)',
+                      label: 'Probationary ($probCount)',
                       isSelected: _selectedFilterIndex == 2,
-                      accentColor: Colors.red,
+                      accentColor: Colors.orange,
                       onTap: () {
                         setState(() => _selectedFilterIndex = 2);
+                        _applyFilters();
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      label: 'Suspended ($suspendedCount)',
+                      isSelected: _selectedFilterIndex == 3,
+                      accentColor: Colors.red,
+                      onTap: () {
+                        setState(() => _selectedFilterIndex = 3);
+                        _applyFilters();
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      label: 'Diaspora ($diasporaCount)',
+                      isSelected: _selectedFilterIndex == 4,
+                      accentColor: Colors.indigo,
+                      onTap: () {
+                        setState(() => _selectedFilterIndex = 4);
+                        _applyFilters();
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      label: 'In Memoriam ($deceasedCount)',
+                      isSelected: _selectedFilterIndex == 5,
+                      accentColor: Colors.grey.shade600,
+                      onTap: () {
+                        setState(() => _selectedFilterIndex = 5);
                         _applyFilters();
                       },
                     ),
@@ -414,6 +647,8 @@ class _MembersManagementScreenState
                                   },
                                   onToggleStatus: () =>
                                       _confirmToggleStatus(member),
+                                  onManageStatus: () =>
+                                      _showStatusDialog(member),
                                 );
                               },
                             ),
@@ -469,6 +704,7 @@ class _SecretaryMemberCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onToggleStatus;
+  final VoidCallback onManageStatus;
 
   const _SecretaryMemberCard({
     super.key,
@@ -477,6 +713,7 @@ class _SecretaryMemberCard extends StatelessWidget {
     required this.onTap,
     required this.onEdit,
     required this.onToggleStatus,
+    required this.onManageStatus,
   });
 
   String _getInitials(String name) {
@@ -489,7 +726,34 @@ class _SecretaryMemberCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final statusColor = member.isActive ? Colors.green : Colors.red;
+    final (statusColor, statusIcon, statusLabel) =
+        switch (member.lifecycleStatus) {
+      MembershipLifecycleStatus.active => (
+          Colors.green,
+          Icons.check_circle_outline,
+          'Active'
+        ),
+      MembershipLifecycleStatus.probationary => (
+          Colors.orange,
+          Icons.hourglass_empty,
+          'Probationary'
+        ),
+      MembershipLifecycleStatus.suspended => (
+          Colors.red,
+          Icons.pause_circle_outline,
+          'Suspended'
+        ),
+      MembershipLifecycleStatus.diaspora => (
+          Colors.indigo,
+          Icons.flight_takeoff_outlined,
+          'Diaspora'
+        ),
+      MembershipLifecycleStatus.deceased => (
+          Colors.grey.shade600,
+          Icons.bookmark_border,
+          'In Memoriam'
+        ),
+    };
 
     return Card(
       elevation: 0,
@@ -620,39 +884,47 @@ class _SecretaryMemberCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
 
-                  // Status Badge Pill
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: statusColor.withValues(alpha: 0.28),
+                  // Status Badge Pill (Tap to change standing)
+                  InkWell(
+                    onTap: onManageStatus,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          member.isActive
-                              ? Icons.check_circle_outline
-                              : Icons.pause_circle_outline,
-                          size: 12,
-                          color: statusColor,
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: statusColor.withValues(alpha: 0.28),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          member.isActive ? 'Active' : 'Suspended',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            statusIcon,
+                            size: 12,
                             color: statusColor,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Text(
+                            statusLabel,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: statusColor,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            size: 14,
+                            color: statusColor,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -778,7 +1050,7 @@ class _SecretaryMemberCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
 
-                  // More Options Menu (View Profile / Suspend / Activate)
+                  // More Options Menu (View Profile / Change Status / Suspend / Activate)
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, size: 20),
                     tooltip: 'More actions',
@@ -788,6 +1060,8 @@ class _SecretaryMemberCard extends StatelessWidget {
                     onSelected: (value) {
                       if (value == 'view') {
                         onTap();
+                      } else if (value == 'manage_status') {
+                        onManageStatus();
                       } else if (value == 'toggle_status') {
                         onToggleStatus();
                       }
@@ -803,6 +1077,17 @@ class _SecretaryMemberCard extends StatelessWidget {
                           ],
                         ),
                       ),
+                      const PopupMenuItem(
+                        value: 'manage_status',
+                        child: Row(
+                          children: [
+                            Icon(Icons.published_with_changes_outlined,
+                                size: 18),
+                            SizedBox(width: 10),
+                            Text('Change Status'),
+                          ],
+                        ),
+                      ),
                       PopupMenuItem(
                         value: 'toggle_status',
                         child: Row(
@@ -812,7 +1097,8 @@ class _SecretaryMemberCard extends StatelessWidget {
                                   ? Icons.block_outlined
                                   : Icons.check_circle_outline,
                               size: 18,
-                              color: member.isActive ? Colors.red : Colors.green,
+                              color:
+                                  member.isActive ? Colors.red : Colors.green,
                             ),
                             const SizedBox(width: 10),
                             Text(
@@ -820,8 +1106,9 @@ class _SecretaryMemberCard extends StatelessWidget {
                                   ? 'Suspend Member'
                                   : 'Activate Member',
                               style: TextStyle(
-                                color:
-                                    member.isActive ? Colors.red : Colors.green,
+                                color: member.isActive
+                                    ? Colors.red
+                                    : Colors.green,
                               ),
                             ),
                           ],

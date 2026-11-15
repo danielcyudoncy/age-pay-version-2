@@ -58,9 +58,7 @@ class _MeetingListScreenState extends ConsumerState<MeetingListScreen>
         ? user.nationalRole!
         : user.role;
     return effectiveRole == UserRole.secretary ||
-        effectiveRole == UserRole.viceSecretary ||
-        effectiveRole == UserRole.president ||
-        effectiveRole == UserRole.vicePresident;
+        effectiveRole == UserRole.viceSecretary;
   }
 
   @override

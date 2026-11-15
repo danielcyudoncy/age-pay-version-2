@@ -11,6 +11,7 @@ import '../../expenses/models/expense_model.dart';
 import '../../levies/models/levy_model.dart';
 import '../../fiscal_period/models/fiscal_period_model.dart';
 import '../../national/models/national_remittance_model.dart';
+import '../../meetings/models/meeting_model.dart';
 
 class PdfService {
   static pw.Font? _regularFont;
@@ -1371,6 +1372,362 @@ class PdfService {
             'Less Operating Disbursements: (${_fmt(totalExpenses)}).',
             'Closing Liquid Assets: ${_fmt(balAtHandAndBank)}.',
           ]),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  Future<Uint8List> generateSecretariatAnnualReport({
+    required int year,
+    List<MeetingModel> meetings = const [],
+    List<MemberModel> members = const [],
+    String? organizationName,
+    String? branchName,
+  }) async {
+    await _ensureFonts();
+    final pdf = pw.Document();
+
+    final yearMeetings = meetings.where((m) => m.meetingDate.year == year).toList()
+      ..sort((a, b) => a.meetingDate.compareTo(b.meetingDate));
+    final adoptedCount = yearMeetings.where((m) => m.isAdopted).length;
+    final documentedCount = yearMeetings.where((m) => m.hasMinutes).length;
+
+    final allResolutions = yearMeetings.expand((m) => m.resolutions).toList();
+    final completedResolutions = allResolutions.where((r) => r.isCompleted).toList();
+    final resolutionPercent = allResolutions.isEmpty
+        ? 100
+        : ((completedResolutions.length / allResolutions.length) * 100).round();
+
+    final activeCount = members.where((m) => m.lifecycleStatus == MembershipLifecycleStatus.active).length;
+    final probCount = members.where((m) => m.lifecycleStatus == MembershipLifecycleStatus.probationary).length;
+    final suspCount = members.where((m) => m.lifecycleStatus == MembershipLifecycleStatus.suspended).length;
+    final diasporaCount = members.where((m) => m.lifecycleStatus == MembershipLifecycleStatus.diaspora).length;
+    final deceasedCount = members.where((m) => m.lifecycleStatus == MembershipLifecycleStatus.deceased).length;
+    final totalMembers = members.length;
+    final newIntakes = members.where((m) => m.createdAt.year == year).length;
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageTheme: const pw.PageTheme(
+          margin: pw.EdgeInsets.all(32),
+        ),
+        footer: _buildFooter,
+        build: (context) => [
+          // Header
+          pw.Center(
+            child: pw.Column(
+              children: [
+                pw.Text(
+                  (organizationName ?? 'ASSOCIATION').toUpperCase(),
+                  style: _regularStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+                ),
+                if (branchName != null && branchName.trim().isNotEmpty) ...[
+                  pw.SizedBox(height: 2),
+                  pw.Text(
+                    branchName.trim().toUpperCase(),
+                    style: _regularStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700),
+                  ),
+                ],
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'SECRETARIAT ANNUAL ACTIVITY & GOVERNANCE REPORT ($year)',
+                  style: _regularStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800),
+                ),
+                pw.SizedBox(height: 2),
+                pw.Text(
+                  'OFFICIAL ANNUAL GENERAL MEETING (AGM) SECRETARIAL PACKET',
+                  style: _regularStyle(fontSize: 9, color: PdfColors.grey700),
+                ),
+                pw.SizedBox(height: 8),
+                pw.Divider(thickness: 1.5, color: PdfColors.teal800),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 8),
+
+          // Section 1: Executive Governance KPI Overview
+          pw.Text(
+            '1. EXECUTIVE GOVERNANCE & SITTING SUMMARY',
+            style: _regularStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.teal900),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(3),
+              1: const pw.FlexColumnWidth(2),
+              2: const pw.FlexColumnWidth(3),
+              3: const pw.FlexColumnWidth(2),
+            },
+            children: [
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                children: [
+                  _tableCell('Metric', isBold: true),
+                  _tableCell('Statistic', isBold: true, align: pw.TextAlign.right),
+                  _tableCell('Governance Metric', isBold: true),
+                  _tableCell('Statistic', isBold: true, align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _tableCell('Total Meetings Convened'),
+                  _tableCell('${yearMeetings.length}', align: pw.TextAlign.right),
+                  _tableCell('Formally Adopted Minutes'),
+                  _tableCell('$adoptedCount / ${yearMeetings.length}', isBold: true, align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _tableCell('Documented Minutes Count'),
+                  _tableCell('$documentedCount / ${yearMeetings.length}', align: pw.TextAlign.right),
+                  _tableCell('Resolutions Resolution Rate'),
+                  _tableCell('$resolutionPercent%', isBold: true, align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _tableCell('Total Action Items / Resolutions'),
+                  _tableCell('${allResolutions.length}', align: pw.TextAlign.right),
+                  _tableCell('Fully Executed Actions'),
+                  _tableCell('${completedResolutions.length}', align: pw.TextAlign.right),
+                ],
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 12),
+
+          // Section 2: Membership Register & Demographics Breakdown
+          pw.Text(
+            '2. MEMBERSHIP STATUS & DEMOGRAPHIC BREAKDOWN',
+            style: _regularStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.teal900),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(4),
+              1: const pw.FlexColumnWidth(2),
+              2: const pw.FlexColumnWidth(2),
+            },
+            children: [
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                children: [
+                  _tableCell('Lifecycle Category', isBold: true),
+                  _tableCell('Member Count', isBold: true, align: pw.TextAlign.right),
+                  _tableCell('% of Register', isBold: true, align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _tableCell('Active Standing Members'),
+                  _tableCell('$activeCount', align: pw.TextAlign.right),
+                  _tableCell(totalMembers > 0 ? '${((activeCount / totalMembers) * 100).toStringAsFixed(1)}%' : '0%', align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _tableCell('Probationary / Candidate Members'),
+                  _tableCell('$probCount', align: pw.TextAlign.right),
+                  _tableCell(totalMembers > 0 ? '${((probCount / totalMembers) * 100).toStringAsFixed(1)}%' : '0%', align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _tableCell('Diaspora / Out-of-Station Members'),
+                  _tableCell('$diasporaCount', align: pw.TextAlign.right),
+                  _tableCell(totalMembers > 0 ? '${((diasporaCount / totalMembers) * 100).toStringAsFixed(1)}%' : '0%', align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _tableCell('Suspended / Disciplinary Status'),
+                  _tableCell('$suspCount', align: pw.TextAlign.right),
+                  _tableCell(totalMembers > 0 ? '${((suspCount / totalMembers) * 100).toStringAsFixed(1)}%' : '0%', align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _tableCell('In Memoriam / Deceased'),
+                  _tableCell('$deceasedCount', align: pw.TextAlign.right),
+                  _tableCell(totalMembers > 0 ? '${((deceasedCount / totalMembers) * 100).toStringAsFixed(1)}%' : '0%', align: pw.TextAlign.right),
+                ],
+              ),
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+                children: [
+                  _tableCell('Total Membership Register Strength (New $year Intakes: $newIntakes)', isBold: true),
+                  _tableCell('$totalMembers', isBold: true, align: pw.TextAlign.right),
+                  _tableCell('100.0%', isBold: true, align: pw.TextAlign.right),
+                ],
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 12),
+
+          // Section 3: Meetings Register & Minutes Adoption Log
+          pw.Text(
+            '3. SITTINGS REGISTER & MINUTES ADOPTION PROTOCOL LOG',
+            style: _regularStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.teal900),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(1),
+              1: const pw.FlexColumnWidth(2),
+              2: const pw.FlexColumnWidth(3.5),
+              3: const pw.FlexColumnWidth(1.2),
+              4: const pw.FlexColumnWidth(3.5),
+            },
+            children: [
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                children: [
+                  _tableCell('#', isBold: true),
+                  _tableCell('Date', isBold: true),
+                  _tableCell('Meeting Title', isBold: true),
+                  _tableCell('Minutes', isBold: true, align: pw.TextAlign.center),
+                  _tableCell('Adoption Protocol Status', isBold: true),
+                ],
+              ),
+              if (yearMeetings.isEmpty)
+                pw.TableRow(
+                  children: [
+                    _tableCell('-'),
+                    _tableCell('-'),
+                    _tableCell('No meetings convened in $year'),
+                    _tableCell('-', align: pw.TextAlign.center),
+                    _tableCell('-'),
+                  ],
+                )
+              else
+                ...yearMeetings.asMap().entries.map((entry) {
+                  final idx = entry.key + 1;
+                  final m = entry.value;
+                  final adoptionText = m.isAdopted
+                      ? 'Adopted: Moved by ${m.movedBy ?? "Unknown"}, Seconded by ${m.secondedBy ?? "Unknown"}'
+                      : 'Pending Formal Adoption';
+                  return pw.TableRow(
+                    children: [
+                      _tableCell('$idx'),
+                      _tableCell(_fmtDate(m.meetingDate)),
+                      _tableCell(m.title, isBold: true),
+                      _tableCell(m.hasMinutes ? 'Documented' : 'Pending', align: pw.TextAlign.center),
+                      _tableCell(adoptionText),
+                    ],
+                  );
+                }),
+            ],
+          ),
+          pw.SizedBox(height: 12),
+
+          // Section 4: Matters Arising & Action Tracker Register
+          pw.Text(
+            '4. MATTERS ARISING & RESOLUTIONS ACTION REGISTER',
+            style: _regularStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.teal900),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(1),
+              1: const pw.FlexColumnWidth(4),
+              2: const pw.FlexColumnWidth(2.5),
+              3: const pw.FlexColumnWidth(2),
+              4: const pw.FlexColumnWidth(2),
+            },
+            children: [
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                children: [
+                  _tableCell('#', isBold: true),
+                  _tableCell('Resolution / Action Item', isBold: true),
+                  _tableCell('Designated Assignee', isBold: true),
+                  _tableCell('Target Due Date', isBold: true),
+                  _tableCell('Execution Status', isBold: true),
+                ],
+              ),
+              if (allResolutions.isEmpty)
+                pw.TableRow(
+                  children: [
+                    _tableCell('-'),
+                    _tableCell('No matters arising or resolutions logged for $year'),
+                    _tableCell('-'),
+                    _tableCell('-'),
+                    _tableCell('-'),
+                  ],
+                )
+              else
+                ...allResolutions.asMap().entries.map((entry) {
+                  final idx = entry.key + 1;
+                  final r = entry.value;
+                  final statusText = r.isCompleted
+                      ? 'COMPLETED (${r.completedAt != null ? _fmtDate(r.completedAt!) : "Resolved"})'
+                      : 'IN PROGRESS / PENDING';
+                  return pw.TableRow(
+                    children: [
+                      _tableCell('$idx'),
+                      _tableCell(r.title),
+                      _tableCell((r.assigneeName?.isNotEmpty == true) ? r.assigneeName! : 'Secretariat'),
+                      _tableCell(r.dueDate != null ? _fmtDate(r.dueDate!) : 'Ongoing'),
+                      _tableCell(statusText, isBold: r.isCompleted),
+                    ],
+                  );
+                }),
+            ],
+          ),
+          pw.SizedBox(height: 24),
+
+          // Section 5: Secretarial Attestation & Signatures
+          pw.Container(
+            padding: const pw.EdgeInsets.all(10),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+              color: PdfColors.grey50,
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'ATTESTATION OF SECRETARIAL ACCURACY',
+                  style: _regularStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'I hereby certify that this Annual Secretarial Activity Report presents an authentic, verifiable record of all general meetings, resolutions, adoption motions, and membership records recorded in the archives of this organization for the year $year.',
+                  style: _regularStyle(fontSize: 8.5, color: PdfColors.grey800),
+                ),
+                pw.SizedBox(height: 24),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      children: [
+                        pw.Container(width: 160, height: 1, color: PdfColors.black),
+                        pw.SizedBox(height: 4),
+                        pw.Text('GENERAL SECRETARY', style: _regularStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                        pw.Text('Signature & Date Stamp', style: _regularStyle(fontSize: 8, color: PdfColors.grey600)),
+                      ],
+                    ),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      children: [
+                        pw.Container(width: 160, height: 1, color: PdfColors.black),
+                        pw.SizedBox(height: 4),
+                        pw.Text('PRESIDENT / BRANCH CHAIRMAN', style: _regularStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                        pw.Text('Countersigned & Date', style: _regularStyle(fontSize: 8, color: PdfColors.grey600)),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
