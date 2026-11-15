@@ -27,6 +27,9 @@ class MeetingModel {
   // Resolutions & Matters Arising
   final List<MeetingResolutionModel> resolutions;
 
+  // Sitting Dues / Contributions
+  final double sittingDuesAmount;
+
   const MeetingModel({
     required this.id,
     this.organizationId = '',
@@ -48,6 +51,7 @@ class MeetingModel {
     this.secondedBy,
     this.adoptionNotes,
     this.resolutions = const [],
+    this.sittingDuesAmount = 0.0,
   });
 
   factory MeetingModel.fromFirestore(DocumentSnapshot doc) {
@@ -78,6 +82,8 @@ class MeetingModel {
                   MeetingResolutionModel.fromMap(e as Map<String, dynamic>))
               .toList() ??
           const [],
+      sittingDuesAmount:
+          (data['sittingDuesAmount'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -104,6 +110,7 @@ class MeetingModel {
       if (adoptionNotes != null && adoptionNotes!.isNotEmpty)
         'adoptionNotes': adoptionNotes,
       'resolutions': resolutions.map((r) => r.toMap()).toList(),
+      'sittingDuesAmount': sittingDuesAmount,
     };
   }
 
@@ -128,6 +135,7 @@ class MeetingModel {
     String? secondedBy,
     String? adoptionNotes,
     List<MeetingResolutionModel>? resolutions,
+    double? sittingDuesAmount,
   }) {
     return MeetingModel(
       id: id ?? this.id,
@@ -150,6 +158,7 @@ class MeetingModel {
       secondedBy: secondedBy ?? this.secondedBy,
       adoptionNotes: adoptionNotes ?? this.adoptionNotes,
       resolutions: resolutions ?? this.resolutions,
+      sittingDuesAmount: sittingDuesAmount ?? this.sittingDuesAmount,
     );
   }
 
@@ -169,5 +178,39 @@ class MeetingModel {
       return true;
     }
     return false;
+  }
+
+  /// True if a positive sitting dues amount has been assigned to this sitting.
+  bool get hasSittingDues => sittingDuesAmount > 0;
+
+  /// The sitting dues payment window opens 10 minutes before the scheduled meeting.
+  DateTime get sittingDuesOpenTime =>
+      meetingDate.subtract(const Duration(minutes: 10));
+
+  /// The sitting dues payment window closes at 12:00 Midnight of the meeting day.
+  DateTime get sittingDuesCloseTime =>
+      DateTime(meetingDate.year, meetingDate.month, meetingDate.day, 23, 59, 59);
+
+  /// True if the current time is within the active sitting dues window
+  /// (between 10 minutes before the meeting and 12:00 Midnight).
+  bool isSittingDuesWindowOpen([DateTime? now]) {
+    if (!hasSittingDues) return false;
+    final current = now ?? DateTime.now();
+    return !current.isBefore(sittingDuesOpenTime) &&
+        !current.isAfter(sittingDuesCloseTime);
+  }
+
+  /// True if the current time is still prior to the 10-minute pre-meeting window.
+  bool isSittingDuesUpcoming([DateTime? now]) {
+    if (!hasSittingDues) return false;
+    final current = now ?? DateTime.now();
+    return current.isBefore(sittingDuesOpenTime);
+  }
+
+  /// True if the meeting day has ended (after 12:00 Midnight) and collection is locked.
+  bool isSittingDuesClosed([DateTime? now]) {
+    if (!hasSittingDues) return false;
+    final current = now ?? DateTime.now();
+    return current.isAfter(sittingDuesCloseTime);
   }
 }

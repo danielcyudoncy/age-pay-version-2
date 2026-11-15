@@ -174,6 +174,7 @@ class _ExpenseApprovalQueueCardState
           return const SizedBox.shrink();
         }
 
+        final theme = Theme.of(context);
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8),
           elevation: 2,
@@ -218,7 +219,7 @@ class _ExpenseApprovalQueueCardState
                               'Requires President, Fin. Sec & Secretary sign-offs',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey.shade600,
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -252,9 +253,9 @@ class _ExpenseApprovalQueueCardState
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
+                      color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: AppTheme.cardBorder(context)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,9 +266,10 @@ class _ExpenseApprovalQueueCardState
                             Expanded(
                               child: Text(
                                 expense.title,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
+                                  color: theme.colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -276,7 +278,7 @@ class _ExpenseApprovalQueueCardState
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
-                                color: Colors.red.shade700,
+                                color: AppTheme.statusColor(context, Colors.red),
                               ),
                             ),
                           ],
@@ -287,7 +289,7 @@ class _ExpenseApprovalQueueCardState
                             expense.description,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade700,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -298,16 +300,19 @@ class _ExpenseApprovalQueueCardState
                           runSpacing: 4,
                           children: [
                             _signatureBadge(
+                              context: context,
                               roleLabel: 'President',
                               isApproved: expense.isPresidentApproved,
                               approvedByName: expense.approvals['president']?['byName'] as String?,
                             ),
                             _signatureBadge(
+                              context: context,
                               roleLabel: 'Fin. Sec',
                               isApproved: expense.isFinancialSecretaryApproved,
                               approvedByName: expense.approvals['financialSecretary']?['byName'] as String?,
                             ),
                             _signatureBadge(
+                              context: context,
                               roleLabel: 'Secretary',
                               isApproved: expense.isSecretaryApproved,
                               approvedByName: expense.approvals['secretary']?['byName'] as String?,
@@ -374,7 +379,7 @@ class _ExpenseApprovalQueueCardState
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: Colors.green.shade800,
+                              color: AppTheme.statusColor(context, Colors.green),
                             ),
                           ),
                         ],
@@ -393,17 +398,24 @@ class _ExpenseApprovalQueueCardState
   }
 
   Widget _signatureBadge({
+    required BuildContext context,
     required String roleLabel,
     required bool isApproved,
     String? approvedByName,
   }) {
+    final theme = Theme.of(context);
+    final approvedColor = AppTheme.statusColor(context, Colors.green);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isApproved ? Colors.green.shade50 : Colors.grey.shade100,
+        color: isApproved
+            ? AppTheme.statusBg(context, Colors.green)
+            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: isApproved ? Colors.green.shade400 : Colors.grey.shade300,
+          color: isApproved
+              ? approvedColor.withValues(alpha: 0.3)
+              : AppTheme.cardBorder(context),
         ),
       ),
       child: Row(
@@ -412,7 +424,7 @@ class _ExpenseApprovalQueueCardState
           Icon(
             isApproved ? Icons.check_circle : Icons.hourglass_empty,
             size: 13,
-            color: isApproved ? Colors.green.shade700 : Colors.grey.shade600,
+            color: isApproved ? approvedColor : theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 4),
           Text(
@@ -422,7 +434,7 @@ class _ExpenseApprovalQueueCardState
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: isApproved ? Colors.green.shade800 : Colors.grey.shade700,
+              color: isApproved ? approvedColor : theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],

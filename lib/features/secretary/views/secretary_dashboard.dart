@@ -774,7 +774,7 @@ class _MeetingsTab extends ConsumerWidget {
                                           fontSize: 10,
                                           fontWeight: FontWeight.w600,
                                           color: meeting.isExecutivesOnly
-                                              ? Colors.deepOrange.shade800
+                                              ? AppTheme.statusColor(context, Colors.deepOrange)
                                               : Theme.of(context).colorScheme.primary,
                                         ),
                                       ),
@@ -790,7 +790,7 @@ class _MeetingsTab extends ConsumerWidget {
                                   Icon(
                                     Icons.location_on_outlined,
                                     size: 13,
-                                    color: Colors.grey.shade600,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   ),
                                   const SizedBox(width: 4),
                                   Expanded(
@@ -798,7 +798,7 @@ class _MeetingsTab extends ConsumerWidget {
                                       meeting.venue,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.grey.shade700,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,

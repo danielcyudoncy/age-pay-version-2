@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/core/constants/enums.dart';
+import 'package:cls/core/theme/app_theme.dart';
 
 
 class MemberInfoCard extends StatelessWidget {
@@ -54,7 +55,7 @@ class MemberInfoCard extends StatelessWidget {
                         member.email,
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey.shade600,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -91,7 +92,9 @@ class MemberInfoCard extends StatelessWidget {
               icon: Icons.info_outline,
               label: 'Status',
               value: member.isActive ? 'Active' : 'Inactive',
-              valueColor: member.isActive ? Colors.green : Colors.orange,
+              valueColor: member.isActive
+                  ? AppTheme.statusColor(context, Colors.green)
+                  : AppTheme.statusColor(context, Colors.orange),
             ),
           ],
         ),
@@ -115,13 +118,14 @@ class InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.grey.shade600),
+        Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
         const SizedBox(width: 8),
         Text(
           label,
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
         ),
         const SizedBox(width: 8),
         Expanded(

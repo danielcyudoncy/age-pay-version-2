@@ -232,7 +232,7 @@ class PaymentDetailSheet extends ConsumerWidget {
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.teal.withValues(alpha: 0.08),
+                            color: AppTheme.statusBg(context, Colors.teal),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -241,13 +241,13 @@ class PaymentDetailSheet extends ConsumerWidget {
                               Icon(
                                 _methodIcon(payment.method),
                                 size: 14,
-                                color: Colors.teal.shade800,
+                                color: AppTheme.statusColor(context, Colors.teal),
                               ),
                               const SizedBox(width: 5),
                               Text(
                                 _methodLabel(payment.method),
                                 style: TextStyle(
-                                  color: Colors.teal.shade800,
+                                  color: AppTheme.statusColor(context, Colors.teal),
                                   fontWeight: FontWeight.w600,
                                   fontSize: 12,
                                 ),
@@ -262,7 +262,7 @@ class PaymentDetailSheet extends ConsumerWidget {
                       dateFormat.format(payment.createdAt),
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade600,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -409,9 +409,12 @@ class PaymentDetailSheet extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: AppTheme.statusBg(context, Colors.blue),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.shade200),
+                  border: Border.all(
+                    color: AppTheme.statusColor(context, Colors.blue)
+                        .withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -462,7 +465,7 @@ class PaymentDetailSheet extends ConsumerWidget {
                         'Reference:',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade600,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                       Row(
@@ -506,7 +509,7 @@ class PaymentDetailSheet extends ConsumerWidget {
                           'Recorded / Verified By:',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade600,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                         Text(

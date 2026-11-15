@@ -163,7 +163,7 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
                                 context,
                                 'Executive Identity',
                                 'NIN/BVN Verified (${widget.user.ninOrBvn!.length == 11 ? "${widget.user.ninOrBvn!.substring(0, 3)}****${widget.user.ninOrBvn!.substring(7)}" : widget.user.ninOrBvn!})',
-                                valueColor: Colors.green.shade700,
+                                valueColor: AppTheme.statusColor(context, Colors.green),
                               ),
                             ],
                           ],
@@ -190,9 +190,9 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
                       padding: const EdgeInsets.all(16),
                       margin: const EdgeInsets.only(bottom: 24),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
+                        color: AppTheme.statusBg(context, Colors.blue),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.blue.shade200),
+                        border: Border.all(color: AppTheme.statusColor(context, Colors.blue).withValues(alpha: 0.3)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -202,7 +202,7 @@ class _PendingApprovalScreenState extends ConsumerState<PendingApprovalScreen> {
                             children: [
                               Icon(
                                 Icons.info_outline,
-                                color: Colors.blue.shade700,
+                                color: AppTheme.statusColor(context, Colors.blue),
                                 size: 22,
                               ),
                               const SizedBox(width: 12),

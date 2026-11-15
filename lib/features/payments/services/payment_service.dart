@@ -63,6 +63,7 @@ abstract class PaymentService {
     required double amount,
     String? notes,
     required String recordedBy,
+    String? meetingId,
   });
 
   /// Submit a bank transfer payment via Cloud Function.
@@ -76,6 +77,7 @@ abstract class PaymentService {
     required String bankName,
     required String receiptUrl,
     String? notes,
+    String? meetingId,
   });
 
   /// Verify (approve or reject) a pending payment via Cloud Function.
@@ -182,6 +184,7 @@ class CloudFunctionPaymentService implements PaymentService {
     required double amount,
     String? notes,
     required String recordedBy,
+    String? meetingId,
   }) async {
     try {
       final callable = _functions.httpsCallable('recordCashPayment');
@@ -191,6 +194,7 @@ class CloudFunctionPaymentService implements PaymentService {
         'amount': amount,
         'notes': notes,
         'recordedBy': recordedBy,
+        'meetingId': ?meetingId,
       });
 
       final data = response.data as Map<String, dynamic>;
@@ -228,6 +232,7 @@ class CloudFunctionPaymentService implements PaymentService {
           verifiedBy: recordedBy,
           verifiedAt: now,
           createdAt: now,
+          meetingId: meetingId,
         );
 
         final firestoreData = payment.toFirestore();
@@ -303,6 +308,7 @@ class CloudFunctionPaymentService implements PaymentService {
     required String bankName,
     required String receiptUrl,
     String? notes,
+    String? meetingId,
   }) async {
     try {
       final callable = _functions.httpsCallable('submitBankTransfer');
@@ -315,6 +321,7 @@ class CloudFunctionPaymentService implements PaymentService {
         'bankName': bankName,
         'receiptUrl': receiptUrl,
         'notes': notes,
+        'meetingId': ?meetingId,
       });
 
       final data = response.data as Map<String, dynamic>;
@@ -379,6 +386,7 @@ class CloudFunctionPaymentService implements PaymentService {
           transferProofUrl: receiptUrl,
           notes: notes,
           createdAt: now,
+          meetingId: meetingId,
         );
 
         final firestoreData = payment.toFirestore();

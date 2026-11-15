@@ -37,6 +37,7 @@ class PaymentModel {
   final String? verifiedBy;
   final DateTime? verifiedAt;
   final DateTime createdAt;
+  final String? meetingId;
 
   const PaymentModel({
     required this.id,
@@ -53,6 +54,7 @@ class PaymentModel {
     this.verifiedBy,
     this.verifiedAt,
     required this.createdAt,
+    this.meetingId,
   });
 
   factory PaymentModel.fromFirestore(DocumentSnapshot doc) {
@@ -82,6 +84,7 @@ class PaymentModel {
           ? _parseDate(data['verifiedAt'])
           : null,
       createdAt: _parseDate(data['createdAt']),
+      meetingId: data['meetingId'] as String?,
     );
   }
 
@@ -100,6 +103,7 @@ class PaymentModel {
       'verifiedBy': verifiedBy,
       'verifiedAt': verifiedAt != null ? Timestamp.fromDate(verifiedAt!) : null,
       'createdAt': Timestamp.fromDate(createdAt),
+      if (meetingId != null) 'meetingId': meetingId,
     };
   }
 
@@ -124,6 +128,7 @@ class PaymentModel {
     String? verifiedBy,
     DateTime? verifiedAt,
     DateTime? createdAt,
+    String? meetingId,
   }) {
     return PaymentModel(
       id: id ?? this.id,
@@ -140,6 +145,7 @@ class PaymentModel {
       verifiedBy: verifiedBy ?? this.verifiedBy,
       verifiedAt: verifiedAt ?? this.verifiedAt,
       createdAt: createdAt ?? this.createdAt,
+      meetingId: meetingId ?? this.meetingId,
     );
   }
 }

@@ -186,9 +186,9 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: AppTheme.cardBorder(context)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.04),
@@ -203,14 +203,21 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
               Text(
                 orgName.toUpperCase(),
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               if (branchName.isNotEmpty) ...[
                 const SizedBox(height: 2),
                 Text(
                   branchName.toUpperCase(),
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
               const SizedBox(height: 6),
@@ -288,16 +295,16 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
+                    color: AppTheme.statusBg(context, Colors.green),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.shade200),
+                    border: Border.all(color: AppTheme.statusColor(context, Colors.green).withValues(alpha: 0.3)),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Reconciled',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green,
+                      color: AppTheme.statusColor(context, Colors.green),
                     ),
                   ),
                 ),
@@ -321,7 +328,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
               // Table Header
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                color: Colors.grey.shade100,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                 child: Row(
                   children: const [
                     Expanded(
@@ -517,17 +524,19 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
   }
 
   Widget _buildSectionHeader(String title) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-      color: Colors.grey.shade100,
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 11,
-          letterSpacing: 0.3,
-          color: Colors.grey.shade700,
+    return Builder(
+      builder: (context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        child: Text(
+          title.toUpperCase(),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+            letterSpacing: 0.3,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );
@@ -779,7 +788,10 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
             const SizedBox(height: 4),
             Text(
               'Detailed monthly breakdown of contributions received during tenure',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 14),
             if (sortedMonthEntries.isEmpty) ...[
@@ -787,27 +799,30 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
-                child: const Text(
+                child: Text(
                   'No dues collections recorded for this tenure period. Total: ₦0',
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ] else ...[
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Column(
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      color: Colors.grey.shade100,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                       child: Row(
                         children: const [
                           Expanded(
@@ -842,7 +857,9 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
 
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        color: isEven ? Colors.white : Colors.grey.shade50,
+                        color: isEven
+                            ? Theme.of(context).colorScheme.surface
+                            : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
                         child: Row(
                           children: [
                             Icon(
@@ -864,7 +881,10 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                                   ),
                                   Text(
                                     '${payments.length} ${payments.length == 1 ? 'payment' : 'payments'} recorded',
-                                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -983,7 +1003,10 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
             const SizedBox(height: 4),
             Text(
               'Admission fees and registration charges received from new members',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 14),
             if (regPayments.isEmpty) ...[
@@ -991,27 +1014,30 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
-                child: const Text(
+                child: Text(
                   'No new member registration fees recorded during this tenure period. Total: ₦0',
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ] else ...[
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Column(
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      color: Colors.grey.shade100,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                       child: Row(
                         children: const [
                           Expanded(
@@ -1047,7 +1073,9 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
 
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        color: isEven ? Colors.white : Colors.grey.shade50,
+                        color: isEven
+                            ? Theme.of(context).colorScheme.surface
+                            : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
                         child: Row(
                           children: [
                             const Icon(
@@ -1069,7 +1097,10 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                                   ),
                                   Text(
                                     noteText,
-                                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -1183,13 +1214,16 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: AppTheme.cardBorder(context)),
               ),
-              child: const Text(
+              child: Text(
                 'No pass-through national levies recorded for this tenure period. Total: ₦0',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
@@ -1206,8 +1240,10 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
     final isFullyRemitted = r.unremittedBalance <= 0;
     final isPartiallyRemitted = !isFullyRemitted && r.amountRemitted > 0;
     final statusColor = isFullyRemitted
-        ? Colors.green
-        : (isPartiallyRemitted ? Colors.orange : Colors.grey.shade700);
+        ? AppTheme.statusColor(context, Colors.green)
+        : (isPartiallyRemitted
+            ? AppTheme.statusColor(context, Colors.orange)
+            : Theme.of(context).colorScheme.onSurfaceVariant);
     final statusText = isFullyRemitted
         ? 'Fully Remitted'
         : (isPartiallyRemitted ? 'Partially Remitted' : 'Pending Remittance');
@@ -1273,13 +1309,16 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
             const SizedBox(height: 4),
             Text(
               'Custodial pass-through funds held in trust for National Secretariat',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 14),
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: AppTheme.cardBorder(context)),
               ),
               clipBehavior: Clip.antiAlias,
               child: Column(
@@ -1292,7 +1331,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                   _buildNoteKeyValueRow(
                     label: 'Remitted to National HQ',
                     value: '(${_currency.format(r.amountRemitted)})',
-                    valueColor: Colors.blue.shade700,
+                    valueColor: AppTheme.statusColor(context, Colors.blue),
                   ),
                   const Divider(height: 1),
                   _buildNoteKeyValueRow(
@@ -1380,13 +1419,16 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: AppTheme.cardBorder(context)),
               ),
-              child: const Text(
+              child: Text(
                 'No operating expenses or disbursements recorded during this tenure period. Total: ₦0',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
@@ -1447,7 +1489,10 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 ),
                 Text(
                   _dateFormat.format(e.expenseDate),
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -1457,12 +1502,15 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     e.category.displayName,
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 if (isCoFunded) ...[
@@ -1489,7 +1537,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: AppTheme.cardBorder(context)),
               ),
               clipBehavior: Clip.antiAlias,
               child: Column(
@@ -1503,7 +1551,7 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                     _buildNoteKeyValueRow(
                       label: 'Less Member Voluntary Donations',
                       value: '(${_currency.format(deduction)})',
-                      valueColor: Colors.orange.shade800,
+                      valueColor: AppTheme.statusColor(context, Colors.orange),
                     ),
                     const Divider(height: 1),
                   ],
@@ -1511,8 +1559,8 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                     label: 'Net Purse Disbursed',
                     value: _currency.format(e.amount),
                     isBold: true,
-                    valueColor: Colors.red.shade800,
-                    backgroundColor: Colors.red.withValues(alpha: 0.04),
+                    valueColor: AppTheme.statusColor(context, Colors.red),
+                    backgroundColor: AppTheme.statusBg(context, Colors.red),
                   ),
                 ],
               ),
@@ -1593,13 +1641,16 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
             const SizedBox(height: 4),
             Text(
               'Closing liquidity reconciliation as at ${_dateFormat.format(endDate)}',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 14),
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: AppTheme.cardBorder(context)),
               ),
               clipBehavior: Clip.antiAlias,
               child: Column(
@@ -1623,16 +1674,16 @@ class _AgmFinancialReportWidgetState extends State<AgmFinancialReportWidget>
                     label: 'Total Gross Value Available',
                     value: '= ${_currency.format(totalGrossValue)}',
                     isBold: true,
-                    valueColor: Colors.blue.shade900,
-                    backgroundColor: Colors.blue.withValues(alpha: 0.08),
+                    valueColor: AppTheme.statusColor(context, Colors.blue),
+                    backgroundColor: AppTheme.statusBg(context, Colors.blue),
                   ),
                   const Divider(height: 1),
                   _buildNoteKeyValueRow(
                     label: 'Less Total Operating Disbursements',
                     value: '- (${_currency.format(totalExpenses)})',
                     isBold: true,
-                    valueColor: Colors.red.shade800,
-                    backgroundColor: Colors.red.withValues(alpha: 0.04),
+                    valueColor: AppTheme.statusColor(context, Colors.red),
+                    backgroundColor: AppTheme.statusBg(context, Colors.red),
                   ),
                   const Divider(height: 1),
                   _buildNoteKeyValueRow(

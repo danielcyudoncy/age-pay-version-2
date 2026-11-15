@@ -22,6 +22,11 @@ import '../widgets/meeting_rsvp_card.dart';
 import '../widgets/meeting_excuses_section.dart';
 import 'package:cls/features/financial_secretary/controllers/sitting_collection_provider.dart';
 import 'package:cls/features/financial_secretary/widgets/sitting_readout_sheet.dart';
+import 'package:cls/features/payments/views/make_payment_screen.dart';
+import 'package:cls/features/payments/views/cash_payment_screen.dart';
+import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dart'
+    show memberPaymentsStreamProvider;
+import 'package:cls/features/payments/models/payment_model.dart';
 
 class MeetingDetailScreen extends ConsumerStatefulWidget {
   final MeetingModel? meeting;
@@ -39,6 +44,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
   final _titleController = TextEditingController();
   final _venueController = TextEditingController();
   final _minutesController = TextEditingController();
+  final _sittingDuesController = TextEditingController();
   final _picker = ImagePicker();
 
   DateTime? _selectedDate;
@@ -63,6 +69,10 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
       _minutesController.text = meeting.minutesText ?? '';
       _selectedDate = meeting.meetingDate;
       _targetAudience = meeting.targetAudience;
+      if (meeting.sittingDuesAmount > 0) {
+        _sittingDuesController.text =
+            meeting.sittingDuesAmount.toStringAsFixed(0);
+      }
     }
   }
 
@@ -71,6 +81,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
     _titleController.dispose();
     _venueController.dispose();
     _minutesController.dispose();
+    _sittingDuesController.dispose();
     super.dispose();
   }
 
@@ -512,6 +523,9 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
       final meetingBranchId =
           widget.meeting?.branchId ?? (isNational ? 'national' : user.branchId);
 
+      final sittingDues =
+          double.tryParse(_sittingDuesController.text.trim()) ?? 0.0;
+
       if (_pickedFile != null && _pickedFileName != null) {
         final meetingId =
             widget.meeting?.id ??
@@ -524,6 +538,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
               targetAudience: _targetAudience,
               scope: meetingScope,
               branchId: meetingBranchId,
+              sittingDuesAmount: sittingDues,
             );
         final result = await controller.uploadMinutesFile(
           meetingId,
@@ -545,6 +560,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
             targetAudience: _targetAudience,
             scope: meetingScope,
             branchId: meetingBranchId,
+            sittingDuesAmount: sittingDues,
           );
 
       final meeting = MeetingModel(
@@ -570,6 +586,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
         secondedBy: _currentMeeting?.secondedBy,
         adoptionNotes: _currentMeeting?.adoptionNotes,
         resolutions: _currentMeeting?.resolutions ?? const [],
+        sittingDuesAmount: sittingDues,
       );
 
       await controller.updateMeeting(meeting);
@@ -853,6 +870,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                 ),
               if (isReadOnly && currentMeeting != null) ...[
                 _buildReadOnlyMeetingHeader(theme, currentMeeting, dateTimeFormat),
+                _buildSittingDuesSection(theme, currentMeeting, user),
               ] else ...[
                 TextFormField(
                   controller: _titleController,
@@ -900,6 +918,31 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                         ? 'Select date and time'
                         : dateTimeFormat.format(_selectedDate!),
                   ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _sittingDuesController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Sitting Dues Amount (₦)',
+                    hintText:
+                        'e.g. 1000 (Optional: Set sitting dues, or leave 0)',
+                    prefixIcon: Icon(Icons.payments_outlined),
+                    prefixText: '₦ ',
+                    border: OutlineInputBorder(),
+                    helperText:
+                        'Changes per sitting. Members can contribute during the sitting window.',
+                  ),
+                  validator: (value) {
+                    if (value != null && value.trim().isNotEmpty) {
+                      final amount = double.tryParse(value.trim());
+                      if (amount == null || amount < 0) {
+                        return 'Please enter a valid amount';
+                      }
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -1535,8 +1578,301 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                 ),
               ],
             ),
+            if (meeting.hasSittingDues) ...[
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                      border:
+                          Border.all(color: Colors.teal.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.payments_outlined,
+                            size: 14, color: Colors.teal),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Sitting Dues: ₦${NumberFormat('#,##0').format(meeting.sittingDuesAmount)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      meeting.isSittingDuesWindowOpen()
+                          ? '● Open until 12:00 AM Midnight'
+                          : (meeting.isSittingDuesUpcoming()
+                              ? '🔒 Opens 10 mins before sitting'
+                              : '🔒 Window closed for this sitting'),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: meeting.isSittingDuesWindowOpen()
+                            ? AppTheme.statusColor(context, Colors.green)
+                            : (meeting.isSittingDuesUpcoming()
+                                ? AppTheme.statusColor(context, Colors.orange)
+                                : Theme.of(context).colorScheme.onSurfaceVariant),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSittingDuesSection(
+    ThemeData theme,
+    MeetingModel meeting,
+    dynamic user,
+  ) {
+    if (!meeting.hasSittingDues) return const SizedBox.shrink();
+
+    final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
+    final uid = user?.uid ?? '';
+    final memberPayments = uid.isNotEmpty
+        ? ref.watch(memberPaymentsStreamProvider(uid)).valueOrNull ?? []
+        : <PaymentModel>[];
+    final sittingPayment = memberPayments.where((p) =>
+        (p.status == PaymentStatus.approved ||
+            p.status == PaymentStatus.pending) &&
+        (p.meetingId == meeting.id ||
+            (p.notes?.contains(meeting.title) ?? false))).firstOrNull;
+    final hasPaid = sittingPayment != null;
+
+    final isOpen = meeting.isSittingDuesWindowOpen();
+    final isUpcoming = meeting.isSittingDuesUpcoming();
+
+    final effectiveRole = (user?.nationalRole != null)
+        ? user!.nationalRole!
+        : user?.role;
+    final canManageFinancials = user != null &&
+        (effectiveRole == UserRole.financialSecretary ||
+            effectiveRole == UserRole.treasurer ||
+            effectiveRole == UserRole.president ||
+            effectiveRole == UserRole.secretary ||
+            user.role == UserRole.superAdmin);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: hasPaid
+            ? Colors.green.withValues(alpha: 0.08)
+            : (isOpen
+                ? Colors.teal.withValues(alpha: 0.08)
+                : (isUpcoming
+                    ? Colors.orange.withValues(alpha: 0.08)
+                    : theme.colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.4))),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasPaid
+              ? Colors.green.withValues(alpha: 0.35)
+              : (isOpen
+                  ? Colors.teal.withValues(alpha: 0.35)
+                  : (isUpcoming
+                      ? Colors.orange.withValues(alpha: 0.35)
+                      : theme.colorScheme.outline.withValues(alpha: 0.2))),
+        ),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: (hasPaid
+                          ? Colors.green
+                          : (isOpen ? Colors.teal : Colors.orange))
+                      .withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  hasPaid
+                      ? Icons.check_circle
+                      : (isOpen ? Icons.payments : Icons.lock_clock),
+                  color: hasPaid
+                      ? AppTheme.statusColor(context, Colors.green)
+                      : (isOpen
+                          ? AppTheme.statusColor(context, Colors.teal)
+                          : AppTheme.statusColor(context, Colors.orange)),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'SITTING DUES: ${currency.format(meeting.sittingDuesAmount)}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                        color: hasPaid
+                            ? AppTheme.statusColor(context, Colors.green)
+                            : (isOpen
+                                ? AppTheme.statusColor(context, Colors.teal)
+                                : AppTheme.statusColor(context, Colors.orange)),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      hasPaid
+                          ? (sittingPayment.status == PaymentStatus.approved
+                              ? 'Paid & Settled (${currency.format(sittingPayment.amount)}) ✓'
+                              : 'Payment Submitted (Pending Verification)')
+                          : (isOpen
+                              ? 'Window Open • Closes 12:00 AM Midnight'
+                              : (isUpcoming
+                                  ? 'Opens 10 mins before sitting'
+                                  : 'Sitting Dues Window Closed')),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: hasPaid
+                            ? AppTheme.statusColor(context, Colors.green)
+                            : (isOpen
+                                ? AppTheme.statusColor(context, Colors.teal)
+                                : theme.colorScheme.onSurface),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            hasPaid
+                ? 'Your sitting dues contribution has been documented in the meeting sitting ledger.'
+                : (isOpen
+                    ? 'The sitting dues payment window is open. You may pay online or via transfer, and adjust the amount you wish to contribute.'
+                    : (isUpcoming
+                        ? 'Sitting dues collection opens exactly 10 minutes before the sitting starts.'
+                        : 'Sitting dues payment for this meeting closed at 12:00 AM Midnight.')),
+            style: TextStyle(
+              fontSize: 12,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          if (isOpen && !hasPaid) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MakePaymentScreen(
+                        memberId: uid,
+                        memberEmail: user?.email,
+                        meetingId: meeting.id,
+                        meetingTitle: meeting.title,
+                        initialAmount: meeting.sittingDuesAmount,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.payment, size: 18),
+                label: Text(
+                  'Pay Sitting Dues (${currency.format(meeting.sittingDuesAmount)})',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+          if (canManageFinancials) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.teal.shade800,
+                      side: BorderSide(color: Colors.teal.shade300),
+                    ),
+                    icon: const Icon(Icons.campaign_outlined, size: 16),
+                    label: const Text(
+                      'Sitting Readout',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () {
+                      ref.read(sittingScopeModeProvider.notifier).state =
+                          SittingScopeMode.customDate;
+                      ref.read(selectedSittingDateProvider.notifier).state =
+                          meeting.meetingDate;
+                      ref
+                          .read(selectedSittingMeetingTitleProvider.notifier)
+                          .state = meeting.title;
+                      SittingReadoutSheet.show(context);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.teal.shade800,
+                      side: BorderSide(color: Colors.teal.shade300),
+                    ),
+                    icon: const Icon(Icons.point_of_sale, size: 16),
+                    label: const Text(
+                      'Collect Cash',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CashPaymentScreen(
+                            recordedBy:
+                                user?.displayName ?? 'Financial Secretary',
+                            meetingId: meeting.id,
+                            meetingTitle: meeting.title,
+                            initialAmount: meeting.sittingDuesAmount,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

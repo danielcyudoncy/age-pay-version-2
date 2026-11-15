@@ -505,6 +505,26 @@ Attendance is recorded for each member.
   - Ordinary members have immediate read-only access to published minutes and downloadable document scans through the Member Dashboard ("Meeting Minutes" Quick Action button and interactive Meeting Minutes card).
   - Ordinary members cannot view executive-only meeting minutes.
 
+### Meeting Sitting Dues & Financial Secretary Readout
+
+* **Secretariat Sitting Dues Configuration**:
+  - The Secretary sets an optional `sittingDuesAmount` (fixed baseline) when scheduling or editing a meeting.
+  - The amount is flexible and can change from meeting to meeting depending on operational needs.
+* **Member Payment Flexibility**:
+  - The baseline amount is pre-filled when a member initiates payment.
+  - Individuals are permitted to adjust and customize the amount they wish to pay (supporting tiered contributions, partial contributions, or voluntary additions).
+* **Strict Timing Window**:
+  - Sitting dues payments are **only active starting 10 minutes before the scheduled meeting time** on the meeting day.
+  - The payment window automatically **closes at 12:00 AM Midnight** (end of that meeting day).
+  - Outside this window, the payment action is disabled with explicit status indicators (`Opens 10 mins before meeting` or `Sitting Dues Closed`).
+* **Real-Time Sitting Financial Readout**:
+  - The Financial Secretary has access to a live **Sitting Financials Readout** bottom sheet from both their dashboard and the meeting detail screen.
+  - Summarizes the total cash, bank transfer, and online receipts collected during that specific meeting sitting.
+  - Provides a one-tap **"Copy Summary"** feature allowing the Financial Secretary to read out the official collections tally to the assembly before adjournment.
+* **End-of-Year Accounting & AGM Reconciliation**:
+  - Every sitting payment records the associated `meetingId` and audit metadata.
+  - Sitting dues seamlessly roll up into the Financial Secretary's Annual / AGM Financial Report under recognized contribution categories without requiring manual spreadsheet tallies.
+
 ---
 
 ## Attendance Rules

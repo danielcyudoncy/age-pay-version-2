@@ -6,6 +6,7 @@ import 'package:cls/features/members/models/member_model.dart';
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/core/constants/enums.dart';
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/dashboard/controllers/president_dashboard_provider.dart';
 import 'package:cls/features/obligations/models/obligation_model.dart';
@@ -282,8 +283,8 @@ class TreasurerMemberDetailScreen extends ConsumerWidget {
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: obligations.isEmpty
-                                              ? Colors.orange.shade800
-                                              : Colors.grey.shade700,
+                                              ? AppTheme.statusColor(context, Colors.orange)
+                                              : Theme.of(context).colorScheme.onSurfaceVariant,
                                           fontWeight: obligations.isEmpty
                                               ? FontWeight.w600
                                               : FontWeight.normal,
@@ -1207,16 +1208,17 @@ class _NationalBranchEnrollmentCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isEnrolled = member.isEnrolledInNational;
 
+    final greenColor = AppTheme.statusColor(context, Colors.green);
     return Card(
       elevation: 0,
       color: isEnrolled
-          ? Colors.green.shade50
+          ? AppTheme.statusBg(context, Colors.green)
           : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: isEnrolled
-              ? Colors.green.shade300
+              ? greenColor.withValues(alpha: 0.3)
               : theme.colorScheme.outlineVariant,
         ),
       ),
@@ -1228,14 +1230,14 @@ class _NationalBranchEnrollmentCard extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isEnrolled
-                    ? Colors.green.shade100
+                    ? greenColor.withValues(alpha: 0.15)
                     : theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 Icons.account_balance,
                 color: isEnrolled
-                    ? Colors.green.shade800
+                    ? greenColor
                     : theme.colorScheme.onSurfaceVariant,
                 size: 22,
               ),
@@ -1260,8 +1262,8 @@ class _NationalBranchEnrollmentCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       color: isEnrolled
-                          ? Colors.green.shade800
-                          : Colors.grey.shade700,
+                          ? greenColor
+                          : theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -1290,12 +1292,14 @@ class _SuperAdminMemberGovernanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final redColor = AppTheme.statusColor(context, Colors.red);
     return Card(
       elevation: 0,
-      color: Colors.red.shade50.withValues(alpha: 0.6),
+      color: AppTheme.statusBg(context, Colors.red),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.red.shade200),
+        side: BorderSide(color: redColor.withValues(alpha: 0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1307,12 +1311,12 @@ class _SuperAdminMemberGovernanceCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade100,
+                    color: redColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.admin_panel_settings_outlined,
-                    color: Colors.red.shade800,
+                    color: redColor,
                     size: 20,
                   ),
                 ),
@@ -1326,14 +1330,14 @@ class _SuperAdminMemberGovernanceCard extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
-                          color: Colors.red.shade900,
+                          color: redColor,
                         ),
                       ),
                       Text(
                         'Sovereign cross-branch management rights',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.red.shade700,
+                          color: redColor.withValues(alpha: 0.85),
                         ),
                       ),
                     ],
@@ -1347,7 +1351,7 @@ class _SuperAdminMemberGovernanceCard extends StatelessWidget {
               'If the member has past payments, they will be safely archived without orphaning financial ledger records.',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.red.shade900.withValues(alpha: 0.8),
+                color: theme.colorScheme.onSurfaceVariant,
                 height: 1.3,
               ),
             ),
@@ -1356,8 +1360,8 @@ class _SuperAdminMemberGovernanceCard extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red.shade700,
-                  side: BorderSide(color: Colors.red.shade400),
+                  foregroundColor: redColor,
+                  side: BorderSide(color: redColor.withValues(alpha: 0.5)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),

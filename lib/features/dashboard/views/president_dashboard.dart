@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:cls/core/constants/enums.dart';
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/dashboard/controllers/president_dashboard_provider.dart';
@@ -1013,14 +1014,14 @@ class _ActiveLeviesSection extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: Colors.green.shade700,
+                              color: AppTheme.statusColor(context, Colors.green),
                             ),
                           ),
                           Text(
                             'Target: ${currency.format(l.totalTarget)}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade600,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -1606,7 +1607,7 @@ class _PresidentMeetingsTab extends ConsumerWidget {
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.w600,
                                                   color: meeting.isExecutivesOnly
-                                                      ? Colors.deepOrange.shade800
+                                                      ? AppTheme.statusColor(context, Colors.deepOrange)
                                                       : theme.colorScheme.primary,
                                                 ),
                                               ),
@@ -1634,8 +1635,8 @@ class _PresidentMeetingsTab extends ConsumerWidget {
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
                                               color: meeting.hasMinutes
-                                                  ? Colors.green.shade800
-                                                  : Colors.orange.shade800,
+                                                  ? AppTheme.statusColor(context, Colors.green)
+                                                  : AppTheme.statusColor(context, Colors.orange),
                                             ),
                                           ),
                                         ),
@@ -1668,7 +1669,7 @@ class _PresidentMeetingsTab extends ConsumerWidget {
                                       Icon(
                                         Icons.location_on_outlined,
                                         size: 14,
-                                        color: Colors.grey.shade600,
+                                        color: theme.colorScheme.onSurfaceVariant,
                                       ),
                                       const SizedBox(width: 6),
                                       Expanded(
@@ -1676,7 +1677,7 @@ class _PresidentMeetingsTab extends ConsumerWidget {
                                           meeting.venue,
                                           style: TextStyle(
                                             fontSize: 13,
-                                            color: Colors.grey.shade700,
+                                            color: theme.colorScheme.onSurfaceVariant,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,

@@ -574,7 +574,7 @@ class _PersonalMemberStatusBanner extends ConsumerWidget {
                           'Your Outstanding Dues',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey.shade700,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                         Text(
@@ -583,8 +583,8 @@ class _PersonalMemberStatusBanner extends ConsumerWidget {
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
                             color: owes
-                                ? Colors.red.shade700
-                                : Colors.green.shade700,
+                                ? AppTheme.statusColor(context, Colors.red)
+                                : AppTheme.statusColor(context, Colors.green),
                           ),
                         ),
                       ],

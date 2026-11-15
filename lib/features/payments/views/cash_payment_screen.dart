@@ -17,11 +17,17 @@ import 'package:cls/features/settings/widgets/license_status_banner.dart';
 class CashPaymentScreen extends ConsumerStatefulWidget {
   final String recordedBy;
   final MemberModel? initialMember;
+  final String? meetingId;
+  final String? meetingTitle;
+  final double? initialAmount;
 
   const CashPaymentScreen({
     super.key,
     required this.recordedBy,
     this.initialMember,
+    this.meetingId,
+    this.meetingTitle,
+    this.initialAmount,
   });
 
   @override
@@ -40,6 +46,12 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
   void initState() {
     super.initState();
     _selectedMember = widget.initialMember;
+    if (widget.initialAmount != null && widget.initialAmount! > 0) {
+      _amountController.text = widget.initialAmount!.toStringAsFixed(0);
+    }
+    if (widget.meetingTitle != null && widget.meetingTitle!.isNotEmpty) {
+      _notesController.text = 'Sitting Dues: ${widget.meetingTitle}';
+    }
     _amountController.addListener(_onAmountChanged);
   }
 
@@ -811,9 +823,12 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
     final selected = ref.read(selectedObligationsProvider);
     final isAdvance = selected.isEmpty;
     final userNote = _notesController.text.trim();
+    final defaultNote = widget.meetingTitle != null
+        ? 'Sitting Dues: ${widget.meetingTitle}'
+        : 'Upfront / Advance Cash Payment';
     final noteToSave = userNote.isNotEmpty
         ? userNote
-        : (isAdvance ? 'Upfront / Advance Cash Payment' : null);
+        : (isAdvance ? defaultNote : null);
 
     final memberUserId = _selectedMember!.userId.isNotEmpty
         ? _selectedMember!.userId
@@ -827,6 +842,7 @@ class _CashPaymentScreenState extends ConsumerState<CashPaymentScreen> {
           amount: amount,
           notes: noteToSave,
           recordedBy: widget.recordedBy,
+          meetingId: widget.meetingId,
         );
   }
 }

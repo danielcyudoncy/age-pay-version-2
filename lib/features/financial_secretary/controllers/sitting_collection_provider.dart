@@ -68,9 +68,20 @@ final sittingCollectionSummaryProvider =
     // Filter payments for the selected day unless in allTime mode
     final sittingPayments = payments.where((p) {
       if (scopeMode == SittingScopeMode.allTime) return true;
-      return p.createdAt.year == targetDate.year &&
+      final isSameDay = p.createdAt.year == targetDate.year &&
           p.createdAt.month == targetDate.month &&
           p.createdAt.day == targetDate.day;
+      if (isSameDay) return true;
+      // Match if linked directly to a meeting occurring on the target date
+      if (p.meetingId != null &&
+          meetings.any((m) =>
+              m.id == p.meetingId &&
+              m.meetingDate.year == targetDate.year &&
+              m.meetingDate.month == targetDate.month &&
+              m.meetingDate.day == targetDate.day)) {
+        return true;
+      }
+      return false;
     }).toList();
 
     // Map members by docId and userId

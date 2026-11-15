@@ -41,18 +41,18 @@ class _WaiverAuditLedgerScreenState
           // Informational audit banner
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: Colors.teal.shade50,
+            color: AppTheme.statusBg(context, Colors.teal),
             child: Row(
               children: [
                 Icon(Icons.shield_outlined,
-                    color: Colors.teal.shade900, size: 20),
+                    color: AppTheme.statusColor(context, Colors.teal), size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'Immutable financial audit trail. Every penalty pardon is countersigned by the President.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.teal.shade900,
+                      color: AppTheme.statusColor(context, Colors.teal),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -185,6 +185,7 @@ class _WaiverAuditLedgerScreenState
   }
 
   Widget _waiverCard(PenaltyWaiverModel waiver) {
+    final theme = Theme.of(context);
     Color statusColor;
     String statusText;
     IconData statusIcon;
@@ -268,9 +269,9 @@ class _WaiverAuditLedgerScreenState
               width: double.infinity,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: AppTheme.cardBorder(context)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,13 +281,16 @@ class _WaiverAuditLedgerScreenState
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     waiver.reason,
-                    style: const TextStyle(fontSize: 13),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
                 ],
               ),

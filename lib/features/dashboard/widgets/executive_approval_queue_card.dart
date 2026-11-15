@@ -204,7 +204,7 @@ class _ExecutiveApprovalQueueCardState
                 Text(
                   'The following members registered and are awaiting your approval to gain access to the organisation:',
                   style: TextStyle(
-                    color: Colors.amber.shade900.withValues(alpha: 0.85),
+                    color: AppTheme.statusColor(context, Colors.amber),
                     fontSize: 13,
                   ),
                 ),
@@ -222,7 +222,7 @@ class _ExecutiveApprovalQueueCardState
                     return Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppTheme.statusColor(context, Colors.amber).withValues(alpha: 0.3)),
                       ),
@@ -251,15 +251,16 @@ class _ExecutiveApprovalQueueCardState
                                   children: [
                                     Text(
                                       applicant.displayName,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
+                                        color: theme.colorScheme.onSurface,
                                       ),
                                     ),
                                     Text(
                                       '${applicant.phoneNumber} • ${applicant.email}',
                                       style: TextStyle(
-                                        color: Colors.grey.shade600,
+                                        color: theme.colorScheme.onSurfaceVariant,
                                         fontSize: 12,
                                       ),
                                     ),
@@ -291,15 +292,16 @@ class _ExecutiveApprovalQueueCardState
                             height: 40,
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.amber.shade400),
+                              border: Border.all(color: AppTheme.statusColor(context, Colors.amber).withValues(alpha: 0.4)),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<UserRole>(
                                 value: _assignedRoles[applicant.uid] ??
                                     applicant.requestedRole ??
                                     UserRole.member,
+                                dropdownColor: theme.colorScheme.surfaceContainerHighest,
                                 isExpanded: true,
                                 icon: Icon(
                                   Icons.arrow_drop_down,
@@ -308,7 +310,7 @@ class _ExecutiveApprovalQueueCardState
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color: theme.colorScheme.onSurface,
                                 ),
                                 items: UserRole.values
                                     .where((role) => role != UserRole.superAdmin)
@@ -326,7 +328,10 @@ class _ExecutiveApprovalQueueCardState
                                         Expanded(
                                           child: Text(
                                             'Assign Role: ${_roleLabel(role)}',
-                                            style: const TextStyle(fontSize: 13),
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: theme.colorScheme.onSurface,
+                                            ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -352,37 +357,44 @@ class _ExecutiveApprovalQueueCardState
                               height: 40,
                               padding: const EdgeInsets.symmetric(horizontal: 10),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.teal.shade400),
+                                border: Border.all(color: AppTheme.statusColor(context, Colors.teal).withValues(alpha: 0.4)),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<UserRole?>(
                                   value: _assignedNationalRoles[applicant.uid],
+                                  dropdownColor: theme.colorScheme.surfaceContainerHighest,
                                   isExpanded: true,
                                   hint: Row(
                                     children: [
                                       Icon(
                                         Icons.stars_rounded,
                                         size: 15,
-                                        color: Colors.teal.shade800,
+                                        color: AppTheme.statusColor(context, Colors.teal),
                                       ),
                                       const SizedBox(width: 6),
-                                      const Expanded(
+                                      Expanded(
                                         child: Text(
                                           'National Office: None (Regular)',
-                                          style: TextStyle(fontSize: 13),
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: theme.colorScheme.onSurfaceVariant,
+                                          ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
                                   ),
                                   items: [
-                                    const DropdownMenuItem<UserRole?>(
+                                    DropdownMenuItem<UserRole?>(
                                       value: null,
                                       child: Text(
                                         'National Office: None',
-                                        style: TextStyle(fontSize: 13),
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: theme.colorScheme.onSurface,
+                                        ),
                                       ),
                                     ),
                                     ...UserRole.values
@@ -394,7 +406,10 @@ class _ExecutiveApprovalQueueCardState
                                         value: role,
                                         child: Text(
                                           'National Office: ${_roleLabel(role)}',
-                                          style: const TextStyle(fontSize: 13),
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: theme.colorScheme.onSurface,
+                                          ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       );
@@ -416,14 +431,15 @@ class _ExecutiveApprovalQueueCardState
                             height: 40,
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.green.shade400),
+                              border: Border.all(color: AppTheme.statusColor(context, Colors.green).withValues(alpha: 0.4)),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<MemberDuesStanding>(
                                 value: _assignedStandings[applicant.uid] ??
                                     applicant.duesStanding,
+                                dropdownColor: theme.colorScheme.surfaceContainerHighest,
                                 isExpanded: true,
                                 icon: Icon(
                                   Icons.arrow_drop_down,
@@ -432,20 +448,29 @@ class _ExecutiveApprovalQueueCardState
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color: theme.colorScheme.onSurface,
                                 ),
-                                items: const [
+                                items: [
                                   DropdownMenuItem(
                                     value: MemberDuesStanding.cleared,
-                                    child: Text('Existing Member (Dues Cleared)'),
+                                    child: Text(
+                                      'Existing Member (Dues Cleared)',
+                                      style: TextStyle(color: theme.colorScheme.onSurface),
+                                    ),
                                   ),
                                   DropdownMenuItem(
                                     value: MemberDuesStanding.openingBalance,
-                                    child: Text('Existing Member (Opening Balance)'),
+                                    child: Text(
+                                      'Existing Member (Opening Balance)',
+                                      style: TextStyle(color: theme.colorScheme.onSurface),
+                                    ),
                                   ),
                                   DropdownMenuItem(
                                     value: MemberDuesStanding.newMember,
-                                    child: Text('New Member (Calculate Dues)'),
+                                    child: Text(
+                                      'New Member (Calculate Dues)',
+                                      style: TextStyle(color: theme.colorScheme.onSurface),
+                                    ),
                                   ),
                                 ],
                                 onChanged: isProcessing
@@ -537,7 +562,7 @@ class _ExecutiveApprovalQueueCardState
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: Colors.grey.shade700),
+          Icon(icon, size: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
           const SizedBox(width: 4),
           Text(
             label,
