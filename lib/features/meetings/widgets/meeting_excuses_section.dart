@@ -219,7 +219,10 @@ class _MeetingExcusesSectionState extends ConsumerState<MeetingExcusesSection> {
               const SizedBox(height: 8),
               Text(
                 'No absence excuses submitted for this meeting.',
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -306,7 +309,7 @@ class _MeetingExcusesSectionState extends ConsumerState<MeetingExcusesSection> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: Colors.redAccent.shade700,
+                            color: AppTheme.statusColor(context, Colors.red),
                           ),
                         ),
                       ),
@@ -320,17 +323,17 @@ class _MeetingExcusesSectionState extends ConsumerState<MeetingExcusesSection> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: AppTheme.cardBorder(context)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.format_quote,
                           size: 14,
-                          color: Colors.grey,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -340,7 +343,7 @@ class _MeetingExcusesSectionState extends ConsumerState<MeetingExcusesSection> {
                                 : 'Absence apology tendered.',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Theme.of(context).colorScheme.onSurface,
+                              color: theme.colorScheme.onSurface,
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -353,7 +356,7 @@ class _MeetingExcusesSectionState extends ConsumerState<MeetingExcusesSection> {
                     'Submitted ${dateFormat.format(excuse.updatedAt)}',
                     style: TextStyle(
                       fontSize: 10.5,
-                      color: Colors.grey.shade500,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -378,7 +381,10 @@ class _MeetingExcusesSectionState extends ConsumerState<MeetingExcusesSection> {
         child: Center(
           child: Text(
             'No members marked as $title yet.',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 13,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       );
@@ -410,17 +416,19 @@ class _MeetingExcusesSectionState extends ConsumerState<MeetingExcusesSection> {
               contentPadding: EdgeInsets.zero,
               leading: CircleAvatar(
                 radius: 14,
-                backgroundColor: showReason
-                    ? Colors.amber.shade100
-                    : Colors.green.shade100,
+                backgroundColor: AppTheme.statusBg(
+                  context,
+                  showReason ? Colors.amber : Colors.green,
+                ),
                 child: Text(
                   initial,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: showReason
-                        ? Colors.amber.shade900
-                        : Colors.green.shade900,
+                    color: AppTheme.statusColor(
+                      context,
+                      showReason ? Colors.amber : Colors.green,
+                    ),
                   ),
                 ),
               ),
@@ -433,7 +441,7 @@ class _MeetingExcusesSectionState extends ConsumerState<MeetingExcusesSection> {
                       'Note: ${member.reason}',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.grey.shade700,
+                        color: theme.colorScheme.onSurfaceVariant,
                         fontStyle: FontStyle.italic,
                       ),
                     )
@@ -441,7 +449,9 @@ class _MeetingExcusesSectionState extends ConsumerState<MeetingExcusesSection> {
               trailing: Icon(
                 showReason ? Icons.schedule : Icons.check_circle,
                 size: 16,
-                color: showReason ? Colors.amber.shade800 : Colors.green,
+                color: showReason
+                    ? AppTheme.statusColor(context, Colors.amber)
+                    : AppTheme.statusColor(context, Colors.green),
               ),
             );
           },

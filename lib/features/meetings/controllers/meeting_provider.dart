@@ -72,6 +72,7 @@ class MeetingController {
     String targetAudience = 'all',
     String scope = 'branch',
     String? branchId,
+    double sittingDuesAmount = 0.0,
   }) {
     return _repository.createMeeting(
       title: title,
@@ -82,6 +83,7 @@ class MeetingController {
       targetAudience: targetAudience,
       scope: scope,
       branchId: branchId,
+      sittingDuesAmount: sittingDuesAmount,
     );
   }
 

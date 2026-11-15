@@ -84,12 +84,14 @@ class ObligationRepository {
   }
 
   Future<String> createObligation(ObligationModel obligation) async {
-    final docRef = _collection.doc();
+    final docRef = obligation.id.isNotEmpty
+        ? _collection.doc(obligation.id)
+        : _collection.doc();
     final newObligation = obligation.copyWith(
       id: docRef.id,
       outstandingBalance: obligation.amount - obligation.paidAmount,
     );
-    await docRef.set(newObligation.toFirestore());
+    await docRef.set(newObligation.toFirestore(), SetOptions(merge: true));
     return docRef.id;
   }
 

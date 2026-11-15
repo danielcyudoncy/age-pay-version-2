@@ -297,6 +297,7 @@ Example
   "paymentMethod": "paystack",
   "status": "successful",
   "providerReference": "",
+  "meetingId": "meeting123", // Linked meeting ID for sitting dues / meeting-day contributions
   "paidAt": "",
   "verifiedBy": ""
 }
@@ -384,6 +385,7 @@ Example
   "title": "Quarterly General Assembly",
   "venue": "Aba Civic Centre",
   "meetingDate": "Timestamp",
+  "sittingDuesAmount": 2000.0, // Fixed baseline dues configured by Secretariat; individuals may customize amount when paying
   "minutesText": "Detailed proceedings, financial resolutions, and welfare allocations.",
   "minutesFileUrl": "https://storage.googleapis.com/.../minutes_scan.pdf",
   "minutesFileName": "minutes_scan.pdf",

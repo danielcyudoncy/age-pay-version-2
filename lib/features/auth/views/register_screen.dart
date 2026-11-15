@@ -412,9 +412,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
+                          color: AppTheme.statusBg(context, Colors.blue),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.blue.shade200),
+                          border: Border.all(color: AppTheme.statusColor(context, Colors.blue).withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,7 +503,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       const SizedBox(height: 6),
                       Text(
                         'To prevent impersonation, provide your valid 11-digit National Identity (NIN) or BVN.',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
                       ),
                       const SizedBox(height: 10),
                       TextFormField(
@@ -548,7 +548,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       const SizedBox(height: 6),
                       Text(
                         'Provide your town union or CAC credentials for platform compliance verification.',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
                       ),
                       const SizedBox(height: 10),
                       TextFormField(
@@ -643,9 +643,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
+                          color: AppTheme.statusBg(context, Colors.blue),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.blue.shade200),
+                          border: Border.all(color: AppTheme.statusColor(context, Colors.blue).withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
@@ -682,15 +682,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 6),
                     Text(
                       'Help us initialize your financial records accurately.',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 12),
                     Card(
                       elevation: 0,
-                      color: Colors.grey.shade50,
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(color: Colors.grey.shade300),
+                        side: BorderSide(color: AppTheme.cardBorder(context)),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -701,27 +701,41 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           },
                           child: Column(
                             children: [
-                              const RadioListTile<MemberDuesStanding>(
+                              RadioListTile<MemberDuesStanding>(
                                 value: MemberDuesStanding.cleared,
                                 title: Text(
                                   'Existing Member (Dues Cleared)',
-                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
                                 ),
                                 subtitle: Text(
                                   'All past obligations & dues have already been paid before using this app.',
-                                  style: TextStyle(fontSize: 11),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                               const Divider(height: 1),
-                              const RadioListTile<MemberDuesStanding>(
+                              RadioListTile<MemberDuesStanding>(
                                 value: MemberDuesStanding.openingBalance,
                                 title: Text(
                                   'Existing Member (Specify Opening Balance)',
-                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
                                 ),
                                 subtitle: Text(
                                   'Carry forward an existing outstanding debt or opening balance.',
-                                  style: TextStyle(fontSize: 11),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                               if (_selectedDuesStanding == MemberDuesStanding.openingBalance)
@@ -746,15 +760,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   ),
                                 ),
                               const Divider(height: 1),
-                              const RadioListTile<MemberDuesStanding>(
+                              RadioListTile<MemberDuesStanding>(
                                 value: MemberDuesStanding.newMember,
                                 title: Text(
                                   'New Member',
-                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
                                 ),
                                 subtitle: Text(
                                   'Recently joined; dues will be calculated from registration date forward.',
-                                  style: TextStyle(fontSize: 11),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                             ],
@@ -889,16 +910,16 @@ class _OrganizationPicker extends ConsumerWidget {
           return Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: AppTheme.statusBg(context, Colors.blue),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.blue.shade200),
+              border: Border.all(color: AppTheme.statusColor(context, Colors.blue).withValues(alpha: 0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.info_outline, size: 18, color: Colors.blue.shade800),
+                    Icon(Icons.info_outline, size: 18, color: AppTheme.statusColor(context, Colors.blue)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -922,7 +943,7 @@ class _OrganizationPicker extends ConsumerWidget {
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('Register New Organisation'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade700,
+                    backgroundColor: AppTheme.primary(context),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   ),
@@ -995,7 +1016,7 @@ class _OrganizationPicker extends ConsumerWidget {
       error: (_, _) => Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(

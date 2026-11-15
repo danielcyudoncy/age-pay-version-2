@@ -536,16 +536,17 @@ class _ExpenseCard extends StatelessWidget {
                 runSpacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  _signatoryIndicator('President', expense.isPresidentApproved),
+                  _signatoryIndicator(context, 'President', expense.isPresidentApproved),
                   _signatoryIndicator(
+                    context,
                     'Fin. Sec',
                     expense.isFinancialSecretaryApproved,
                   ),
-                  _signatoryIndicator('Secretary', expense.isSecretaryApproved),
+                  _signatoryIndicator(context, 'Secretary', expense.isSecretaryApproved),
                   Text(
                     dateFormat.format(expense.expenseDate),
                     style:
-                        theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                        theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -556,7 +557,7 @@ class _ExpenseCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontStyle: FontStyle.italic,
-                    color: Colors.red.shade700,
+                    color: AppTheme.statusColor(context, Colors.red),
                   ),
                 ),
               ],
@@ -567,14 +568,18 @@ class _ExpenseCard extends StatelessWidget {
     );
   }
 
-  Widget _signatoryIndicator(String title, bool signed) {
+  Widget _signatoryIndicator(BuildContext context, String title, bool signed) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: signed ? Colors.green.shade50 : Colors.grey.shade100,
+        color: signed
+            ? AppTheme.statusBg(context, Colors.green)
+            : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(4),
         border: Border.all(
-          color: signed ? Colors.green.shade300 : Colors.grey.shade300,
+          color: signed
+              ? AppTheme.statusColor(context, Colors.green).withValues(alpha: 0.3)
+              : AppTheme.cardBorder(context),
         ),
       ),
       child: Row(
@@ -583,7 +588,9 @@ class _ExpenseCard extends StatelessWidget {
           Icon(
             signed ? Icons.check_circle : Icons.schedule,
             size: 11,
-            color: signed ? Colors.green.shade700 : Colors.grey.shade600,
+            color: signed
+                ? AppTheme.statusColor(context, Colors.green)
+                : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 3),
           Text(
@@ -591,7 +598,9 @@ class _ExpenseCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               fontWeight: signed ? FontWeight.bold : FontWeight.normal,
-              color: signed ? Colors.green.shade900 : Colors.grey.shade700,
+              color: signed
+                  ? AppTheme.statusColor(context, Colors.green)
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],

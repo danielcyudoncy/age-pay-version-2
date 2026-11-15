@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cls/core/theme/app_theme.dart';
 import '../controllers/sitting_collection_provider.dart';
 import 'sitting_readout_sheet.dart';
 
@@ -167,10 +168,11 @@ class _MicroPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final statusColor = AppTheme.statusColor(context, color);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: AppTheme.statusBg(context, color),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -181,7 +183,7 @@ class _MicroPill extends StatelessWidget {
             style: TextStyle(
               fontSize: 10.5,
               fontWeight: FontWeight.w500,
-              color: color.shade800,
+              color: statusColor,
             ),
           ),
           Text(
@@ -189,7 +191,7 @@ class _MicroPill extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
-              color: color.shade900,
+              color: statusColor,
             ),
           ),
         ],

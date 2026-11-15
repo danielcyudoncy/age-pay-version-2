@@ -733,17 +733,17 @@ class _RecentPaymentsSection extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.amber.shade50,
+                                color: AppTheme.statusBg(context, Colors.amber),
                                 borderRadius: BorderRadius.circular(6),
                                 border:
-                                    Border.all(color: Colors.amber.shade200),
+                                    Border.all(color: AppTheme.statusColor(context, Colors.amber).withValues(alpha: 0.3)),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.notes,
                                     size: 12,
-                                    color: Colors.amber.shade900,
+                                    color: AppTheme.statusColor(context, Colors.amber),
                                   ),
                                   const SizedBox(width: 6),
                                   Expanded(
@@ -751,7 +751,7 @@ class _RecentPaymentsSection extends StatelessWidget {
                                       payment.notes!,
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.amber.shade900,
+                                        color: AppTheme.statusColor(context, Colors.amber),
                                         fontWeight: FontWeight.w500,
                                       ),
                                       maxLines: 1,
@@ -1211,6 +1211,16 @@ class _UpcomingMeetingCard extends ConsumerWidget {
               )
             : null;
 
+        final memberPayments = user != null
+            ? ref.watch(memberPaymentsStreamProvider(user.uid)).valueOrNull ?? []
+            : <PaymentModel>[];
+        final sittingPayment = memberPayments.where((p) =>
+            (p.status == PaymentStatus.approved ||
+                p.status == PaymentStatus.pending) &&
+            (p.meetingId == meeting.id ||
+                (p.notes?.contains(meeting.title) ?? false))).firstOrNull;
+        final hasPaidSittingDues = sittingPayment != null;
+
         final isPast = now.isAfter(meeting.meetingDate);
         final hasMinutes = meeting.hasMinutes;
 
@@ -1431,6 +1441,185 @@ class _UpcomingMeetingCard extends ConsumerWidget {
                       ),
                     ),
                   ],
+                  if (meeting.hasSittingDues) ...[
+                    const SizedBox(height: 10),
+                    if (hasPaidSittingDues)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.green.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              size: 15,
+                              color: Colors.green,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Sitting Dues: Paid (${NumberFormat.currency(symbol: '₦', decimalDigits: 0).format(sittingPayment.amount)}) ✓',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (meeting.isSittingDuesWindowOpen())
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.teal.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.teal.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.payments_outlined,
+                              size: 18,
+                              color: Colors.teal,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Sitting Dues: ₦${NumberFormat('#,##0').format(meeting.sittingDuesAmount)}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.teal,
+                                    ),
+                                  ),
+                                  const Text(
+                                    'Window Open • Closes 12:00 AM Midnight',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.teal,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.teal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => MakePaymentScreen(
+                                      memberId: user!.uid,
+                                      memberEmail: user.email,
+                                      meetingId: meeting.id,
+                                      meetingTitle: meeting.title,
+                                      initialAmount: meeting.sittingDuesAmount,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'Pay Dues',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (meeting.isSittingDuesUpcoming())
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.orange.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.lock_clock,
+                              size: 14,
+                              color: AppTheme.statusColor(context, Colors.orange),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Sitting Dues: ₦${NumberFormat('#,##0').format(meeting.sittingDuesAmount)} • Opens 10 mins before sitting',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.statusColor(context, Colors.orange),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.lock_outline,
+                              size: 14,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Sitting dues window closed at 12:00 AM Midnight',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                   const SizedBox(height: 12),
                   const Divider(height: 1),
                   const SizedBox(height: 10),
@@ -1446,10 +1635,10 @@ class _UpcomingMeetingCard extends ConsumerWidget {
                                   : Icons.cancel),
                           size: 16,
                           color: myRsvp.status == MeetingRsvpStatus.attending
-                              ? Colors.green
+                              ? AppTheme.statusColor(context, Colors.green)
                               : (myRsvp.status == MeetingRsvpStatus.late
-                                  ? Colors.orange.shade800
-                                  : Colors.redAccent),
+                                  ? AppTheme.statusColor(context, Colors.orange)
+                                  : AppTheme.statusColor(context, Colors.red)),
                         ),
                         const SizedBox(width: 6),
                         Expanded(
@@ -1459,10 +1648,10 @@ class _UpcomingMeetingCard extends ConsumerWidget {
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: myRsvp.status == MeetingRsvpStatus.attending
-                                  ? Colors.green.shade800
+                                  ? AppTheme.statusColor(context, Colors.green)
                                   : (myRsvp.status == MeetingRsvpStatus.late
-                                      ? Colors.orange.shade900
-                                      : Colors.redAccent.shade700),
+                                      ? AppTheme.statusColor(context, Colors.orange)
+                                      : AppTheme.statusColor(context, Colors.red)),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

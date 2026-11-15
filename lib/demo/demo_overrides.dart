@@ -473,6 +473,7 @@ class DemoPaymentService implements PaymentService {
     required double amount,
     String? notes,
     required String recordedBy,
+    String? meetingId,
   }) async {
     await Future.delayed(const Duration(milliseconds: 300));
     final paymentId = 'cash_${DateTime.now().millisecondsSinceEpoch}';
@@ -493,6 +494,7 @@ class DemoPaymentService implements PaymentService {
     required String bankName,
     required String receiptUrl,
     String? notes,
+    String? meetingId,
   }) async {
     await Future.delayed(const Duration(milliseconds: 300));
     final paymentId = 'bt_${DateTime.now().millisecondsSinceEpoch}';

@@ -14,6 +14,7 @@ class MemberProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final authState = ref.watch(authProvider);
     final activeScope = ref.watch(activeExecutiveScopeProvider);
     final dateFormat = DateFormat('MMM d, yyyy');
@@ -287,7 +288,7 @@ class MemberProfileScreen extends ConsumerWidget {
                         'Switching your active context filters your dashboard dues, receipts, and announcements to the selected tier.',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.grey.shade600,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -376,7 +377,10 @@ class _ProfileHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(member.email, style: TextStyle(color: Colors.grey.shade600)),
+            Text(
+              member.email,
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+            ),
           ],
         ),
       ),
@@ -426,11 +430,12 @@ class _ProfileInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey.shade600),
+          Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -438,7 +443,10 @@ class _ProfileInfoRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(

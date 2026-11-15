@@ -257,7 +257,7 @@ class _PenaltyWaiverApprovalQueueCardState
                     return Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppTheme.statusColor(context, Colors.teal).withValues(alpha: 0.3)),
                       ),
@@ -270,9 +270,10 @@ class _PenaltyWaiverApprovalQueueCardState
                               Expanded(
                                 child: Text(
                                   waiver.penaltyTitle,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -299,7 +300,7 @@ class _PenaltyWaiverApprovalQueueCardState
                             'Requested by: ${waiver.requestedBy} • ${DateFormat('MMM d').format(waiver.requestedAt)}',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.grey.shade600,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -312,7 +313,10 @@ class _PenaltyWaiverApprovalQueueCardState
                             ),
                             child: Text(
                               'Excuse: ${waiver.reason}',
-                              style: const TextStyle(fontSize: 12),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -324,9 +328,9 @@ class _PenaltyWaiverApprovalQueueCardState
                                     ? null
                                     : () => _reject(waiver, presidentName),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.red.shade700,
+                                  foregroundColor: AppTheme.statusColor(context, Colors.red),
                                   side: BorderSide(
-                                      color: Colors.red.shade300),
+                                      color: AppTheme.statusColor(context, Colors.red).withValues(alpha: 0.4)),
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 6),
                                   minimumSize: Size.zero,

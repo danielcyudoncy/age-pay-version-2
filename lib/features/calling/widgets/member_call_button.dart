@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cls/core/theme/app_theme.dart';
 import '../../auth/controllers/auth_provider.dart';
 import '../../members/models/member_model.dart';
 import '../controllers/call_controller.dart';
@@ -52,7 +53,7 @@ class MemberCallButton extends ConsumerWidget {
     return FilledButton.tonalIcon(
       style: FilledButton.styleFrom(
         backgroundColor: Colors.green.withValues(alpha: 0.12),
-        foregroundColor: Colors.green.shade800,
+        foregroundColor: AppTheme.statusColor(context, Colors.green),
         visualDensity: VisualDensity.compact,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       ),

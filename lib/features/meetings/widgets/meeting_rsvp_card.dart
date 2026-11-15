@@ -269,7 +269,7 @@ class _MeetingRsvpCardState extends ConsumerState<MeetingRsvpCard> {
                         'State reason for absence (required):',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.redAccent.shade700,
+                          color: AppTheme.statusColor(context, Colors.red),
                         ),
                       ),
                     ),
@@ -278,7 +278,10 @@ class _MeetingRsvpCardState extends ConsumerState<MeetingRsvpCard> {
                 const SizedBox(height: 8),
                 Text(
                   'This official excuse will be noted by the secretary and published to the house.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Wrap(

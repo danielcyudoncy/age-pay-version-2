@@ -94,6 +94,7 @@ class OfflinePaymentNotifier extends StateNotifier<OfflinePaymentState> {
     required double amount,
     String? notes,
     required String recordedBy,
+    String? meetingId,
   }) async {
     state = state.copyWith(
       type: OfflinePaymentType.cash,
@@ -109,6 +110,7 @@ class OfflinePaymentNotifier extends StateNotifier<OfflinePaymentState> {
         amount: amount,
         notes: notes,
         recordedBy: recordedBy,
+        meetingId: meetingId,
       );
 
       state = state.copyWith(
@@ -137,6 +139,7 @@ class OfflinePaymentNotifier extends StateNotifier<OfflinePaymentState> {
     required String bankName,
     required String receiptUrl,
     String? notes,
+    String? meetingId,
   }) async {
     state = state.copyWith(
       type: OfflinePaymentType.bankTransfer,
@@ -155,6 +158,7 @@ class OfflinePaymentNotifier extends StateNotifier<OfflinePaymentState> {
         bankName: bankName,
         receiptUrl: receiptUrl,
         notes: notes,
+        meetingId: meetingId,
       );
 
       state = state.copyWith(

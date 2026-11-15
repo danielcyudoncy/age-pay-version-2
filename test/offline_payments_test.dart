@@ -60,6 +60,7 @@ class _MockPaymentService implements PaymentService {
     required double amount,
     String? notes,
     required String recordedBy,
+    String? meetingId,
   }) async {
     if (_cashError != null) throw _cashError!;
     return _cashResult ??
@@ -80,6 +81,7 @@ class _MockPaymentService implements PaymentService {
     required String bankName,
     required String receiptUrl,
     String? notes,
+    String? meetingId,
   }) async {
     if (_transferError != null) throw _transferError!;
     return _transferResult ?? BankTransferResult(paymentId: 'pay_transfer');

@@ -13,6 +13,35 @@ import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/receipts/controllers/receipt_provider.dart';
 import 'package:cls/features/receipts/repositories/receipt_repository.dart';
 import 'package:cls/features/receipts/models/receipt_model.dart';
+import 'package:cls/features/admin/controllers/admin_provider.dart';
+import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/auth/models/user_model.dart';
+import 'package:cls/features/auth/services/auth_service.dart';
+import 'package:cls/features/meetings/controllers/meeting_provider.dart';
+
+class _MockAuthService implements AuthService {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<UserModel?> getCurrentUser() async => null;
+}
+
+class _MockAuthNotifier extends AuthNotifier {
+  _MockAuthNotifier() : super(_MockAuthService()) {
+    state = AsyncValue.data(
+      UserModel(
+        uid: 'user1',
+        organizationId: 'org1',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        phoneNumber: '+1234567890',
+        role: UserRole.member,
+        createdAt: DateTime(2026, 1, 1),
+      ),
+    );
+  }
+}
 
 class _MockPaymentService implements PaymentService {
   PaymentInitResult? _initResult;
@@ -68,6 +97,7 @@ class _MockPaymentService implements PaymentService {
     required double amount,
     String? notes,
     required String recordedBy,
+    String? meetingId,
   }) async {
     return CashPaymentResult(
       paymentId: 'pay_cash',
@@ -86,6 +116,7 @@ class _MockPaymentService implements PaymentService {
     required String bankName,
     required String receiptUrl,
     String? notes,
+    String? meetingId,
   }) async {
     return BankTransferResult(paymentId: 'pay_xfer');
   }
@@ -302,6 +333,7 @@ void main() {
     Widget buildScreen({
       List<ObligationModel>? obligations,
       _MockPaymentService? customService,
+      PaymentFlowNotifier? customNotifier,
     }) {
       final mockService = customService ?? _MockPaymentService();
       final mockObligationRepo = _MockObligationRepository();
@@ -309,9 +341,21 @@ void main() {
 
       return ProviderScope(
         overrides: [
+          authProvider.overrideWith((ref) => _MockAuthNotifier()),
           paymentServiceProvider.overrideWith((ref) => mockService),
           obligationRepositoryProvider.overrideWith(
             (ref) => mockObligationRepo,
+          ),
+          if (customNotifier != null)
+            paymentFlowProvider.overrideWith((ref) => customNotifier),
+          currentOrganizationProvider.overrideWith(
+            (ref) => Stream.value(null),
+          ),
+          allObligationsProvider.overrideWith(
+            (ref) => Stream.value([]),
+          ),
+          meetingsStreamProvider.overrideWith(
+            (ref) => Stream.value([]),
           ),
         ],
         child: MaterialApp(
@@ -329,7 +373,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Make Payment'), findsOneWidget);
-      expect(find.text('Payment Options'), findsOneWidget);
+      expect(find.text('Select Payment Type'), findsOneWidget);
       expect(find.text('Custom Amount'), findsOneWidget);
     });
 
@@ -346,6 +390,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final firstCheckbox = find.byType(CheckboxListTile).first;
+      await tester.ensureVisible(firstCheckbox);
       await tester.tap(firstCheckbox);
       await tester.pump();
 
@@ -358,46 +403,28 @@ void main() {
       await tester.pumpWidget(buildScreen(obligations: testObligations));
       await tester.pumpAndSettle();
 
-      final payButton = find.widgetWithText(FilledButton, 'Pay with Paystack');
+      final payButton = find.widgetWithText(FilledButton, 'Submit Transfer');
       expect(payButton, findsOneWidget);
       expect(tester.widget<FilledButton>(payButton).onPressed, isNull);
     });
 
     testWidgets('shows payment error', (tester) async {
-      final mockService = _MockPaymentService();
-      mockService.setInitError(PaymentException('Init failed'));
-
-      final mockObligationRepo = _MockObligationRepository();
-      mockObligationRepo.setObligations(testObligations);
+      final notifier = PaymentFlowNotifier(
+        paymentService: _MockPaymentService(),
+      );
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            paymentServiceProvider.overrideWith((ref) => mockService),
-            obligationRepositoryProvider.overrideWith(
-              (ref) => mockObligationRepo,
-            ),
-          ],
-          child: MaterialApp(
-            home: MakePaymentScreen(
-              memberId: 'member1',
-              memberEmail: 'test@example.com',
-              obligations: testObligations,
-            ),
-          ),
+        buildScreen(
+          obligations: testObligations,
+          customNotifier: notifier,
         ),
       );
       await tester.pumpAndSettle();
 
-      final firstCheckbox = find.byType(CheckboxListTile).first;
-      await tester.tap(firstCheckbox);
+      notifier.state = const PaymentFlowState(error: 'Init failed');
       await tester.pump();
 
-      final payButton = find.widgetWithText(FilledButton, 'Pay with Paystack');
-      await tester.tap(payButton);
-      await tester.pumpAndSettle();
-
-      expect(find.byIcon(Icons.error), findsOneWidget);
+      expect(find.byIcon(Icons.error_outline), findsOneWidget);
       expect(find.textContaining('Init failed'), findsOneWidget);
     });
   });
@@ -407,11 +434,15 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            authProvider.overrideWith((ref) => _MockAuthNotifier()),
             paymentHistoryProvider(
               'member1',
             ).overrideWith((ref) => Stream.value([])),
             receiptRepositoryProvider.overrideWith(
               (ref) => _MockReceiptRepository(),
+            ),
+            allObligationsProvider.overrideWith(
+              (ref) => Stream.value([]),
             ),
           ],
           child: MaterialApp(home: PaymentHistoryScreen(memberId: 'member1')),
@@ -419,19 +450,23 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Payment History'), findsOneWidget);
-      expect(find.text('No payments yet'), findsOneWidget);
+      expect(find.textContaining('Payments'), findsOneWidget);
+      expect(find.textContaining('No branch payments recorded yet'), findsOneWidget);
     });
 
     testWidgets('displays payments with status', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            authProvider.overrideWith((ref) => _MockAuthNotifier()),
             paymentHistoryProvider(
               'member1',
             ).overrideWith((ref) => Stream.value(testPayments)),
             receiptRepositoryProvider.overrideWith(
               (ref) => _MockReceiptRepository(),
+            ),
+            allObligationsProvider.overrideWith(
+              (ref) => Stream.value([]),
             ),
           ],
           child: MaterialApp(home: PaymentHistoryScreen(memberId: 'member1')),

@@ -20,6 +20,7 @@ import 'package:cls/features/admin/models/organization_model.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
 import 'package:cls/features/settings/widgets/read_only_license_dialog.dart';
 import 'package:cls/features/settings/widgets/license_status_banner.dart';
+import 'package:cls/features/meetings/controllers/meeting_provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 enum PaymentOptionMode { specific, allOutstanding, custom, bankTransfer }
@@ -28,12 +29,18 @@ class MakePaymentScreen extends ConsumerStatefulWidget {
   final String memberId;
   final String? memberEmail;
   final List<ObligationModel>? obligations;
+  final String? meetingId;
+  final String? meetingTitle;
+  final double? initialAmount;
 
   const MakePaymentScreen({
     super.key,
     required this.memberId,
     this.memberEmail,
     this.obligations,
+    this.meetingId,
+    this.meetingTitle,
+    this.initialAmount,
   });
 
   @override
@@ -58,6 +65,15 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialAmount != null && widget.initialAmount! > 0) {
+      _customAmountController.text = widget.initialAmount!.toStringAsFixed(0);
+    }
+    if (widget.meetingTitle != null && widget.meetingTitle!.isNotEmpty) {
+      _notesController.text = 'Sitting Dues: ${widget.meetingTitle}';
+    }
+    if (widget.meetingId != null) {
+      _selectedObligationIds.add('sitting_${widget.meetingId}_${widget.memberId}');
+    }
     // Clean up previous flow state on entrance
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(paymentFlowProvider.notifier).reset();
@@ -429,15 +445,47 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
 
     return obligationsAsync.when(
       data: (obligations) {
-        _cachedObligations = obligations;
-        if (obligations.isEmpty) {
-          return _buildEmptyState('No outstanding obligations');
+        final List<ObligationModel> effectiveObligations = List.from(obligations);
+        if (widget.meetingId != null) {
+          final hasMeetingObligation = effectiveObligations.any(
+            (o) =>
+                o.meetingId == widget.meetingId ||
+                o.id == 'sitting_${widget.meetingId}_${widget.memberId}',
+          );
+          if (!hasMeetingObligation) {
+            final sittingDueAmount = widget.initialAmount ?? 1000.0;
+            final dynamicSittingObligation = ObligationModel(
+              id: 'sitting_${widget.meetingId}_${widget.memberId}',
+              organizationId: '',
+              memberId: widget.memberId,
+              levyId: 'sitting_dues_${widget.meetingId}',
+              type: ObligationType.monthlyDue,
+              title: 'Sitting Dues: ${widget.meetingTitle ?? "Meeting"}',
+              description: 'Meeting sitting dues contribution',
+              amount: sittingDueAmount,
+              paidAmount: 0.0,
+              outstandingBalance: sittingDueAmount,
+              status: ObligationStatus.unpaid,
+              dueDate: DateTime.now(),
+              createdAt: DateTime.now(),
+              meetingId: widget.meetingId,
+            );
+            effectiveObligations.insert(0, dynamicSittingObligation);
+            if (!_selectedObligationIds.contains(dynamicSittingObligation.id)) {
+              _selectedObligationIds.add(dynamicSittingObligation.id);
+            }
+          }
+        }
+
+        _cachedObligations = effectiveObligations;
+        if (effectiveObligations.isEmpty) {
+          return _buildEmptyState('No outstanding obligations', currency);
         }
         return _buildObligationSelector(
           currency,
           paymentState,
           offlineState,
-          obligations: obligations,
+          obligations: effectiveObligations,
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -476,34 +524,136 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
     );
   }
 
-  Widget _buildEmptyState(String message) {
+  Widget _buildEmptyState(String message, [NumberFormat? currency]) {
+    final curr = currency ?? NumberFormat.currency(symbol: '₦', decimalDigits: 0);
+    final theme = Theme.of(context);
+    final meetingsAsync = ref.watch(meetingsStreamProvider);
+    final meetings = meetingsAsync.valueOrNull ?? [];
+    final activeMeeting = meetings
+        .where((m) => m.hasSittingDues && m.isSittingDuesWindowOpen())
+        .firstOrNull;
+
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.check_circle_outline,
-              size: 64,
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.5),
+              size: 56,
+              color: theme.colorScheme.primary.withValues(alpha: 0.5),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               message,
-              style: Theme.of(context).textTheme.titleMedium,
+              style: theme.textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
-              'You have no pending payments at this time.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              'You have no pending regular levies or monthly debts.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
+            if (activeMeeting != null) ...[
+              const SizedBox(height: 24),
+              Card(
+                elevation: 1.5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.teal.withValues(alpha: 0.3)),
+                ),
+                color: Colors.teal.withValues(alpha: 0.06),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.teal.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.event_available,
+                              color: Colors.teal,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'SITTING DUES WINDOW OPEN',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.teal,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                Text(
+                                  activeMeeting.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Sitting dues: ${curr.format(activeMeeting.sittingDuesAmount)} • Open until 12:00 AM Midnight.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MakePaymentScreen(
+                                  memberId: widget.memberId,
+                                  memberEmail: widget.memberEmail,
+                                  meetingId: activeMeeting.id,
+                                  meetingTitle: activeMeeting.title,
+                                  initialAmount: activeMeeting.sittingDuesAmount,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.payments_outlined, size: 18),
+                          label: Text(
+                            'Pay Sitting Dues (${curr.format(activeMeeting.sittingDuesAmount)})',
+                          ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -887,6 +1037,56 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
                     org: org,
                     isExecutive: currentUser?.isExecutive ?? false,
                   ),
+                if (widget.meetingTitle != null) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.teal.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.event, color: Colors.teal, size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'SITTING DUES CONTRIBUTION',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.teal,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              Text(
+                                widget.meetingTitle!,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Default sitting due is pre-filled. You can adjust the amount below to pay what you wish.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 // 1. Payment Scope Selector
                 Text(
                   'Select Payment Type',
@@ -1678,6 +1878,40 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
 
     final currentUser = ref.read(authProvider).valueOrNull;
     final memberName = currentUser?.displayName;
+    final defaultNote = widget.meetingTitle != null
+        ? 'Sitting Dues: ${widget.meetingTitle}'
+        : null;
+    final noteToSave = _notesController.text.trim().isNotEmpty
+        ? _notesController.text.trim()
+        : defaultNote;
+
+    // Ensure sitting obligation exists if paying for a meeting
+    if (widget.meetingId != null) {
+      try {
+        final obRepo = ref.read(obligationRepositoryProvider);
+        final sittingDocId = 'sitting_${widget.meetingId}_${widget.memberId}';
+        final existing = await obRepo.getObligationById(sittingDocId);
+        if (existing == null) {
+          final newOb = ObligationModel(
+            id: sittingDocId,
+            organizationId: org?.id ?? '',
+            memberId: widget.memberId,
+            levyId: 'sitting_dues_${widget.meetingId}',
+            type: ObligationType.monthlyDue,
+            title: 'Sitting Dues: ${widget.meetingTitle ?? "Meeting"}',
+            description: 'Meeting sitting dues contribution',
+            amount: amount,
+            paidAmount: 0.0,
+            outstandingBalance: amount,
+            status: ObligationStatus.unpaid,
+            dueDate: DateTime.now(),
+            createdAt: DateTime.now(),
+            meetingId: widget.meetingId,
+          );
+          await obRepo.createObligation(newOb);
+        }
+      } catch (_) {}
+    }
 
     await ref
         .read(offlinePaymentProvider.notifier)
@@ -1689,9 +1923,8 @@ class _MakePaymentScreenState extends ConsumerState<MakePaymentScreen> {
           transferReference: 'TRF-${DateTime.now().millisecondsSinceEpoch}',
           bankName: _bankNameController.text.trim(),
           receiptUrl: _uploadedImageUrl!,
-          notes: _notesController.text.trim().isNotEmpty
-              ? _notesController.text.trim()
-              : null,
+          notes: noteToSave,
+          meetingId: widget.meetingId,
         );
   }
 }

@@ -7,30 +7,38 @@ import '../models/meeting_model.dart';
 import '../models/meeting_resolution_model.dart';
 
 class MeetingRepository {
-  final FirebaseFirestore _firestore;
-  final FirebaseStorage _storage;
+  final FirebaseFirestore? _customFirestore;
+  final FirebaseStorage? _customStorage;
   final String collection = 'meetings';
 
   MeetingRepository({FirebaseFirestore? firestore, FirebaseStorage? storage})
-    : _firestore = firestore ?? FirebaseFirestore.instance,
-      _storage = storage ?? FirebaseStorage.instance;
+    : _customFirestore = firestore,
+      _customStorage = storage;
+
+  FirebaseFirestore get _firestore =>
+      _customFirestore ?? FirebaseFirestore.instance;
+  FirebaseStorage get _storage => _customStorage ?? FirebaseStorage.instance;
 
   CollectionReference get _collection => _firestore.collection(collection);
 
   Stream<List<MeetingModel>> getMeetings() {
-    if (FirebaseAuth.instance.currentUser == null) {
+    try {
+      if (FirebaseAuth.instance.currentUser == null) {
+        return const Stream.empty();
+      }
+      return _collection
+          .orderBy('meetingDate', descending: true)
+          .snapshots()
+          .map(
+            (snapshot) =>
+                snapshot.docs
+                    .map((doc) => MeetingModel.fromFirestore(doc))
+                    .toList(),
+          )
+          .handleError((_) => <MeetingModel>[]);
+    } catch (_) {
       return const Stream.empty();
     }
-    return _collection
-        .orderBy('meetingDate', descending: true)
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs
-                  .map((doc) => MeetingModel.fromFirestore(doc))
-                  .toList(),
-        )
-        .handleError((_) => <MeetingModel>[]);
   }
 
   Future<MeetingModel?> getMeetingById(String id) async {
@@ -44,13 +52,17 @@ class MeetingRepository {
   }
 
   Stream<MeetingModel?> getMeetingStream(String id) {
-    if (FirebaseAuth.instance.currentUser == null) {
+    try {
+      if (FirebaseAuth.instance.currentUser == null) {
+        return const Stream.empty();
+      }
+      return _collection.doc(id).snapshots().map((doc) {
+        if (!doc.exists) return null;
+        return MeetingModel.fromFirestore(doc);
+      }).handleError((_) => null);
+    } catch (_) {
       return const Stream.empty();
     }
-    return _collection.doc(id).snapshots().map((doc) {
-      if (!doc.exists) return null;
-      return MeetingModel.fromFirestore(doc);
-    }).handleError((_) => null);
   }
 
   Future<String> createMeeting({
@@ -62,6 +74,7 @@ class MeetingRepository {
     String targetAudience = 'all',
     String scope = 'branch',
     String? branchId,
+    double sittingDuesAmount = 0.0,
   }) async {
     final docRef = _collection.doc();
     final meeting = MeetingModel(
@@ -76,6 +89,7 @@ class MeetingRepository {
       targetAudience: targetAudience,
       scope: scope,
       branchId: branchId,
+      sittingDuesAmount: sittingDuesAmount,
     );
     await docRef.set(meeting.toFirestore());
     return docRef.id;

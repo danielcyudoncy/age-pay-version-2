@@ -41,18 +41,18 @@ class _WaiverAuditLedgerScreenState
           // Informational audit banner
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: Colors.teal.shade50,
+            color: AppTheme.statusBg(context, Colors.teal),
             child: Row(
               children: [
                 Icon(Icons.shield_outlined,
-                    color: Colors.teal.shade900, size: 20),
+                    color: AppTheme.statusColor(context, Colors.teal), size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'Immutable financial audit trail. Every penalty pardon is countersigned by the President.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.teal.shade900,
+                      color: AppTheme.statusColor(context, Colors.teal),
                       fontWeight: FontWeight.w500,
                     ),
                   ),

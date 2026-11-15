@@ -254,7 +254,10 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     'Contact admin to update joined date',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               if (_error != null)
@@ -262,13 +265,15 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
                   padding: const EdgeInsets.all(12),
                   margin: const EdgeInsets.only(top: 16),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: AppTheme.statusBg(context, Colors.red),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade200),
+                    border: Border.all(
+                      color: AppTheme.statusColor(context, Colors.red).withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Text(
                     _error!,
-                    style: TextStyle(color: Colors.red.shade700),
+                    style: TextStyle(color: AppTheme.statusColor(context, Colors.red)),
                   ),
                 ),
               const SizedBox(height: 24),
@@ -342,7 +347,7 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
                     child: Card(
                       elevation: 0,
                       color: _isEnrolledInNational
-                          ? Colors.green.shade50
+                          ? AppTheme.statusBg(context, Colors.green)
                           : Theme.of(context)
                               .colorScheme
                               .surfaceContainerHighest
@@ -351,16 +356,17 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(
                           color: _isEnrolledInNational
-                              ? Colors.green.shade300
+                              ? AppTheme.statusColor(context, Colors.green).withValues(alpha: 0.3)
                               : Theme.of(context).colorScheme.outlineVariant,
                         ),
                       ),
                       child: SwitchListTile(
-                        title: const Text(
+                        title: Text(
                           'Enrolled in national branch',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         subtitle: Text(
@@ -370,12 +376,12 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             color: _isEnrolledInNational
-                                ? Colors.green.shade800
-                                : Colors.grey.shade700,
+                                ? AppTheme.statusColor(context, Colors.green)
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                         value: _isEnrolledInNational,
-                        activeThumbColor: Colors.green,
+                        activeThumbColor: AppTheme.statusColor(context, Colors.green),
                         onChanged: (val) {
                           setState(() {
                             _isEnrolledInNational = val;
@@ -419,8 +425,10 @@ class _EditMemberScreenState extends ConsumerState<EditMemberScreen> {
                       height: 48,
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red.shade700,
-                          side: BorderSide(color: Colors.red.shade300),
+                          foregroundColor: AppTheme.statusColor(context, Colors.red),
+                          side: BorderSide(
+                            color: AppTheme.statusColor(context, Colors.red).withValues(alpha: 0.5),
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
