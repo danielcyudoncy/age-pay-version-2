@@ -9,7 +9,14 @@ import '../controllers/cash_handover_provider.dart';
 import '../controllers/financial_secretary_dashboard_provider.dart';
 
 class CashHandoverScreen extends ConsumerStatefulWidget {
-  const CashHandoverScreen({super.key});
+  final double? initialAmount;
+  final String? initialNotes;
+
+  const CashHandoverScreen({
+    super.key,
+    this.initialAmount,
+    this.initialNotes,
+  });
 
   @override
   ConsumerState<CashHandoverScreen> createState() => _CashHandoverScreenState();
@@ -21,6 +28,18 @@ class _CashHandoverScreenState extends ConsumerState<CashHandoverScreen> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialAmount != null && widget.initialAmount! > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showInitiateDialog(widget.initialAmount!);
+        }
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _amountController.dispose();
     _notesController.dispose();
@@ -29,7 +48,11 @@ class _CashHandoverScreenState extends ConsumerState<CashHandoverScreen> {
 
   void _showInitiateDialog(double defaultAmount) {
     _amountController.text = defaultAmount > 0 ? defaultAmount.toStringAsFixed(0) : '';
-    _notesController.clear();
+    if (widget.initialNotes != null && widget.initialNotes!.isNotEmpty) {
+      _notesController.text = widget.initialNotes!;
+    } else {
+      _notesController.clear();
+    }
 
     showDialog(
       context: context,

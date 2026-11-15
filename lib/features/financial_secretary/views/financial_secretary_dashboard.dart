@@ -30,6 +30,9 @@ import 'package:cls/features/calling/views/branch_directory_screen.dart';
 import 'package:cls/features/fiscal_period/views/fiscal_period_screen.dart';
 import 'package:cls/features/financial_secretary/views/cash_handover_screen.dart';
 import 'package:cls/features/national/views/national_remittance_screen.dart';
+import '../controllers/sitting_collection_provider.dart';
+import '../widgets/sitting_readout_sheet.dart';
+import '../widgets/sitting_tally_card.dart';
 
 class FinancialSecretaryDashboard extends ConsumerStatefulWidget {
   const FinancialSecretaryDashboard({super.key});
@@ -469,6 +472,11 @@ class _HomeTab extends ConsumerWidget {
                     },
                   ),
                   QuickActionButton(
+                    icon: Icons.campaign_outlined,
+                    label: 'Sitting Readout',
+                    onPressed: () => SittingReadoutSheet.show(context),
+                  ),
+                  QuickActionButton(
                     icon: Icons.point_of_sale,
                     label: 'Record Cash',
                     onPressed: () {
@@ -882,7 +890,20 @@ class _CollectionsTabState extends ConsumerState<_CollectionsTab> {
             }
           }
 
-          var filtered = payments;
+          final sittingScopeMode = ref.watch(sittingScopeModeProvider);
+          final selectedSittingDate = ref.watch(selectedSittingDateProvider);
+          final selectedMeetingTitle = ref.watch(selectedSittingMeetingTitleProvider);
+
+          // 1. Date Scope Filter
+          var dateScopedPayments = payments;
+          if (sittingScopeMode != SittingScopeMode.allTime) {
+            dateScopedPayments = payments.where((p) =>
+                p.createdAt.year == selectedSittingDate.year &&
+                p.createdAt.month == selectedSittingDate.month &&
+                p.createdAt.day == selectedSittingDate.day).toList();
+          }
+
+          var filtered = dateScopedPayments;
           if (_filter == 'Cash') {
             filtered = filtered
                 .where((p) => p.method == PaymentMethod.cash)
@@ -924,20 +945,81 @@ class _CollectionsTabState extends ConsumerState<_CollectionsTab> {
                   onChanged: (_) => setState(() {}),
                 ),
               ),
+
+              // Sitting Date Scope Bar
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    FilterChip(
+                      avatar: const Icon(Icons.today, size: 14),
+                      label: const Text("Today's Sitting"),
+                      selected: sittingScopeMode == SittingScopeMode.today,
+                      selectedColor: Colors.teal.withValues(alpha: 0.15),
+                      checkmarkColor: Colors.teal,
+                      onSelected: (val) {
+                        if (val) {
+                          ref.read(sittingScopeModeProvider.notifier).state = SittingScopeMode.today;
+                          ref.read(selectedSittingDateProvider.notifier).state = DateTime.now();
+                          ref.read(selectedSittingMeetingTitleProvider.notifier).state = null;
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    FilterChip(
+                      avatar: const Icon(Icons.event_seat_outlined, size: 14),
+                      label: Text(
+                        sittingScopeMode == SittingScopeMode.customDate
+                            ? (selectedMeetingTitle != null && selectedMeetingTitle.isNotEmpty
+                                ? selectedMeetingTitle
+                                : DateFormat('MMM dd, yyyy').format(selectedSittingDate))
+                            : 'Pick Date / Meeting',
+                      ),
+                      selected: sittingScopeMode == SittingScopeMode.customDate,
+                      selectedColor: Colors.teal.withValues(alpha: 0.15),
+                      checkmarkColor: Colors.teal,
+                      onSelected: (_) {
+                        SittingReadoutSheet.pickSittingDateOrMeeting(context, ref);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    FilterChip(
+                      avatar: const Icon(Icons.all_inclusive, size: 14),
+                      label: const Text('All-Time Ledger'),
+                      selected: sittingScopeMode == SittingScopeMode.allTime,
+                      selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                      checkmarkColor: Theme.of(context).colorScheme.primary,
+                      onSelected: (val) {
+                        if (val) {
+                          ref.read(sittingScopeModeProvider.notifier).state = SittingScopeMode.allTime;
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Sitting Glance Tally Card (visible when scoped to a sitting day)
+              if (sittingScopeMode != SittingScopeMode.allTime)
+                const SittingTallyCard(),
+
+              // Channel / Status Filter Chips
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
                     _FilterChip(
-                      label: 'All (${payments.length})',
+                      label: 'All (${dateScopedPayments.length})',
                       selected: _filter == 'All',
                       onSelected: () => setState(() => _filter = 'All'),
                     ),
                     const SizedBox(width: 8),
                     _FilterChip(
                       label:
-                          'Pending (${payments.where((p) => p.status == PaymentStatus.pending).length})',
+                          'Pending (${dateScopedPayments.where((p) => p.status == PaymentStatus.pending).length})',
                       selected: _filter == 'Pending',
                       color: Colors.amber.shade700,
                       onSelected: () => setState(() => _filter = 'Pending'),
@@ -945,7 +1027,7 @@ class _CollectionsTabState extends ConsumerState<_CollectionsTab> {
                     const SizedBox(width: 8),
                     _FilterChip(
                       label:
-                          'Cash (${payments.where((p) => p.method == PaymentMethod.cash).length})',
+                          'Cash (${dateScopedPayments.where((p) => p.method == PaymentMethod.cash).length})',
                       selected: _filter == 'Cash',
                       color: Colors.teal,
                       onSelected: () => setState(() => _filter = 'Cash'),
@@ -953,7 +1035,7 @@ class _CollectionsTabState extends ConsumerState<_CollectionsTab> {
                     const SizedBox(width: 8),
                     _FilterChip(
                       label:
-                          'Bank (${payments.where((p) => p.method == PaymentMethod.bankTransfer).length})',
+                          'Bank (${dateScopedPayments.where((p) => p.method == PaymentMethod.bankTransfer).length})',
                       selected: _filter == 'Bank',
                       color: Colors.blue,
                       onSelected: () => setState(() => _filter = 'Bank'),
@@ -964,7 +1046,43 @@ class _CollectionsTabState extends ConsumerState<_CollectionsTab> {
               const Divider(height: 16),
               Expanded(
                 child: filtered.isEmpty
-                    ? const Center(child: Text('No payments found.'))
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                sittingScopeMode == SittingScopeMode.allTime
+                                    ? Icons.receipt_long_outlined
+                                    : Icons.event_busy_outlined,
+                                size: 48,
+                                color: Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                sittingScopeMode == SittingScopeMode.allTime
+                                    ? 'No payments found.'
+                                    : 'No payments recorded for this sitting date.',
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              if (sittingScopeMode != SittingScopeMode.allTime) ...[
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Tap "Record Cash" below to collect dues from attending members, or switch to All-Time Ledger.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      )
                     : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
                         itemCount: filtered.length,

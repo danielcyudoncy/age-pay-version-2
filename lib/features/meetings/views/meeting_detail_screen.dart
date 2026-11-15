@@ -20,6 +20,8 @@ import 'package:cls/features/secretary/models/announcement_model.dart';
 import 'meeting_minutes_reader_screen.dart';
 import '../widgets/meeting_rsvp_card.dart';
 import '../widgets/meeting_excuses_section.dart';
+import 'package:cls/features/financial_secretary/controllers/sitting_collection_provider.dart';
+import 'package:cls/features/financial_secretary/widgets/sitting_readout_sheet.dart';
 
 class MeetingDetailScreen extends ConsumerStatefulWidget {
   final MeetingModel? meeting;
@@ -1237,11 +1239,41 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                   MeetingExcusesSection(meetingId: currentMeeting.id),
                 ],
                 const SizedBox(height: 24),
-                Text(
-                  'Meeting Minutes / Agenda',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Meeting Minutes / Agenda',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (currentMeeting != null) ...[
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          foregroundColor: Colors.teal,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        icon: const Icon(Icons.campaign_outlined, size: 16),
+                        label: const Text(
+                          'Sitting Financials',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () {
+                          ref.read(sittingScopeModeProvider.notifier).state =
+                              SittingScopeMode.customDate;
+                          ref.read(selectedSittingDateProvider.notifier).state =
+                              currentMeeting.meetingDate;
+                          ref.read(selectedSittingMeetingTitleProvider.notifier).state =
+                              currentMeeting.title;
+                          SittingReadoutSheet.show(context);
+                        },
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
