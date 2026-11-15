@@ -196,6 +196,26 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
     );
 
     if (confirmed == true && _currentMeeting != null) {
+      final user = ref.read(authProvider).valueOrNull;
+      final activeScope = ref.read(activeExecutiveScopeProvider);
+      final effectiveRole = (activeScope == ExecutiveScope.national && user?.nationalRole != null)
+          ? user!.nationalRole!
+          : user?.role;
+      final isSecretary = user != null &&
+          (effectiveRole == UserRole.secretary ||
+              effectiveRole == UserRole.viceSecretary ||
+              user.role == UserRole.superAdmin);
+      if (!isSecretary) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Only the Secretariat can record minutes adoption.'),
+            ),
+          );
+        }
+        return;
+      }
+
       final repo = ref.read(meetingRepositoryProvider);
       final moved = movedByController.text.trim();
       final seconded = secondedByController.text.trim();
@@ -232,6 +252,26 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
   }
 
   Future<void> _showAddResolutionDialog() async {
+    final user = ref.read(authProvider).valueOrNull;
+    final activeScope = ref.read(activeExecutiveScopeProvider);
+    final effectiveRole = (activeScope == ExecutiveScope.national && user?.nationalRole != null)
+        ? user!.nationalRole!
+        : user?.role;
+    final isSecretary = user != null &&
+        (effectiveRole == UserRole.secretary ||
+            effectiveRole == UserRole.viceSecretary ||
+            user.role == UserRole.superAdmin);
+    if (!isSecretary) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Only the Secretariat can add action items or resolutions.'),
+          ),
+        );
+      }
+      return;
+    }
+
     final titleController = TextEditingController();
     final assigneeController = TextEditingController();
     DateTime? dueDate;
@@ -347,15 +387,34 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
 
   Future<void> _toggleResolution(MeetingResolutionModel r) async {
     if (_currentMeeting == null) return;
+    final user = ref.read(authProvider).valueOrNull;
+    final activeScope = ref.read(activeExecutiveScopeProvider);
+    final effectiveRole = (activeScope == ExecutiveScope.national && user?.nationalRole != null)
+        ? user!.nationalRole!
+        : user?.role;
+    final isSecretary = user != null &&
+        (effectiveRole == UserRole.secretary ||
+            effectiveRole == UserRole.viceSecretary ||
+            user.role == UserRole.superAdmin);
+    if (!isSecretary) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Only the Secretariat can update action item status.'),
+          ),
+        );
+      }
+      return;
+    }
+
     final repo = ref.read(meetingRepositoryProvider);
     final nextStatus = !r.isCompleted;
-    final user = ref.read(authProvider).valueOrNull;
 
     await repo.toggleResolution(
       meetingId: _currentMeeting!.id,
       resolutionId: r.id,
       isCompleted: nextStatus,
-      completedBy: user?.displayName,
+      completedBy: user.displayName,
     );
 
     ref.invalidate(meetingsStreamProvider);
@@ -366,7 +425,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
           return item.copyWith(
             isCompleted: nextStatus,
             completedAt: nextStatus ? DateTime.now() : null,
-            completedBy: nextStatus ? user?.displayName : null,
+            completedBy: nextStatus ? user.displayName : null,
           );
         }
         return item;
@@ -384,6 +443,28 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) {
       setState(() => _error = 'Session expired. Please sign in again.');
+      return;
+    }
+
+    final activeScope = ref.read(activeExecutiveScopeProvider);
+    final effectiveRole = (activeScope == ExecutiveScope.national && user.nationalRole != null)
+        ? user.nationalRole!
+        : user.role;
+    final isSecretary = effectiveRole == UserRole.secretary ||
+        effectiveRole == UserRole.viceSecretary ||
+        user.role == UserRole.superAdmin;
+
+    if (publishAndNotify && !isSecretary) {
+      setState(() {
+        _error = 'Only the Secretariat is authorized to publish meeting minutes.';
+      });
+      return;
+    }
+
+    if (!_isNew && !isSecretary) {
+      setState(() {
+        _error = 'Only the Secretariat is authorized to record and update meeting minutes.';
+      });
       return;
     }
 
@@ -670,15 +751,15 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
     final dateTimeFormat = DateFormat('EEE, MMM dd, yyyy \u2022 hh:mm a');
 
     final user = ref.watch(authProvider).valueOrNull;
-    final effectiveRole = (user?.nationalRole != null)
+    final activeScope = ref.watch(activeExecutiveScopeProvider);
+    final effectiveRole = (activeScope == ExecutiveScope.national && user?.nationalRole != null)
         ? user!.nationalRole!
         : user?.role;
-    final canManage = user != null &&
+    final isSecretary = user != null &&
         (effectiveRole == UserRole.secretary ||
             effectiveRole == UserRole.viceSecretary ||
-            effectiveRole == UserRole.president ||
-            effectiveRole == UserRole.vicePresident ||
             user.role == UserRole.superAdmin);
+    final isReadOnly = widget.readOnly || (!_isNew && !isSecretary);
 
     final meetingId = widget.meeting?.id;
     final liveMeetingAsync = meetingId != null
@@ -689,7 +770,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
         liveMeetingAsync?.valueOrNull ?? _currentMeeting ?? widget.meeting;
     if (currentMeeting != null) {
       _currentMeeting = currentMeeting;
-      if (widget.readOnly) {
+      if (isReadOnly) {
         if (_titleController.text != currentMeeting.title) {
           _titleController.text = currentMeeting.title;
         }
@@ -707,12 +788,12 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.readOnly
+          isReadOnly
               ? 'Meeting Details'
               : (_isNew ? 'New Meeting' : 'Meeting Minutes'),
         ),
         actions: [
-          if (canManage && widget.readOnly && currentMeeting != null)
+          if (isSecretary && isReadOnly && currentMeeting != null)
             IconButton(
               icon: const Icon(Icons.edit_outlined),
               tooltip: 'Edit / Document Minutes',
@@ -768,7 +849,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                     style: TextStyle(color: theme.colorScheme.onErrorContainer),
                   ),
                 ),
-              if (widget.readOnly && currentMeeting != null) ...[
+              if (isReadOnly && currentMeeting != null) ...[
                 _buildReadOnlyMeetingHeader(theme, currentMeeting, dateTimeFormat),
               ] else ...[
                 TextFormField(
@@ -869,7 +950,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                   ),
                 ),
               ],
-              if (widget.readOnly) ...[
+              if (isReadOnly) ...[
                 if (currentMeeting?.hasMinutes == true) ...[
                   const SizedBox(height: 20),
                   Container(
@@ -1062,8 +1143,8 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                       onUndoRemove: () {},
                     ),
                   ],
-                  _buildAdoptionSection(theme, currentMeeting),
-                  _buildResolutionsSection(theme, currentMeeting),
+                  _buildAdoptionSection(theme, currentMeeting, isReadOnly: isReadOnly),
+                  _buildResolutionsSection(theme, currentMeeting, isReadOnly: isReadOnly),
                   const SizedBox(height: 24),
                   MeetingRsvpCard(meetingId: currentMeeting.id),
                   const SizedBox(height: 20),
@@ -1199,8 +1280,8 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                   }),
                   onUndoRemove: () => setState(() => _removeFile = false),
                 ),
-                _buildAdoptionSection(theme, currentMeeting),
-                _buildResolutionsSection(theme, currentMeeting),
+                _buildAdoptionSection(theme, currentMeeting, isReadOnly: isReadOnly),
+                _buildResolutionsSection(theme, currentMeeting, isReadOnly: isReadOnly),
                 const SizedBox(height: 20),
                 if (_isNew)
                   SizedBox(
@@ -1428,7 +1509,11 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
     );
   }
 
-  Widget _buildAdoptionSection(ThemeData theme, MeetingModel? meeting) {
+  Widget _buildAdoptionSection(
+    ThemeData theme,
+    MeetingModel? meeting, {
+    required bool isReadOnly,
+  }) {
     if (meeting == null || _isNew) return const SizedBox.shrink();
     if (meeting.isAdopted) {
       return Container(
@@ -1497,7 +1582,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
           ],
         ),
       );
-    } else if (!widget.readOnly && meeting.hasMinutes) {
+    } else if (!isReadOnly && meeting.hasMinutes) {
       return Padding(
         padding: const EdgeInsets.only(top: 16),
         child: SizedBox(
@@ -1521,7 +1606,11 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildResolutionsSection(ThemeData theme, MeetingModel? meeting) {
+  Widget _buildResolutionsSection(
+    ThemeData theme,
+    MeetingModel? meeting, {
+    required bool isReadOnly,
+  }) {
     if (meeting == null || _isNew) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1538,7 +1627,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
                 ),
               ),
             ),
-            if (!widget.readOnly)
+            if (!isReadOnly)
               TextButton.icon(
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Add Action Item'),
@@ -1587,7 +1676,7 @@ class _MeetingDetailScreenState extends ConsumerState<MeetingDetailScreen> {
               child: ListTile(
                 leading: Checkbox(
                   value: r.isCompleted,
-                  onChanged: widget.readOnly
+                  onChanged: isReadOnly
                       ? null
                       : (_) => _toggleResolution(r),
                 ),

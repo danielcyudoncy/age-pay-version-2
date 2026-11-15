@@ -1253,11 +1253,9 @@ class _UpcomingMeetingCard extends ConsumerWidget {
               final effectiveRole = (user?.nationalRole != null)
                   ? user!.nationalRole!
                   : user?.role;
-              final canManage = user != null &&
+              final isSecretary = user != null &&
                   (effectiveRole == UserRole.secretary ||
                       effectiveRole == UserRole.viceSecretary ||
-                      effectiveRole == UserRole.president ||
-                      effectiveRole == UserRole.vicePresident ||
                       user.role == UserRole.superAdmin);
               Navigator.push(
                 context,
@@ -1265,7 +1263,7 @@ class _UpcomingMeetingCard extends ConsumerWidget {
                   builder:
                       (_) => MeetingDetailScreen(
                         meeting: meeting,
-                        readOnly: !canManage,
+                        readOnly: !isSecretary,
                       ),
                 ),
               );

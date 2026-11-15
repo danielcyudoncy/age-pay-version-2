@@ -624,8 +624,6 @@ class _MeetingsTab extends ConsumerWidget {
     final canEdit = user != null &&
         (effectiveRole == UserRole.secretary ||
             effectiveRole == UserRole.viceSecretary ||
-            effectiveRole == UserRole.president ||
-            effectiveRole == UserRole.vicePresident ||
             user.role == UserRole.superAdmin);
 
     return Scaffold(
