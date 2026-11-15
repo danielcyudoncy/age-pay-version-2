@@ -1,3 +1,4 @@
+import 'package:cls/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -116,18 +117,22 @@ class _RequestWaiverDialogState extends ConsumerState<RequestWaiverDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surfaceContainerHighest
+                      .withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       widget.penalty.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -135,16 +140,16 @@ class _RequestWaiverDialogState extends ConsumerState<RequestWaiverDialog> {
                       'Member: ${widget.memberName}',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey.shade700,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Fine: ${_currencyFormat.format(widget.penalty.amount)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Colors.redAccent,
+                        color: AppTheme.statusColor(context, Colors.red),
                       ),
                     ),
                   ],
@@ -154,21 +159,27 @@ class _RequestWaiverDialogState extends ConsumerState<RequestWaiverDialog> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
+                  color: AppTheme.statusBg(context, Colors.amber),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber.shade300),
+                  border: Border.all(
+                    color: AppTheme.statusColor(context, Colors.amber)
+                        .withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline,
-                        size: 18, color: Colors.amber.shade900),
+                    Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: AppTheme.statusColor(context, Colors.amber),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Requires President counter-signature to finalize. Financial records cannot be deleted.',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.amber.shade900,
+                          color: AppTheme.statusColor(context, Colors.amber),
                           fontWeight: FontWeight.w500,
                         ),
                       ),

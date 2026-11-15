@@ -185,6 +185,7 @@ class _WaiverAuditLedgerScreenState
   }
 
   Widget _waiverCard(PenaltyWaiverModel waiver) {
+    final theme = Theme.of(context);
     Color statusColor;
     String statusText;
     IconData statusIcon;
@@ -268,9 +269,9 @@ class _WaiverAuditLedgerScreenState
               width: double.infinity,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: AppTheme.cardBorder(context)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,13 +281,16 @@ class _WaiverAuditLedgerScreenState
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     waiver.reason,
-                    style: const TextStyle(fontSize: 13),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
                 ],
               ),

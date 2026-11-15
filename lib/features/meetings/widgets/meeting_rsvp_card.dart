@@ -319,7 +319,7 @@ class _MeetingRsvpCardState extends ConsumerState<MeetingRsvpCard> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade700,
+                      backgroundColor: AppTheme.statusColor(context, Colors.red),
                       foregroundColor: Colors.white,
                     ),
                     onPressed: _isSubmitting
@@ -467,7 +467,10 @@ class _MeetingRsvpCardState extends ConsumerState<MeetingRsvpCard> {
             const SizedBox(height: 8),
             Text(
               'Recorded on ${dateFormat.format(rsvp.updatedAt)}',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              style: TextStyle(
+                fontSize: 11,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
