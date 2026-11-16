@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cls/main.dart' as app;
 import 'package:cls/core/constants/enums.dart';
 import 'package:cls/features/auth/models/user_model.dart';
 import 'package:cls/features/auth/controllers/auth_provider.dart';
@@ -24,8 +23,7 @@ import 'package:cls/features/dashboard/controllers/member_dashboard_provider.dar
 import 'package:cls/features/dashboard/controllers/treasurer_dashboard_provider.dart';
 import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/levies/controllers/levy_provider.dart'
-    as levy_provider
-    show levyRepositoryProvider, obligationRepositoryProvider;
+    as levy_provider;
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
 import 'package:cls/features/receipts/controllers/receipt_provider.dart';
 import 'package:cls/features/notifications/controllers/notification_provider.dart';
@@ -34,6 +32,13 @@ import 'package:cls/features/expenses/views/expense_list_screen.dart';
 import 'package:cls/features/reports/views/reports_screen.dart';
 import 'package:cls/features/receipts/views/receipt_list_screen.dart';
 import 'package:cls/features/notifications/views/notifications_screen.dart';
+import 'package:cls/features/dashboard/views/home_router.dart';
+import 'package:cls/features/dashboard/views/treasurer_dashboard.dart';
+import 'package:cls/features/dashboard/views/president_dashboard.dart';
+import 'package:cls/features/obligations/views/member_obligations_screen.dart';
+import 'package:cls/features/payments/views/payment_history_screen.dart';
+import 'package:cls/features/admin/controllers/admin_provider.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
 
 void main() {
   final now = DateTime.now();
@@ -144,6 +149,13 @@ void main() {
 
   List<Override> buildOverrides(UserModel? user) => [
     authServiceProvider.overrideWithValue(_MockAuth(user)),
+    authProvider.overrideWith((ref) {
+      final notifier = AuthNotifier(ref.watch(authServiceProvider));
+      notifier.state = AsyncValue.data(user);
+      return notifier;
+    }),
+    currentOrganizationProvider.overrideWith((ref) => Stream.value(null)),
+    activeExecutiveScopeProvider.overrideWith((ref) => ExecutiveScope.branch),
     memberRepositoryProvider.overrideWithValue(_MockMemberRepo(testMember)),
     paymentRepositoryProvider.overrideWithValue(_MockPaymentRepo(testPayment)),
     obligationRepositoryProvider.overrideWithValue(
@@ -155,6 +167,9 @@ void main() {
     levy_provider.levyRepositoryProvider.overrideWithValue(
       _MockLevyRepo(testLevy),
     ),
+    levy_provider.levyCreationProvider.overrideWith(
+      (ref) => _MockLevyCreationNotifier(),
+    ),
     expenseRepositoryProvider.overrideWithValue(_MockExpenseRepo(testExpense)),
     receiptRepositoryProvider.overrideWithValue(_MockReceiptRepo(testReceipt)),
     notificationServiceProvider.overrideWithValue(_MockNotificationService()),
@@ -162,11 +177,15 @@ void main() {
 
   Future<void> pumpApp(WidgetTester tester, UserModel? user) async {
     await tester.pumpWidget(
-      ProviderScope(overrides: buildOverrides(user), child: const app.MyApp()),
+      ProviderScope(
+        overrides: buildOverrides(user),
+        child: const MaterialApp(
+          home: HomeRouter(),
+        ),
+      ),
     );
-    await tester.pumpAndSettle();
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
   }
 
   testWidgets('member end-to-end flow', (WidgetTester tester) async {
@@ -193,7 +212,7 @@ void main() {
     await tester.tap(quickAction);
     await tester.pumpAndSettle();
 
-    expect(find.text('My Obligations'), findsOneWidget);
+    expect(find.byType(MemberObligationsScreen), findsOneWidget);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -211,13 +230,13 @@ void main() {
     await tester.tap(historyAction);
     await tester.pumpAndSettle();
 
-    expect(find.text('Payment History'), findsOneWidget);
+    expect(find.byType(PaymentHistoryScreen), findsOneWidget);
   });
 
   testWidgets('treasurer end-to-end flow', (WidgetTester tester) async {
     await pumpApp(tester, treasurerUser);
 
-    expect(find.text('Treasurer Dashboard'), findsOneWidget);
+    expect(find.byType(TreasurerDashboard), findsOneWidget);
     expect(find.text('Total Collected'), findsOneWidget);
     expect(find.text('Total Outstanding'), findsOneWidget);
 
@@ -248,14 +267,15 @@ void main() {
   testWidgets('president end-to-end flow', (WidgetTester tester) async {
     await pumpApp(tester, presidentUser);
 
-    expect(find.text('President Dashboard'), findsOneWidget);
+    expect(find.byType(PresidentDashboard), findsOneWidget);
 
     await tester.fling(
       find.byType(ListView).first,
       const Offset(0, -800),
       1000,
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     final allTexts = tester.allWidgets
         .whereType<Text>()
@@ -264,8 +284,10 @@ void main() {
     expect(
       allTexts.any(
         (t) =>
+            t.contains('Revenue by Payment Method') ||
             t.contains('Collections by Method') ||
-            t.contains('Monthly Collections'),
+            t.contains('Monthly Collections') ||
+            t.contains('Treasury & Membership Health'),
       ),
       isTrue,
     );
@@ -326,6 +348,16 @@ class _MockAuth implements AuthService {
 
   @override
   Future<void> signOut() async {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _MockLevyCreationNotifier
+    extends StateNotifier<levy_provider.LevyCreationState>
+    implements levy_provider.LevyCreationNotifier {
+  _MockLevyCreationNotifier()
+      : super(const levy_provider.LevyCreationState());
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

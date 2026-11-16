@@ -591,7 +591,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // scroll down to bring quick actions into viewport
-      await tester.drag(find.byType(ListView).first, const Offset(0, -800));
+      await tester.scrollUntilVisible(
+        find.text('Record Cash Payment'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
 
       final allTexts = tester.allWidgets
@@ -617,7 +621,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // scroll down to bring quick actions into viewport
-      await tester.drag(find.byType(ListView).first, const Offset(0, -800));
+      await tester.scrollUntilVisible(
+        find.text('Record Cash Payment'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
 
       // Verify Create Levy is not present on Treasurer dashboard

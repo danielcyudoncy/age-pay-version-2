@@ -13,6 +13,8 @@ import 'package:cls/features/payments/views/payment_history_screen.dart';
 import 'package:cls/features/receipts/controllers/receipt_provider.dart';
 import 'package:cls/features/receipts/views/receipt_detail_screen.dart';
 import 'package:cls/features/receipts/views/receipt_list_screen.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
+import 'package:cls/features/obligations/controllers/obligation_provider.dart';
 import 'package:cls/features/payments/views/payment_history_screen.dart'
     as payment_history;
 
@@ -246,6 +248,9 @@ void main() {
               .paymentHistoryProvider('m1')
               .overrideWith((ref) => Stream.value(payments)),
           receiptRepositoryProvider.overrideWith((ref) => mockRepo),
+          activeExecutiveScopeProvider
+              .overrideWith((ref) => ExecutiveScope.branch),
+          allObligationsProvider.overrideWith((ref) => Stream.value([])),
         ],
         child: MaterialApp(
           home: MediaQuery(

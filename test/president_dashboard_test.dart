@@ -517,7 +517,8 @@ void main() {
           members: testMembers,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(PresidentDashboard), findsOneWidget);
       expect(find.text('Total Members'), findsOneWidget);
@@ -562,7 +563,8 @@ void main() {
             members: testMembers,
           ),
         );
-        await tester.pumpAndSettle();
+        await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
         final allTexts = tester.allWidgets
             .whereType<Text>()
@@ -600,7 +602,8 @@ void main() {
           members: testMembers,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(ListView), findsWidgets);
       expect(find.text('Monthly Collections (Last 12 Months)'), findsNothing);
@@ -618,11 +621,13 @@ void main() {
           members: testMembers,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Scroll down to bring pie chart into viewport
       await tester.drag(find.byType(ListView), const Offset(0, -1000));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(PieChart), findsOneWidget);
       expect(find.text('Revenue by Payment Method'), findsOneWidget);
@@ -638,11 +643,13 @@ void main() {
           members: testMembers,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Scroll down to bring active levies into viewport
       await tester.drag(find.byType(ListView), const Offset(0, -800));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Active Levies & Projects'), findsOneWidget);
       expect(find.text('June Monthly Due'), findsOneWidget);
@@ -661,11 +668,13 @@ void main() {
           members: testMembers,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Scroll down to bring recent expenses into viewport
       await tester.drag(find.byType(ListView), const Offset(0, -1000));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Recent Disbursed Expenses'), findsOneWidget);
 
@@ -689,11 +698,13 @@ void main() {
           members: testMembers,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Open the Executive Quick Actions dropdown menu
       await tester.tap(find.text('Executive Quick Actions'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Reports'), findsOneWidget);
     });
@@ -736,7 +747,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.textContaining('Auth error'), findsOneWidget);
       expect(find.widgetWithText(ElevatedButton, 'Retry'), findsOneWidget);
@@ -754,11 +766,13 @@ void main() {
           members: testMembers,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Tap Members on BottomNavigationBar
       await tester.tap(find.text('Members'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify that DashboardScopeTitle is shown in the AppBar (clean executive title)
       expect(find.byType(DashboardScopeTitle), findsOneWidget);
@@ -784,7 +798,8 @@ void main() {
         find.byType(TextField),
         'jane',
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Search Results (1)'), findsOneWidget);
       expect(find.text('Total: 2'), findsOneWidget);
