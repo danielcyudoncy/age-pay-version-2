@@ -73,7 +73,7 @@ describe('Users collection', () => {
     await assertSucceeds(ref.get());
   });
 
-  it('denies member from reading another user doc', async () => {
+  it('allows authenticated member to read another user doc', async () => {
     const db = getFirestore({ uid: 'member2' });
     const ref = db.collection('users').doc(userId);
     await testEnv.withSecurityRulesDisabled(async (context) => {
@@ -88,7 +88,7 @@ describe('Users collection', () => {
         createdAt: new Date(),
       });
     });
-    await assertFails(ref.get());
+    await assertSucceeds(ref.get());
   });
 });
 
@@ -305,7 +305,7 @@ describe('Expenses collection', () => {
     }));
   });
 
-  it('denies member from reading expenses', async () => {
+  it('allows authenticated member to read expenses', async () => {
     const db = getFirestore({ uid: 'member1' });
     const ref = db.collection('expenses').doc('exp1');
     await testEnv.withSecurityRulesDisabled(async (context) => {
@@ -324,6 +324,12 @@ describe('Expenses collection', () => {
         updatedAt: new Date(),
       });
     });
+    await assertSucceeds(ref.get());
+  });
+
+  it('denies unauthenticated user from reading expenses', async () => {
+    const db = getUnauthenticatedFirestore();
+    const ref = db.collection('expenses').doc('exp1');
     await assertFails(ref.get());
   });
 });

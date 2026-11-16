@@ -7,6 +7,24 @@ import 'package:cls/features/expenses/repositories/expense_repository.dart';
 import 'package:cls/features/expenses/controllers/expense_provider.dart';
 import 'package:cls/features/expenses/views/expense_list_screen.dart';
 import 'package:cls/features/expenses/views/expense_form_screen.dart';
+import 'package:cls/features/auth/models/user_model.dart';
+import 'package:cls/features/auth/services/auth_service.dart';
+import 'package:cls/features/auth/controllers/auth_provider.dart';
+import 'package:cls/features/national/controllers/national_provider.dart';
+
+class _MockAuthService implements AuthService {
+  final UserModel? _user;
+  _MockAuthService([this._user]);
+
+  @override
+  Future<UserModel?> getCurrentUser() async => _user;
+
+  @override
+  Future<String> getActiveOrganizationId() async => _user?.organizationId ?? '';
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class _MockExpenseRepo implements ExpenseRepository {
   bool createCalled = false;
@@ -190,11 +208,31 @@ void main() {
   });
 
   group('ExpenseFormScreen', () {
-    Widget buildCreateScreen({ExpenseModel? expense}) {
-      final mockRepo = _MockExpenseRepo();
+    final testUser = UserModel(
+      uid: 'treasurer1',
+      organizationId: 'org1',
+      branchId: 'branch1',
+      email: 'treasurer@test.com',
+      displayName: 'Test Treasurer',
+      phoneNumber: '08012345678',
+      role: UserRole.treasurer,
+      createdAt: DateTime(2024),
+    );
+
+    Widget buildCreateScreen({ExpenseModel? expense, _MockExpenseRepo? repo}) {
+      final mockRepo = repo ?? _MockExpenseRepo();
 
       return ProviderScope(
-        overrides: [expenseRepositoryProvider.overrideWith((ref) => mockRepo)],
+        overrides: [
+          authServiceProvider.overrideWith((ref) => _MockAuthService(testUser)),
+          authProvider.overrideWith((ref) {
+            final notifier = AuthNotifier(ref.watch(authServiceProvider));
+            notifier.state = AsyncValue.data(testUser);
+            return notifier;
+          }),
+          activeExecutiveScopeProvider.overrideWith((ref) => ExecutiveScope.branch),
+          expenseRepositoryProvider.overrideWith((ref) => mockRepo),
+        ],
         child: MaterialApp(
           home: MediaQuery(
             data: const MediaQueryData(size: Size(800, 1200)),
@@ -212,7 +250,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Add Expense'), findsOneWidget);
-      expect(find.byType(TextFormField), findsNWidgets(3));
+      expect(find.byType(TextFormField), findsNWidgets(4));
       expect(
         find.byType(DropdownButtonFormField<ExpenseCategory>),
         findsOneWidget,
@@ -262,19 +300,7 @@ void main() {
     testWidgets('save button calls create on valid form', (tester) async {
       final mockRepo = _MockExpenseRepo();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            expenseRepositoryProvider.overrideWith((ref) => mockRepo),
-          ],
-          child: MaterialApp(
-            home: MediaQuery(
-              data: const MediaQueryData(size: Size(800, 1200)),
-              child: ExpenseFormScreen(currentUserId: 'treasurer1'),
-            ),
-          ),
-        ),
-      );
+      await tester.pumpWidget(buildCreateScreen(repo: mockRepo));
       await tester.pumpAndSettle();
 
       // Fill title
@@ -305,22 +331,7 @@ void main() {
       final mockRepo = _MockExpenseRepo();
       final expense = testExpenses[0];
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            expenseRepositoryProvider.overrideWith((ref) => mockRepo),
-          ],
-          child: MaterialApp(
-            home: MediaQuery(
-              data: const MediaQueryData(size: Size(800, 1200)),
-              child: ExpenseFormScreen(
-                currentUserId: 'treasurer1',
-                expense: expense,
-              ),
-            ),
-          ),
-        ),
-      );
+      await tester.pumpWidget(buildCreateScreen(expense: expense, repo: mockRepo));
       await tester.pumpAndSettle();
 
       // Modify title

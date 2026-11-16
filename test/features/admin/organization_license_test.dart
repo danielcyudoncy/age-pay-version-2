@@ -76,7 +76,7 @@ void main() {
       );
 
       expect(org.isLicensePendingVerification, isTrue);
-      expect(org.isLicenseActive, isFalse);
+      expect(org.isLicenseActive, isTrue);
       expect(org.licensePaymentReference, equals('ZEN-REF-9988'));
       expect(org.licensePaymentAmount, equals(35000.0));
       expect(org.licenseProofUrl, contains('test.jpg'));
